@@ -1,0 +1,7 @@
+.omx/
+.omc/
+.claude/
+.codex/
+.playwright-mcp/
+*.png
+AGENTS.md
