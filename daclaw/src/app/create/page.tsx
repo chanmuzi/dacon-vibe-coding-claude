@@ -313,7 +313,7 @@ export default function CreatePage() {
       title: form.title.trim(),
       description: form.description.trim(),
       type: selectedType,
-      status: new Date(form.startDate) > new Date() ? 'upcoming' : 'active',
+      status: new Date(form.endDate) < new Date() ? 'ended' : new Date(form.startDate) > new Date() ? 'upcoming' : 'active',
       tags,
       thumbnailUrl: form.thumbnailUrl.trim(),
       startDate: form.startDate,

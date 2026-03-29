@@ -53,7 +53,11 @@ export default function HackathonDetailPage() {
 
   const hackathon = getBySlug(slug);
   const hackTeams = teams.filter((t) => t.hackathonSlug === slug);
-  const hackSubs = submissions.filter((s) => s.hackathonSlug === slug);
+  const allHackSubs = submissions.filter((s) => s.hackathonSlug === slug);
+  const myTeamIds = new Set(
+    teams.filter((t) => t.hackathonSlug === slug && t.members.some((m) => m.userId === user?.id)).map((t) => t.id)
+  );
+  const hackSubs = allHackSubs.filter((s) => myTeamIds.has(s.teamId) || s.teamId === `solo-${user?.id}`);
   const leaderboard = getLeaderboard(slug);
   const bookmarked = isBookmarked(slug);
 
@@ -77,9 +81,9 @@ export default function HackathonDetailPage() {
   const badge = TYPE_BADGE[hackathon.type];
 
   function handleSubmit() {
-    if (!submitForm.content.trim() || !hackathon) return;
-    const myTeam = hackTeams.find((t) => t.members.some((m) => m.userId === user?.id));
-    const teamId = myTeam?.id ?? `solo-${user?.id ?? 'anon'}`;
+    if (!submitForm.content.trim() || !hackathon || !isLoggedIn || !user) return;
+    const myTeam = hackTeams.find((t) => t.members.some((m) => m.userId === user.id));
+    const teamId = myTeam?.id ?? `solo-${user.id}`;
     const teamName = myTeam?.name ?? user?.nickname ?? '익명';
     const version = hackSubs.filter((s) => s.teamId === teamId).length + 1;
     const score = hackathon.type !== 'qualitative' ? Math.round((60 + Math.random() * 35) * 10) / 10 : undefined;
