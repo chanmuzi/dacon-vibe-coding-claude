@@ -83,6 +83,7 @@ export default function HackathonDetailPage() {
   function handleSubmit() {
     if (!submitForm.content.trim() || !hackathon || !isLoggedIn || !user) return;
     const myTeam = hackTeams.find((t) => t.members.some((m) => m.userId === user.id));
+    if (!hackathon.teamPolicy.solo && !myTeam) return;
     const teamId = myTeam?.id ?? `solo-${user.id}`;
     const teamName = myTeam?.name ?? user?.nickname ?? '익명';
     const version = hackSubs.filter((s) => s.teamId === teamId).length + 1;

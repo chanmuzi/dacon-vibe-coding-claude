@@ -313,7 +313,14 @@ export default function CreatePage() {
       title: form.title.trim(),
       description: form.description.trim(),
       type: selectedType,
-      status: new Date(form.endDate) < new Date() ? 'ended' : new Date(form.startDate) > new Date() ? 'upcoming' : 'active',
+      status: (() => {
+        const now = new Date();
+        const start = new Date(form.startDate + 'T00:00:00');
+        const end = new Date(form.endDate + 'T23:59:59');
+        if (end < now) return 'ended' as const;
+        if (start > now) return 'upcoming' as const;
+        return 'active' as const;
+      })(),
       tags,
       thumbnailUrl: form.thumbnailUrl.trim(),
       startDate: form.startDate,

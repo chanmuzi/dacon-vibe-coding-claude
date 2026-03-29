@@ -78,7 +78,7 @@ export default function CampPage() {
   }
 
   function handleSendDM() {
-    if (!dmMessage.trim() || !applyTeam) return;
+    if (!dmMessage.trim() || !applyTeam || !isLoggedIn || !user) return;
     const leader = applyTeam.members[0];
     if (!leader) return;
     addMessage({
