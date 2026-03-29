@@ -3,6 +3,7 @@ import { JetBrains_Mono } from 'next/font/google';
 import Navigation from '@/components/layout/Navigation';
 import ClientProvider from '@/components/ClientProvider';
 import QAChatbot from '@/components/QAChatbot';
+import AgentationDev from '@/components/AgentationDev';
 import './globals.css';
 
 const jetbrainsMono = JetBrains_Mono({
@@ -36,6 +37,7 @@ export default function RootLayout({
         <ClientProvider>
           <main className="flex-1">{children}</main>
           <QAChatbot />
+          <AgentationDev />
         </ClientProvider>
       </body>
     </html>
