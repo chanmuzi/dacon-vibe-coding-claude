@@ -1,13 +1,25 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send } from 'lucide-react';
+import { MessageCircle, X, Send, RotateCcw } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathon';
 
 interface ChatMessage {
   role: 'user' | 'bot';
   text: string;
 }
+
+const WELCOME_MESSAGE: ChatMessage = {
+  role: 'bot',
+  text: '안녕하세요! DACLAW 도우미입니다. 대회 정보, 규칙, 일정 등 무엇이든 물어보세요.',
+};
+
+const SUGGESTED_QUESTIONS = [
+  '이 대회의 평가 기준은?',
+  '마감일이 언제인가요?',
+  '참가 조건은 무엇인가요?',
+  '상금 구조를 알려주세요',
+];
 
 function getAnswer(question: string, hackathons: ReturnType<typeof useHackathonStore.getState>['hackathons']): string {
   const q = question.toLowerCase();
@@ -71,17 +83,31 @@ function getAnswer(question: string, hackathons: ReturnType<typeof useHackathonS
     return '커뮤니티 페이지에서 질문, 팁 공유, 팀원 모집 등 다양한 게시글을 작성하고 소통할 수 있습니다.';
   }
 
+  if (/평가|기준|criteria|metric/.test(q)) {
+    return '평가 기준은 대회마다 다릅니다. 각 대회 상세 페이지에서 평가 방식 및 지표를 확인하세요.';
+  }
+
   return '죄송합니다, 관련 정보를 찾지 못했습니다. 다른 키워드로 검색해보세요.\n\n가능한 질문 예시:\n• 상금 정보\n• 대회 일정\n• 팀 구성\n• 제출 방법\n• 참가 방법';
 }
 
 export default function QAChatbot() {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'bot', text: '안녕하세요! DACLAW 챗봇입니다. 해커톤 관련 궁금한 점을 질문해보세요.' },
-  ]);
+  const [visible, setVisible] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
+  const [isComposing, setIsComposing] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const hackathons = useHackathonStore((s) => s.hackathons);
+
+  // M1: Manage visibility with delay on close for animation
+  useEffect(() => {
+    if (open) {
+      setVisible(true);
+    } else {
+      const timer = setTimeout(() => setVisible(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -89,43 +115,70 @@ export default function QAChatbot() {
     }
   }, [messages, open]);
 
-  const send = () => {
-    const text = input.trim();
-    if (!text) return;
-    const userMsg: ChatMessage = { role: 'user', text };
-    const botText = getAnswer(text, hackathons);
+  const send = (text?: string) => {
+    const msgText = (text ?? input).trim();
+    if (!msgText) return;
+    const userMsg: ChatMessage = { role: 'user', text: msgText };
+    const botText = getAnswer(msgText, hackathons);
     const botMsg: ChatMessage = { role: 'bot', text: botText };
     setMessages((prev) => [...prev, userMsg, botMsg]);
     setInput('');
   };
 
-  const [isComposing, setIsComposing] = useState(false);
-
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !isComposing) send();
   };
 
+  // M4: Reset conversation
+  const handleReset = () => {
+    if (window.confirm('새 대화를 시작하시겠습니까?')) {
+      setMessages([WELCOME_MESSAGE]);
+      setInput('');
+    }
+  };
+
+  // M5: Suggestion chip click
+  const handleSuggestion = (question: string) => {
+    send(question);
+  };
+
+  const isWelcomeOnly = messages.length === 1;
+
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
-      {/* Chat Popup */}
-      {open && (
+      {/* M1: Chat Popup with animation — always rendered when visible */}
+      {visible && (
         <div
           className="bg-surface rounded-2xl shadow-xl border border-border w-full max-w-sm flex flex-col"
-          style={{ maxHeight: '500px' }}
+          style={{
+            maxHeight: '500px',
+            transition: 'transform 300ms ease, opacity 300ms ease',
+            transform: open ? 'translateY(0)' : 'translateY(100%)',
+            opacity: open ? 1 : 0,
+          }}
         >
-          {/* Header */}
+          {/* M3: Header with branding emoji + M4: Reset button */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border rounded-t-2xl bg-primary text-text-on-primary">
             <div className="flex items-center gap-2">
               <MessageCircle size={18} />
-              <span className="font-semibold text-sm">DACLAW 챗봇</span>
+              <span className="font-semibold text-sm">🦞 DACLAW 도우미</span>
             </div>
-            <button
-              onClick={() => setOpen(false)}
-              className="p-1 rounded-lg hover:bg-white/20 transition-colors"
-              aria-label="닫기"
-            >
-              <X size={16} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleReset}
+                className="p-1 rounded-lg hover:bg-white/20 transition-colors"
+                aria-label="대화 초기화"
+              >
+                <RotateCcw size={16} />
+              </button>
+              <button
+                onClick={() => setOpen(false)}
+                className="p-1 rounded-lg hover:bg-white/20 transition-colors"
+                aria-label="닫기"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
           {/* Messages */}
@@ -147,6 +200,22 @@ export default function QAChatbot() {
                 </div>
               </div>
             ))}
+
+            {/* M5: Suggestion chips — shown only when welcome message is alone */}
+            {isWelcomeOnly && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {SUGGESTED_QUESTIONS.map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => handleSuggestion(q)}
+                    className="px-3 py-1.5 rounded-full text-xs font-medium bg-primary-light text-primary hover:bg-primary hover:text-text-on-primary transition-colors cursor-pointer"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div ref={bottomRef} />
           </div>
 
@@ -164,7 +233,7 @@ export default function QAChatbot() {
               className="flex-1 bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition-shadow"
             />
             <button
-              onClick={send}
+              onClick={() => send()}
               disabled={!input.trim()}
               className="p-2 rounded-lg bg-primary text-text-on-primary hover:bg-primary/90 transition-colors disabled:opacity-40"
               aria-label="전송"
