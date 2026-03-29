@@ -97,7 +97,7 @@ export default function CampPage() {
 
   const filtered = useMemo(() => {
     let result = teams;
-    if (hackFilter !== 'all') result = result.filter((t) => t.hackathonSlugs.includes(hackFilter));
+    if (hackFilter !== 'all') result = result.filter((t) => t.hackathonSlugs?.includes(hackFilter));
     if (roleFilter !== 'all') result = result.filter((t) => t.recruitRoles.includes(roleFilter));
     return result;
   }, [teams, hackFilter, roleFilter]);
@@ -105,7 +105,7 @@ export default function CampPage() {
   const recommendations = useMemo(() => {
     const openTeams = teams.filter((t) => t.recruitStatus === 'open');
     return openTeams.map((t) => {
-      const hack = hackathons.find((h) => t.hackathonSlugs.includes(h.slug));
+      const hack = hackathons.find((h) => t.hackathonSlugs?.includes(h.slug));
       const rate = isLoggedIn && user
         ? calcMatchRate(t, user.role, user.techStack, hack?.tags ?? [])
         : Math.round(50 + Math.random() * 30);
@@ -237,7 +237,7 @@ export default function CampPage() {
                 조건에 맞는 팀이 없습니다.
               </div>
             ) : filtered.map((team) => {
-              const hack = hackathons.find((h) => team.hackathonSlugs.includes(h.slug));
+              const hack = hackathons.find((h) => team.hackathonSlugs?.includes(h.slug));
               const isOpen = team.recruitStatus === 'open';
               return (
                 // G10: Entire card is a link to /teams/[id]
@@ -257,7 +257,7 @@ export default function CampPage() {
                       </div>
                       <p className="text-sm text-text-secondary mb-3">{team.description}</p>
                       <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary">
-                        <span className="bg-primary-light text-primary px-2 py-0.5 rounded-full font-medium">{hack?.title ?? team.hackathonSlugs[0] ?? '미정'}</span>
+                        <span className="bg-primary-light text-primary px-2 py-0.5 rounded-full font-medium">{hack?.title ?? team.hackathonSlugs?.[0] ?? '미정'}</span>
                         <span className="flex items-center gap-1"><Users size={12} /> {team.members.length}/{team.maxMembers}명</span>
                         {/* G3: Flexible role recruitment — suggestive framing */}
                         {team.recruitRoles.length > 0 && (

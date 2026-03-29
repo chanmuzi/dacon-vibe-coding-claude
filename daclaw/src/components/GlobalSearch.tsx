@@ -49,7 +49,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
         category: '팀' as const,
         title: t.name,
         description: t.description.slice(0, 80),
-        href: t.hackathonSlugs.length > 0 ? `/hackathons/${t.hackathonSlugs[0]}` : '/camp',
+        href: t.hackathonSlugs?.length > 0 ? `/hackathons/${t.hackathonSlugs[0]}` : '/camp',
         _search: `${t.name} ${t.description}`,
       }));
 

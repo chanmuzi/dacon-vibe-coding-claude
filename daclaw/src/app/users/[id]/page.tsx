@@ -91,7 +91,7 @@ export default function UserProfilePage() {
 
   const participatedHackathonSlugs = useMemo(() => {
     const slugs = new Set<string>();
-    userTeams.forEach((t) => t.hackathonSlugs.forEach((s) => slugs.add(s)));
+    userTeams.forEach((t) => t.hackathonSlugs?.forEach((s) => slugs.add(s)));
     userSubmissions.forEach((s) => slugs.add(s.hackathonSlug));
     return Array.from(slugs);
   }, [userTeams, userSubmissions]);

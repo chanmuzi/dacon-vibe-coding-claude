@@ -34,5 +34,5 @@ export const useTeamStore = create<TeamState>((set, get) => ({
     set({ teams: updated });
   },
 
-  getByHackathon: (slug) => get().teams.filter((t) => t.hackathonSlugs.includes(slug)),
+  getByHackathon: (slug) => get().teams.filter((t) => t.hackathonSlugs?.includes(slug)),
 }));

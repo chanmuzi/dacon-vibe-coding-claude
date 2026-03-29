@@ -134,10 +134,10 @@ export default function HackathonDetailPage() {
   const ideDropdownRef = useRef<HTMLDivElement>(null);
 
   const hackathon = getBySlug(slug);
-  const hackTeams = teams.filter((t) => t.hackathonSlugs.includes(slug));
+  const hackTeams = teams.filter((t) => t.hackathonSlugs?.includes(slug));
   const allHackSubs = submissions.filter((s) => s.hackathonSlug === slug);
   const myTeamIds = new Set(
-    teams.filter((t) => t.hackathonSlugs.includes(slug) && t.members.some((m) => m.userId === user?.id)).map((t) => t.id)
+    teams.filter((t) => t.hackathonSlugs?.includes(slug) && t.members.some((m) => m.userId === user?.id)).map((t) => t.id)
   );
   const hackSubs = allHackSubs.filter((s) => myTeamIds.has(s.teamId) || s.teamId === `solo-${user?.id}`);
   const leaderboard = getLeaderboard(slug);

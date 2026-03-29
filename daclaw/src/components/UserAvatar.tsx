@@ -22,7 +22,7 @@ interface UserAvatarProps {
 }
 
 export default function UserAvatar({ role, size = 'md', className = '' }: UserAvatarProps) {
-  const cfg = ROLE_CONFIG[role];
+  const cfg = ROLE_CONFIG[role] ?? ROLE_CONFIG.developer;
   const sz = SIZE_CONFIG[size];
   const Icon = cfg.icon;
 

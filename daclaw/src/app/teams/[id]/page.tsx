@@ -43,7 +43,7 @@ export default function TeamPublicPage() {
 
   const team = teams.find((t) => t.id === teamId);
   const teamHackathons = team
-    ? hackathons.filter((h) => team.hackathonSlugs.includes(h.slug))
+    ? hackathons.filter((h) => team.hackathonSlugs?.includes(h.slug))
     : [];
 
   function handleApplyClick() {
@@ -196,7 +196,7 @@ export default function TeamPublicPage() {
                 참가 해커톤
               </div>
               <span className="font-bold text-text-primary text-lg">
-                {team.hackathonCount ?? team.hackathonSlugs.length}
+                {team.hackathonCount ?? team.hackathonSlugs?.length ?? 0}
               </span>
             </div>
             <div className="flex items-center justify-between p-3 bg-background rounded-lg">

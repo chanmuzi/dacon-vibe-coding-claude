@@ -497,7 +497,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {openTeams.map((team) => {
               const relatedHackathon = hackathons.find((h) =>
-                team.hackathonSlugs.includes(h.slug)
+                team.hackathonSlugs?.includes(h.slug)
               );
               return (
                 <Link
