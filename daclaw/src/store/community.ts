@@ -12,6 +12,8 @@ interface CommunityState {
   addPost: (p: CommunityPost) => void;
   addComment: (postId: string, comment: Comment) => void;
   toggleLike: (postId: string, userId: string) => void;
+  updatePost: (id: string, updates: Partial<CommunityPost>) => void;
+  deletePost: (id: string) => void;
 }
 
 export const useCommunityStore = create<CommunityState>((set, get) => ({
@@ -53,6 +55,18 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
         likedBy: liked ? p.likedBy.filter((id) => id !== userId) : [...p.likedBy, userId],
       };
     });
+    setItem('community', posts);
+    set({ posts });
+  },
+
+  updatePost: (id, updates) => {
+    const posts = get().posts.map((p) => (p.id === id ? { ...p, ...updates } : p));
+    setItem('community', posts);
+    set({ posts });
+  },
+
+  deletePost: (id) => {
+    const posts = get().posts.filter((p) => p.id !== id);
     setItem('community', posts);
     set({ posts });
   },

@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { useCommunityStore } from '@/store/community';
 import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
 import {
-  MessageSquare, ThumbsUp, Plus, X, Send, ChevronDown, HelpCircle, Lightbulb, Users, MessageCircle,
+  MessageSquare, Heart, Plus, X, ChevronDown, HelpCircle, Lightbulb, Users, MessageCircle, Search,
 } from 'lucide-react';
 import type { CommunityPost } from '@/types';
 
@@ -24,24 +25,39 @@ const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
   free: { label: '자유', cls: 'bg-background text-text-secondary' },
 };
 
+type SortKey = 'latest' | 'popular' | 'comments';
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'latest', label: '최신순' },
+  { value: 'popular', label: '인기순' },
+  { value: 'comments', label: '댓글순' },
+];
+
 export default function CommunityPage() {
-  const { posts, addPost, addComment, toggleLike } = useCommunityStore();
+  const { posts, addPost, toggleLike } = useCommunityStore();
   const { hackathons } = useHackathonStore();
-  const { user, isLoggedIn } = useUserStore();
+  const { user, isLoggedIn, openAuthModal } = useUserStore();
 
   const [typeFilter, setTypeFilter] = useState('all');
   const [hackFilter, setHackFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>('latest');
   const [showWrite, setShowWrite] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [commentText, setCommentText] = useState('');
   const [writeForm, setWriteForm] = useState({ title: '', content: '', type: 'free' as CommunityPost['type'], hackathonTag: '' });
 
   const filtered = useMemo(() => {
     let result = posts;
     if (typeFilter !== 'all') result = result.filter((p) => p.type === typeFilter);
     if (hackFilter !== 'all') result = result.filter((p) => p.hackathonTag === hackFilter);
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((p) => p.title.toLowerCase().includes(q) || p.content.toLowerCase().includes(q));
+    }
+    if (sortKey === 'latest') result = [...result].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    if (sortKey === 'popular') result = [...result].sort((a, b) => b.likes - a.likes);
+    if (sortKey === 'comments') result = [...result].sort((a, b) => b.comments.length - a.comments.length);
     return result;
-  }, [posts, typeFilter, hackFilter]);
+  }, [posts, typeFilter, hackFilter, searchQuery, sortKey]);
 
   function handleWritePost(e: React.FormEvent) {
     e.preventDefault();
@@ -51,6 +67,7 @@ export default function CommunityPage() {
       type: writeForm.type,
       title: writeForm.title,
       content: writeForm.content,
+      summary: writeForm.content.slice(0, 100),
       authorId: user?.id ?? 'anonymous',
       authorNickname: user?.nickname ?? '익명',
       hackathonTag: writeForm.hackathonTag || undefined,
@@ -64,16 +81,14 @@ export default function CommunityPage() {
     setShowWrite(false);
   }
 
-  function handleAddComment(postId: string) {
-    if (!commentText.trim()) return;
-    addComment(postId, {
-      id: `c-${Date.now()}`,
-      authorId: user?.id ?? 'anonymous',
-      authorNickname: user?.nickname ?? '익명',
-      content: commentText,
-      createdAt: new Date().toISOString().slice(0, 10),
-    });
-    setCommentText('');
+  function handleLike(e: React.MouseEvent, postId: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isLoggedIn || !user) {
+      openAuthModal();
+      return;
+    }
+    toggleLike(postId, user.id);
   }
 
   return (
@@ -92,8 +107,21 @@ export default function CommunityPage() {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-6">
+      {/* Filter Bar */}
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        {/* Search */}
+        <div className="relative flex items-center">
+          <Search size={14} className="absolute left-3 text-text-secondary pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="검색..."
+            className="pl-8 pr-3 py-2 bg-surface border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary-light focus:border-primary w-48"
+          />
+        </div>
+
+        {/* Type filter chips */}
         <div className="flex gap-1">
           {POST_TYPES.map((t) => {
             const Icon = t.icon;
@@ -110,6 +138,8 @@ export default function CommunityPage() {
             );
           })}
         </div>
+
+        {/* Hackathon filter */}
         <div className="relative">
           <select
             value={hackFilter}
@@ -119,6 +149,20 @@ export default function CommunityPage() {
             <option value="all">모든 해커톤</option>
             {hackathons.map((h) => (
               <option key={h.slug} value={h.slug}>{h.title}</option>
+            ))}
+          </select>
+          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+        </div>
+
+        {/* Sort dropdown */}
+        <div className="relative ml-auto">
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as SortKey)}
+            className="pl-3 pr-8 py-2 bg-surface border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary-light appearance-none"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
           <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
@@ -133,82 +177,60 @@ export default function CommunityPage() {
           </div>
         ) : filtered.map((post) => {
           const badge = TYPE_BADGE[post.type];
-          const expanded = expandedId === post.id;
-          const hackTitle = hackathons.find((h) => h.slug === post.hackathonTag)?.title;
+          const hackathon = hackathons.find((h) => h.slug === post.hackathonTag);
           const liked = user ? post.likedBy.includes(user.id) : false;
+          const summary = post.summary ?? post.content.slice(0, 100);
 
           return (
-            <div key={post.id} className="bg-surface border border-border rounded-xl overflow-hidden hover:border-primary-light transition-colors">
-              {/* Header */}
-              <button
-                className="w-full text-left p-5"
-                onClick={() => setExpandedId(expanded ? null : post.id)}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.cls}`}>{badge.label}</span>
-                      {hackTitle && <span className="text-xs bg-primary-light text-primary px-2 py-0.5 rounded-full">{hackTitle}</span>}
-                    </div>
-                    <h3 className="font-semibold text-text-primary">{post.title}</h3>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-text-secondary">
-                      <span>{post.authorNickname}</span>
-                      <span>{post.createdAt}</span>
-                      <span className="flex items-center gap-1"><ThumbsUp size={12} /> {post.likes}</span>
-                      <span className="flex items-center gap-1"><MessageSquare size={12} /> {post.comments.length}</span>
-                    </div>
-                  </div>
+            <Link
+              key={post.id}
+              href={`/community/${post.id}`}
+              className="flex items-start gap-4 bg-surface border border-border rounded-xl p-5 hover:border-primary-light transition-colors"
+            >
+              {/* Main content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.cls}`}>{badge.label}</span>
+                  {hackathon && (
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full font-medium"
+                      style={{ backgroundColor: hackathon.color + '20', color: hackathon.color }}
+                    >
+                      {hackathon.title}
+                    </span>
+                  )}
                 </div>
-              </button>
-
-              {/* Expanded Content */}
-              {expanded && (
-                <div className="border-t border-border px-5 pb-5">
-                  <div className="py-4 text-sm text-text-primary whitespace-pre-wrap leading-relaxed">{post.content}</div>
-
-                  {/* Like Button */}
+                <h3 className="font-semibold text-text-primary mb-1 leading-snug">{post.title}</h3>
+                <p className="text-sm text-text-secondary line-clamp-2 mb-2">{summary}</p>
+                <div className="flex items-center gap-3 text-xs text-text-secondary">
+                  <span>{post.authorNickname}</span>
+                  <span>{post.createdAt}</span>
                   <button
-                    onClick={() => user && toggleLike(post.id, user.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors mb-4 ${
-                      liked ? 'bg-primary text-white' : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
-                    }`}
+                    onClick={(e) => handleLike(e, post.id)}
+                    className="flex items-center gap-1 hover:text-primary transition-colors"
                   >
-                    <ThumbsUp size={14} /> {liked ? '좋아요 취소' : '좋아요'} ({post.likes})
+                    <Heart
+                      size={14}
+                      className={liked ? 'fill-current text-primary' : ''}
+                    />
+                    {post.likes}
                   </button>
-
-                  {/* Comments */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-semibold text-text-primary">댓글 ({post.comments.length})</h4>
-                    {post.comments.map((c) => (
-                      <div key={c.id} className="bg-background rounded-lg p-3">
-                        <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
-                          <span className="font-medium text-text-primary">{c.authorNickname}</span>
-                          <span>{c.createdAt}</span>
-                        </div>
-                        <p className="text-sm text-text-primary">{c.content}</p>
-                      </div>
-                    ))}
-                    {/* Comment Form */}
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={expandedId === post.id ? commentText : ''}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        placeholder="댓글을 입력하세요..."
-                        className="flex-1 bg-surface border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddComment(post.id)}
-                      />
-                      <button
-                        onClick={() => handleAddComment(post.id)}
-                        className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-                      >
-                        <Send size={16} />
-                      </button>
-                    </div>
-                  </div>
+                  <span className="flex items-center gap-1">
+                    <MessageSquare size={14} />
+                    {post.comments.length}
+                  </span>
                 </div>
+              </div>
+
+              {/* Thumbnail */}
+              {post.thumbnailUrl && (
+                <img
+                  src={post.thumbnailUrl}
+                  alt=""
+                  className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                />
               )}
-            </div>
+            </Link>
           );
         })}
       </div>
