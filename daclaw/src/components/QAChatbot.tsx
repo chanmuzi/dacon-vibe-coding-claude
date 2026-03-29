@@ -157,7 +157,7 @@ export default function QAChatbot() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKey}
               placeholder="질문을 입력하세요..."
-              className="flex-1 bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition-shadow"
+              className="flex-1 bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition-shadow"
             />
             <button
               onClick={send}

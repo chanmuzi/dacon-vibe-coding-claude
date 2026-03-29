@@ -6,8 +6,9 @@ import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
 import { useMessageStore } from '@/store/message';
 import {
-  Users, Plus, Sparkles, Send, X, Filter, ChevronDown, UserPlus, CheckCircle2,
+  Users, Plus, Sparkles, Send, X, Filter, ChevronDown, UserPlus, CheckCircle2, Check,
 } from 'lucide-react';
+import UserAvatar from '@/components/UserAvatar';
 import type { Team, Role } from '@/types';
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -65,7 +66,7 @@ export default function CampPage() {
       name: createForm.name,
       description: createForm.description,
       hackathonSlug: createForm.hackathonSlug,
-      members: [{ userId: user.id, nickname: user.nickname, role: user.role, avatar: user.avatar }],
+      members: [{ userId: user.id, nickname: user.nickname, role: user.role }],
       maxMembers: createForm.maxMembers,
       recruitRoles: createForm.roles,
       recruitStatus: 'open',
@@ -179,7 +180,7 @@ export default function CampPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-bold text-text-primary">{team.name}</h3>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${team.recruitStatus === 'open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${team.recruitStatus === 'open' ? 'bg-success-light text-success' : 'bg-background text-text-secondary'}`}>
                           {team.recruitStatus === 'open' ? '모집중' : '마감'}
                         </span>
                       </div>
@@ -193,7 +194,7 @@ export default function CampPage() {
                       </div>
                       <div className="flex gap-1 mt-2">
                         {team.members.map((m) => (
-                          <span key={m.userId} title={`${m.nickname} (${ROLE_LABELS[m.role]})`} className="text-lg">{m.avatar}</span>
+                          <UserAvatar key={m.userId} role={m.role} size="sm" />
                         ))}
                       </div>
                     </div>
@@ -238,7 +239,7 @@ export default function CampPage() {
                   <div className="flex flex-wrap gap-1">
                     {team.recruitRoles.map((r) => (
                       <span key={r} className="text-xs bg-primary-light/60 text-primary px-1.5 py-0.5 rounded">
-                        {user?.role === r ? '✅ ' : ''}{ROLE_LABELS[r]}
+                        {user?.role === r && <Check size={12} className="inline" />} {ROLE_LABELS[r]}
                       </span>
                     ))}
                   </div>
@@ -255,7 +256,7 @@ export default function CampPage() {
           <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">팀 만들기</h2>
-              <button onClick={() => setShowCreateForm(false)} className="p-1 rounded-lg hover:bg-gray-100"><X size={20} /></button>
+              <button onClick={() => setShowCreateForm(false)} className="p-1 rounded-lg hover:bg-background"><X size={20} /></button>
             </div>
             <form onSubmit={handleCreateTeam} className="space-y-4">
               <div>
@@ -341,7 +342,7 @@ export default function CampPage() {
           <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">참가 신청 — {applyTeam.name}</h2>
-              <button onClick={() => setApplyTeam(null)} className="p-1 rounded-lg hover:bg-gray-100"><X size={20} /></button>
+              <button onClick={() => setApplyTeam(null)} className="p-1 rounded-lg hover:bg-background"><X size={20} /></button>
             </div>
             <p className="text-sm text-text-secondary mb-4">팀장에게 메시지를 보내 참가를 신청하세요.</p>
             <textarea

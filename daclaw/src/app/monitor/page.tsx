@@ -68,7 +68,7 @@ function HealthCard({ hackathon, teamCount, submissionCount }: HealthCardProps) 
     <div
       data-testid="health-card"
       className={`bg-surface border rounded-xl p-5 flex flex-col gap-4 shadow-sm transition-all ${
-        hasAnomaly ? 'border-amber-300' : 'border-border'
+        hasAnomaly ? 'border-warning' : 'border-border'
       }`}
     >
       {/* Header */}
@@ -78,14 +78,14 @@ function HealthCard({ hackathon, teamCount, submissionCount }: HealthCardProps) 
             <span
               className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
                 hackathon.status === 'active'
-                  ? 'bg-green-100 text-green-700'
+                  ? 'bg-success-light text-success'
                   : hackathon.status === 'upcoming'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-gray-100 text-gray-500'
+                  ? 'bg-info-light text-info'
+                  : 'bg-background text-text-secondary'
               }`}
             >
               {hackathon.status === 'active' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
               )}
               {STATUS_LABELS[hackathon.status]}
             </span>
@@ -134,7 +134,7 @@ function HealthCard({ hackathon, teamCount, submissionCount }: HealthCardProps) 
           {anomalies.map((msg) => (
             <div
               key={msg}
-              className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700"
+              className="flex items-center gap-2 bg-warning-light border border-warning/20 rounded-lg px-3 py-2 text-xs text-warning"
             >
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               {msg}
@@ -142,7 +142,7 @@ function HealthCard({ hackathon, teamCount, submissionCount }: HealthCardProps) 
           ))}
         </div>
       ) : (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-xs text-green-700">
+        <div className="flex items-center gap-2 bg-success-light border border-success/20 rounded-lg px-3 py-2 text-xs text-success">
           <CheckCircle2 className="w-3.5 h-3.5" />
           정상 운영 중
         </div>
@@ -339,7 +339,7 @@ export default function MonitorPage() {
             { label: '진행중 해커톤', value: activeHackathons.length, icon: <Activity className="w-5 h-5" />, color: 'text-primary' },
             { label: '전체 참가자', value: totalParticipants.toLocaleString(), icon: <Users className="w-5 h-5" />, color: 'text-primary' },
             { label: '전체 팀', value: totalTeams, icon: <Users className="w-5 h-5" />, color: 'text-primary' },
-            { label: '이상 감지', value: anomalyCount, icon: <AlertTriangle className="w-5 h-5" />, color: anomalyCount > 0 ? 'text-amber-500' : 'text-green-600' },
+            { label: '이상 감지', value: anomalyCount, icon: <AlertTriangle className="w-5 h-5" />, color: anomalyCount > 0 ? 'text-warning' : 'text-success' },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -371,7 +371,7 @@ export default function MonitorPage() {
             </span>
           </h2>
           {anomalyCount > 0 && (
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full">
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-warning bg-warning-light border border-warning/20 px-3 py-1.5 rounded-full">
               <AlertTriangle className="w-3.5 h-3.5" />
               {anomalyCount}개 이상 감지
             </span>
@@ -449,12 +449,12 @@ export default function MonitorPage() {
                         <td className="px-5 py-3 text-right font-mono text-text-primary">{subs}</td>
                         <td className="px-5 py-3 text-center">
                           {isAnomaly ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                            <span className="inline-flex items-center gap-1 text-xs text-warning bg-warning-light px-2 py-0.5 rounded-full border border-warning/20">
                               <AlertTriangle className="w-3 h-3" />
                               주의
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+                            <span className="inline-flex items-center gap-1 text-xs text-success bg-success-light px-2 py-0.5 rounded-full border border-success/20">
                               <CheckCircle2 className="w-3 h-3" />
                               정상
                             </span>

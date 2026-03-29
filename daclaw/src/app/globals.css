@@ -38,6 +38,16 @@
   --color-grade-master: #D97706;
   --color-grade-legend: #DC2626;
 
+  /* Semantic: User Role */
+  --color-role-developer: #06B6D4;
+  --color-role-developer-light: #CFFAFE;
+  --color-role-designer: #EC4899;
+  --color-role-designer-light: #FCE7F3;
+  --color-role-planner: #6366F1;
+  --color-role-planner-light: #E0E7FF;
+  --color-role-data-scientist: #14B8A6;
+  --color-role-data-scientist-light: #CCFBF1;
+
   /* Typography */
   --font-sans: "Pretendard", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, monospace;

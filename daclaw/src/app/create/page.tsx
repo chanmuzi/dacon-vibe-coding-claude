@@ -160,7 +160,7 @@ function PrizeEditor({ prizes, onChange }: PrizeEditorProps) {
           <button
             type="button"
             onClick={() => remove(i)}
-            className="p-2 rounded-lg hover:bg-red-50 text-text-secondary hover:text-red-500 transition-colors"
+            className="p-2 rounded-lg hover:bg-error-light text-text-secondary hover:text-error transition-colors"
             aria-label="삭제"
           >
             <Trash2 className="w-4 h-4" />
@@ -228,7 +228,7 @@ function CriterionEditor({ criteria, onChange }: CriterionEditorProps) {
             <button
               type="button"
               onClick={() => remove(i)}
-              className="p-2 rounded-lg hover:bg-red-50 text-text-secondary hover:text-red-500 transition-colors"
+              className="p-2 rounded-lg hover:bg-error-light text-text-secondary hover:text-error transition-colors"
               aria-label="삭제"
             >
               <Trash2 className="w-4 h-4" />
@@ -250,7 +250,7 @@ function CriterionEditor({ criteria, onChange }: CriterionEditorProps) {
           <Plus className="w-4 h-4" />
           기준 추가
         </button>
-        <span className={`text-xs font-mono ${totalWeight === 100 ? 'text-green-600' : 'text-amber-600'}`}>
+        <span className={`text-xs font-mono ${totalWeight === 100 ? 'text-success' : 'text-warning'}`}>
           합계: {totalWeight}%{totalWeight !== 100 && ' (100%여야 합니다)'}
         </span>
       </div>
@@ -434,7 +434,7 @@ export default function CreatePage() {
                 value={form.title}
                 onChange={(e) => updateForm('title', e.target.value)}
               />
-              {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
+              {errors.title && <p className="text-xs text-error mt-1">{errors.title}</p>}
             </div>
 
             <div>
@@ -446,7 +446,7 @@ export default function CreatePage() {
                 value={form.description}
                 onChange={(e) => updateForm('description', e.target.value)}
               />
-              {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
+              {errors.description && <p className="text-xs text-error mt-1">{errors.description}</p>}
             </div>
 
             <div>
@@ -479,7 +479,7 @@ export default function CreatePage() {
                   value={form.startDate}
                   onChange={(e) => updateForm('startDate', e.target.value)}
                 />
-                {errors.startDate && <p className="text-xs text-red-500 mt-1">{errors.startDate}</p>}
+                {errors.startDate && <p className="text-xs text-error mt-1">{errors.startDate}</p>}
               </div>
               <div>
                 <Label>마감일 *</Label>
@@ -488,7 +488,7 @@ export default function CreatePage() {
                   value={form.endDate}
                   onChange={(e) => updateForm('endDate', e.target.value)}
                 />
-                {errors.endDate && <p className="text-xs text-red-500 mt-1">{errors.endDate}</p>}
+                {errors.endDate && <p className="text-xs text-error mt-1">{errors.endDate}</p>}
               </div>
               <div>
                 <Label>결과 발표일 *</Label>
@@ -497,7 +497,7 @@ export default function CreatePage() {
                   value={form.resultDate}
                   onChange={(e) => updateForm('resultDate', e.target.value)}
                 />
-                {errors.resultDate && <p className="text-xs text-red-500 mt-1">{errors.resultDate}</p>}
+                {errors.resultDate && <p className="text-xs text-error mt-1">{errors.resultDate}</p>}
               </div>
             </div>
           </div>

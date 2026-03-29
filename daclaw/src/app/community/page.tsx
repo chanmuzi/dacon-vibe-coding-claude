@@ -18,10 +18,10 @@ const POST_TYPES = [
 ] as const;
 
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
-  question: { label: '질문', cls: 'bg-blue-100 text-blue-700' },
-  tip: { label: '팁', cls: 'bg-green-100 text-green-700' },
-  'team-find': { label: '팀 구하기', cls: 'bg-purple-100 text-purple-700' },
-  free: { label: '자유', cls: 'bg-gray-100 text-gray-600' },
+  question: { label: '질문', cls: 'bg-info-light text-info' },
+  tip: { label: '팁', cls: 'bg-success-light text-success' },
+  'team-find': { label: '팀 구하기', cls: 'bg-type-qualitative-light text-type-qualitative' },
+  free: { label: '자유', cls: 'bg-background text-text-secondary' },
 };
 
 export default function CommunityPage() {
@@ -219,7 +219,7 @@ export default function CommunityPage() {
           <div className="bg-surface rounded-2xl shadow-xl w-full max-w-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">게시글 작성</h2>
-              <button onClick={() => setShowWrite(false)} className="p-1 rounded-lg hover:bg-gray-100"><X size={20} /></button>
+              <button onClick={() => setShowWrite(false)} className="p-1 rounded-lg hover:bg-background"><X size={20} /></button>
             </div>
             <form onSubmit={handleWritePost} className="space-y-4">
               <div className="flex gap-2">

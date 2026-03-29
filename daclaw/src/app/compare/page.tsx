@@ -21,9 +21,9 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  active: 'bg-green-100 text-green-700',
-  upcoming: 'bg-blue-100 text-blue-700',
-  ended: 'bg-gray-100 text-gray-500',
+  active: 'bg-success-light text-success',
+  upcoming: 'bg-info-light text-info',
+  ended: 'bg-background text-text-secondary',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

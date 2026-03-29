@@ -65,7 +65,6 @@ export interface TeamMember {
   userId: string;
   nickname: string;
   role: Role;
-  avatar: string;
 }
 
 export type Role = 'developer' | 'designer' | 'planner' | 'data-scientist';
@@ -80,7 +79,6 @@ export interface UserProfile {
   grade: Grade;
   badges: string[];
   points: number;
-  avatar: string;
   joinedAt: string;
   loginStreak: number;
   apiKey?: string;
@@ -119,7 +117,7 @@ export interface Leaderboard {
 export interface RankingEntry {
   userId: string;
   nickname: string;
-  avatar: string;
+  role: Role;
   grade: Grade;
   badges: string[];
   totalScore: number;

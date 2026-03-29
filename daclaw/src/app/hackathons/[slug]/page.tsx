@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, Bookmark, BookmarkCheck, Users, Calendar, Clock,
-  Trophy, FileText, MessageSquare, Send, Download, Copy, ExternalLink,
+  Trophy, Medal, Award, FileText, MessageSquare, Send, Download, Copy, ExternalLink,
   Pin, Check, CheckCircle2, Circle, AlertCircle, BarChart3, Star,
 } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathon';
@@ -28,9 +28,9 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id'];
 
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
-  quantitative: { label: '정량 평가', cls: 'bg-blue-500/90 text-white' },
-  qualitative: { label: '정성 평가', cls: 'bg-purple-500/90 text-white' },
-  hybrid: { label: '혼합 평가', cls: 'bg-amber-500/90 text-white' },
+  quantitative: { label: '정량 평가', cls: 'bg-type-quantitative/90 text-text-on-primary' },
+  qualitative: { label: '정성 평가', cls: 'bg-type-qualitative/90 text-text-on-primary' },
+  hybrid: { label: '혼합 평가', cls: 'bg-type-hybrid/90 text-text-on-primary' },
 };
 
 function daysUntil(dateStr: string) {
@@ -147,12 +147,12 @@ export default function HackathonDetailPage() {
           <div className="flex items-center gap-2 mb-2">
             <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${badge.cls}`}>{badge.label}</span>
             {hackathon.status === 'active' && (
-              <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
+              <span className="bg-success text-text-on-primary px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse-dot" /> 진행중
               </span>
             )}
-            {hackathon.status === 'upcoming' && <span className="bg-yellow-500 text-white px-2 py-0.5 rounded-full text-xs font-medium">예정</span>}
-            {hackathon.status === 'ended' && <span className="bg-gray-500 text-white px-2 py-0.5 rounded-full text-xs font-medium">종료</span>}
+            {hackathon.status === 'upcoming' && <span className="bg-warning text-text-on-primary px-2 py-0.5 rounded-full text-xs font-medium">예정</span>}
+            {hackathon.status === 'ended' && <span className="bg-text-secondary text-text-on-primary px-2 py-0.5 rounded-full text-xs font-medium">종료</span>}
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">{hackathon.title}</h1>
           <div className="flex items-center gap-4 text-sm text-white/80">
@@ -164,7 +164,7 @@ export default function HackathonDetailPage() {
           onClick={() => toggleBookmark(slug)}
           className="absolute top-4 right-4 p-2 rounded-full bg-white/20 hover:bg-white/40 transition-colors"
         >
-          {bookmarked ? <BookmarkCheck size={20} className="text-yellow-400" /> : <Bookmark size={20} className="text-white" />}
+          {bookmarked ? <BookmarkCheck size={20} className="text-warning" /> : <Bookmark size={20} className="text-white" />}
         </button>
       </div>
 
@@ -211,13 +211,13 @@ export default function HackathonDetailPage() {
             <div className="bg-surface border border-border rounded-xl p-6">
               <h3 className="font-bold mb-3">개발 시작하기</h3>
               <div className="flex flex-wrap gap-3">
-                <button onClick={handleDownloadJSON} className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white font-mono text-sm rounded-lg hover:bg-gray-800 transition-colors">
+                <button onClick={handleDownloadJSON} className="flex items-center gap-2 px-4 py-2.5 bg-text-primary text-white font-mono text-sm rounded-lg hover:bg-text-primary/90 transition-colors">
                   <Download size={16} /> JSON 다운로드
                 </button>
-                <button onClick={handleCopyJSON} className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white font-mono text-sm rounded-lg hover:bg-gray-800 transition-colors">
+                <button onClick={handleCopyJSON} className="flex items-center gap-2 px-4 py-2.5 bg-text-primary text-white font-mono text-sm rounded-lg hover:bg-text-primary/90 transition-colors">
                   <Copy size={16} /> 코드 복사
                 </button>
-                <a href={`cursor://open?url=${encodeURIComponent(hackathon.title)}`} className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white font-mono text-sm rounded-lg hover:bg-gray-800 transition-colors">
+                <a href={`cursor://open?url=${encodeURIComponent(hackathon.title)}`} className="flex items-center gap-2 px-4 py-2.5 bg-text-primary text-white font-mono text-sm rounded-lg hover:bg-text-primary/90 transition-colors">
                   <ExternalLink size={16} /> Cursor에서 열기
                 </a>
               </div>
@@ -243,7 +243,7 @@ export default function HackathonDetailPage() {
                   <p className="text-sm text-text-secondary mt-1">{team.description}</p>
                   <div className="flex items-center gap-3 mt-2 text-xs text-text-secondary">
                     <span><Users size={12} className="inline mr-1" />{team.members.length}/{team.maxMembers}명</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${team.recruitStatus === 'open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${team.recruitStatus === 'open' ? 'bg-success-light text-success' : 'bg-background text-text-secondary'}`}>
                       {team.recruitStatus === 'open' ? '모집중' : '마감'}
                     </span>
                   </div>
@@ -309,9 +309,9 @@ export default function HackathonDetailPage() {
                     <tr key={p.rank} className="border-t border-border">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          {p.rank === 1 && <span className="text-xl">🥇</span>}
-                          {p.rank === 2 && <span className="text-xl">🥈</span>}
-                          {p.rank === 3 && <span className="text-xl">🥉</span>}
+                          {p.rank === 1 && <Trophy size={20} className="text-warning" />}
+                          {p.rank === 2 && <Medal size={20} className="text-text-secondary" />}
+                          {p.rank === 3 && <Award size={20} className="text-warning" />}
                           <span className="font-medium">{p.label}</span>
                         </div>
                       </td>
@@ -376,7 +376,7 @@ export default function HackathonDetailPage() {
                           </span>
                         )}
                         {!ms.done && remaining <= 0 && remaining > -1 && (
-                          <span className="inline-block mt-1 text-xs font-mono bg-red-100 text-red-600 px-2 py-0.5 rounded-full">오늘 마감</span>
+                          <span className="inline-block mt-1 text-xs font-mono bg-error-light text-error px-2 py-0.5 rounded-full">오늘 마감</span>
                         )}
                       </div>
                     </div>
@@ -508,7 +508,7 @@ export default function HackathonDetailPage() {
                       return (
                         <tr key={e.teamId} className={`border-t border-border ${isMe ? 'bg-primary-light/30' : ''}`}>
                           <td className="px-4 py-3">
-                            <span className={`font-mono font-bold ${e.rank === 1 ? 'text-yellow-500' : e.rank === 2 ? 'text-gray-400' : e.rank === 3 ? 'text-amber-600' : 'text-text-secondary'}`}>
+                            <span className={`font-mono font-bold ${e.rank === 1 ? 'text-warning' : e.rank === 2 ? 'text-text-secondary' : e.rank === 3 ? 'text-warning' : 'text-text-secondary'}`}>
                               {e.rank}
                             </span>
                           </td>

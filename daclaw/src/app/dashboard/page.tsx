@@ -18,6 +18,8 @@ import { useMissionStore } from '@/store/mission';
 import { useMessageStore } from '@/store/message';
 import { gradeConfig, seedBadges } from '@/data/seed';
 import type { Role } from '@/types';
+import IconMapper from '@/components/IconMapper';
+import UserAvatar from '@/components/UserAvatar';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -29,9 +31,9 @@ const ROLES: { value: Role; label: string }[] = [
 ];
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  easy: 'text-emerald-600 bg-emerald-50',
-  medium: 'text-amber-600 bg-amber-50',
-  hard: 'text-red-600 bg-red-50',
+  easy: 'text-success bg-success-light',
+  medium: 'text-warning bg-warning-light',
+  hard: 'text-error bg-error-light',
 };
 
 const DIFFICULTY_LABELS: Record<string, string> = {
@@ -174,8 +176,8 @@ function ProfileForm() {
           type="submit"
           className={`self-end px-5 py-2 rounded-lg text-sm font-medium transition-colors ${
             saved
-              ? 'bg-emerald-500 text-white'
-              : 'bg-primary text-white hover:bg-primary/90'
+              ? 'bg-success text-text-on-primary'
+              : 'bg-primary text-text-on-primary hover:bg-primary/90'
           }`}
         >
           {saved ? '저장 완료!' : '저장'}
@@ -207,7 +209,7 @@ function BadgePanel() {
     <SectionCard title="등급 & 배지" icon={<Star className="w-4 h-4" />} testId="badge-panel">
       {/* Current grade */}
       <div className="flex items-center gap-3 mb-5">
-        <span className="text-4xl">{cfg?.icon ?? '🌱'}</span>
+        <IconMapper name={cfg?.icon ?? 'Sprout'} size={36} />
         <div>
           <div className="font-bold text-text-primary text-lg" style={{ color: cfg?.color }}>
             {cfg?.label ?? user.grade}
@@ -254,7 +256,7 @@ function BadgePanel() {
                   title={badge.condition}
                   className="flex items-center gap-1.5 px-2.5 py-1 bg-primary-light rounded-full text-xs font-medium text-primary"
                 >
-                  <span>{badge.icon}</span>
+                  <IconMapper name={badge.icon} size={14} />
                   <span>{badge.name}</span>
                 </div>
               );
@@ -279,7 +281,7 @@ function BadgePanel() {
                     : 'bg-border/40 text-text-secondary opacity-50'
                 }`}
               >
-                <span>{badge.icon}</span>
+                <IconMapper name={badge.icon} size={14} />
                 <span>{badge.name}</span>
               </div>
             );
@@ -471,9 +473,9 @@ function BookmarkedHackathons() {
   };
 
   const statusColor: Record<string, string> = {
-    active: 'text-emerald-600 bg-emerald-50',
-    upcoming: 'text-amber-600 bg-amber-50',
-    ended: 'text-gray-400 bg-gray-100',
+    active: 'text-success bg-success-light',
+    upcoming: 'text-warning bg-warning-light',
+    ended: 'text-text-secondary bg-background',
   };
 
   return (
@@ -628,7 +630,7 @@ function Messages() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     {isTeamRequest && (
-                      <span className="text-xs px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded font-medium">
+                      <span className="text-xs px-1.5 py-0.5 bg-warning-light text-warning rounded font-medium">
                         팀 요청
                       </span>
                     )}
@@ -730,11 +732,11 @@ export default function DashboardPage() {
         {/* Page header */}
         <div className="mb-6">
           <div className="flex items-center gap-3">
-            <span className="text-3xl">{user.avatar}</span>
+            <UserAvatar role={user.role} size="lg" />
             <div>
               <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
                 {user.nickname}
-                <span title={cfg?.label ?? user.grade} className="text-xl">{cfg?.icon}</span>
+                <span title={cfg?.label ?? user.grade} style={{ color: cfg?.color }}><IconMapper name={cfg?.icon ?? 'Sprout'} size={20} /></span>
               </h1>
               <div className="flex items-center gap-2 mt-0.5">
                 <Shield className="w-3.5 h-3.5 text-text-secondary" />

@@ -195,8 +195,8 @@ export const seedTeams: Team[] = [
     description: 'AI 이미지 생성에 열정적인 팀입니다. Stable Diffusion과 DALL-E 경험자 환영!',
     hackathonSlug: 'ai-image-generation',
     members: [
-      { userId: 'user-2', nickname: '김데이터', role: 'data-scientist', avatar: '👨‍💻' },
-      { userId: 'user-3', nickname: '이디자인', role: 'designer', avatar: '🎨' },
+      { userId: 'user-2', nickname: '김데이터', role: 'data-scientist' },
+      { userId: 'user-3', nickname: '이디자인', role: 'designer' },
     ],
     maxMembers: 4,
     recruitRoles: ['developer', 'data-scientist'],
@@ -209,7 +209,7 @@ export const seedTeams: Team[] = [
     description: '바이브 코딩으로 멋진 웹서비스를 만들어봐요! React/Next.js 경험자 우대.',
     hackathonSlug: 'vibe-coding-challenge',
     members: [
-      { userId: 'user-4', nickname: '박프론트', role: 'developer', avatar: '🚀' },
+      { userId: 'user-4', nickname: '박프론트', role: 'developer' },
     ],
     maxMembers: 5,
     recruitRoles: ['developer', 'designer', 'planner'],
@@ -222,8 +222,8 @@ export const seedTeams: Team[] = [
     description: '데이터 사이언스 전문가 팀. Kaggle 경험자들이 모였습니다.',
     hackathonSlug: 'data-science-hackathon',
     members: [
-      { userId: 'user-5', nickname: '최분석', role: 'data-scientist', avatar: '📊' },
-      { userId: 'user-6', nickname: '정머신', role: 'data-scientist', avatar: '🤖' },
+      { userId: 'user-5', nickname: '최분석', role: 'data-scientist' },
+      { userId: 'user-6', nickname: '정머신', role: 'data-scientist' },
     ],
     maxMembers: 3,
     recruitRoles: ['data-scientist'],
@@ -236,7 +236,7 @@ export const seedTeams: Team[] = [
     description: 'NLP와 Transformer 모델에 관심 있는 분들을 찾습니다!',
     hackathonSlug: 'nlp-sentiment-analysis',
     members: [
-      { userId: 'user-7', nickname: '한언어', role: 'data-scientist', avatar: '💬' },
+      { userId: 'user-7', nickname: '한언어', role: 'data-scientist' },
     ],
     maxMembers: 3,
     recruitRoles: ['developer', 'data-scientist'],
@@ -249,9 +249,9 @@ export const seedTeams: Team[] = [
     description: '디자인과 기획이 강한 팀! 함께 대상을 노려봐요.',
     hackathonSlug: 'vibe-coding-challenge',
     members: [
-      { userId: 'user-8', nickname: '오기획', role: 'planner', avatar: '📋' },
-      { userId: 'user-9', nickname: '유예술', role: 'designer', avatar: '✨' },
-      { userId: 'user-10', nickname: '강개발', role: 'developer', avatar: '⚡' },
+      { userId: 'user-8', nickname: '오기획', role: 'planner' },
+      { userId: 'user-9', nickname: '유예술', role: 'designer' },
+      { userId: 'user-10', nickname: '강개발', role: 'developer' },
     ],
     maxMembers: 5,
     recruitRoles: ['developer'],
@@ -264,9 +264,9 @@ export const seedTeams: Team[] = [
     description: '빠르고 정확한 구현이 강점! 이미지 생성 파이프라인 구축 경험 있습니다.',
     hackathonSlug: 'ai-image-generation',
     members: [
-      { userId: 'user-11', nickname: '윤스피드', role: 'developer', avatar: '⚡' },
-      { userId: 'user-12', nickname: '신코더', role: 'developer', avatar: '💻' },
-      { userId: 'user-13', nickname: '임사이언스', role: 'data-scientist', avatar: '🔬' },
+      { userId: 'user-11', nickname: '윤스피드', role: 'developer' },
+      { userId: 'user-12', nickname: '신코더', role: 'developer' },
+      { userId: 'user-13', nickname: '임사이언스', role: 'data-scientist' },
     ],
     maxMembers: 4,
     recruitRoles: [],
@@ -325,16 +325,16 @@ export const seedLeaderboards: Leaderboard[] = [
 ];
 
 export const seedRankings: RankingEntry[] = [
-  { userId: 'user-11', nickname: '윤스피드', avatar: '⚡', grade: 'master', badges: ['first-submit', 'team-leader', '3-wins'], totalScore: 2850, competitionScore: 2200, communityScore: 650 },
-  { userId: 'user-5', nickname: '최분석', avatar: '📊', grade: 'expert', badges: ['first-submit', '10-hackathons'], totalScore: 1420, competitionScore: 1100, communityScore: 320 },
-  { userId: 'user-8', nickname: '오기획', avatar: '📋', grade: 'expert', badges: ['first-submit', 'team-leader', 'popular-author'], totalScore: 1180, competitionScore: 700, communityScore: 480 },
-  { userId: 'user-2', nickname: '김데이터', avatar: '👨‍💻', grade: 'expert', badges: ['first-submit', '7-day-streak'], totalScore: 980, competitionScore: 750, communityScore: 230 },
-  { userId: 'user-4', nickname: '박프론트', avatar: '🚀', grade: 'challenger', badges: ['first-submit'], totalScore: 450, competitionScore: 300, communityScore: 150 },
-  { userId: 'user-9', nickname: '유예술', avatar: '✨', grade: 'challenger', badges: ['first-submit', 'creator'], totalScore: 380, competitionScore: 200, communityScore: 180 },
-  { userId: 'user-3', nickname: '이디자인', avatar: '🎨', grade: 'challenger', badges: ['first-submit'], totalScore: 310, competitionScore: 200, communityScore: 110 },
-  { userId: 'user-7', nickname: '한언어', avatar: '💬', grade: 'challenger', badges: ['first-submit'], totalScore: 250, competitionScore: 180, communityScore: 70 },
-  { userId: 'user-6', nickname: '정머신', avatar: '🤖', grade: 'rookie', badges: ['first-submit'], totalScore: 95, competitionScore: 80, communityScore: 15 },
-  { userId: 'user-10', nickname: '강개발', avatar: '⚡', grade: 'rookie', badges: [], totalScore: 60, competitionScore: 50, communityScore: 10 },
+  { userId: 'user-11', nickname: '윤스피드', role: 'developer', grade: 'master', badges: ['first-submit', 'team-leader', '3-wins'], totalScore: 2850, competitionScore: 2200, communityScore: 650 },
+  { userId: 'user-5', nickname: '최분석', role: 'data-scientist', grade: 'expert', badges: ['first-submit', '10-hackathons'], totalScore: 1420, competitionScore: 1100, communityScore: 320 },
+  { userId: 'user-8', nickname: '오기획', role: 'planner', grade: 'expert', badges: ['first-submit', 'team-leader', 'popular-author'], totalScore: 1180, competitionScore: 700, communityScore: 480 },
+  { userId: 'user-2', nickname: '김데이터', role: 'data-scientist', grade: 'expert', badges: ['first-submit', '7-day-streak'], totalScore: 980, competitionScore: 750, communityScore: 230 },
+  { userId: 'user-4', nickname: '박프론트', role: 'developer', grade: 'challenger', badges: ['first-submit'], totalScore: 450, competitionScore: 300, communityScore: 150 },
+  { userId: 'user-9', nickname: '유예술', role: 'designer', grade: 'challenger', badges: ['first-submit', 'creator'], totalScore: 380, competitionScore: 200, communityScore: 180 },
+  { userId: 'user-3', nickname: '이디자인', role: 'designer', grade: 'challenger', badges: ['first-submit'], totalScore: 310, competitionScore: 200, communityScore: 110 },
+  { userId: 'user-7', nickname: '한언어', role: 'data-scientist', grade: 'challenger', badges: ['first-submit'], totalScore: 250, competitionScore: 180, communityScore: 70 },
+  { userId: 'user-6', nickname: '정머신', role: 'data-scientist', grade: 'rookie', badges: ['first-submit'], totalScore: 95, competitionScore: 80, communityScore: 15 },
+  { userId: 'user-10', nickname: '강개발', role: 'developer', grade: 'rookie', badges: [], totalScore: 60, competitionScore: 50, communityScore: 10 },
 ];
 
 export const seedCommunityPosts: CommunityPost[] = [
@@ -394,15 +394,15 @@ export const seedCommunityPosts: CommunityPost[] = [
 ];
 
 export const seedBadges: Badge[] = [
-  { id: 'first-submit', name: '첫 제출', type: 'achievement', icon: '🎯', condition: '첫 번째 제출 완료' },
-  { id: 'team-leader', name: '팀 리더', type: 'achievement', icon: '👑', condition: '팀 생성 및 리더 역할' },
-  { id: '3-wins', name: '3연속 입상', type: 'achievement', icon: '🏆', condition: '3회 연속 대회 입상' },
-  { id: 'popular-author', name: '인기 작성자', type: 'activity', icon: '🌟', condition: '좋아요 50개 이상 받기' },
-  { id: '7-day-streak', name: '7일 연속 로그인', type: 'activity', icon: '🔥', condition: '7일 연속 로그인' },
-  { id: '10-hackathons', name: '10개 대회 참가', type: 'activity', icon: '🎪', condition: '10개 이상 해커톤 참가' },
-  { id: 'creator', name: '대회 창작자', type: 'special', icon: '🎨', condition: '나만의 대회 1개 이상 생성' },
-  { id: 'beta-tester', name: '베타 테스터', type: 'special', icon: '🧪', condition: 'DACLAW 베타 테스트 참여' },
-  { id: '50-comments', name: '50개 댓글', type: 'activity', icon: '💬', condition: '커뮤니티 댓글 50개 이상 작성' },
+  { id: 'first-submit', name: '첫 제출', type: 'achievement', icon: 'Target', condition: '첫 번째 제출 완료' },
+  { id: 'team-leader', name: '팀 리더', type: 'achievement', icon: 'Crown', condition: '팀 생성 및 리더 역할' },
+  { id: '3-wins', name: '3연속 입상', type: 'achievement', icon: 'Trophy', condition: '3회 연속 대회 입상' },
+  { id: 'popular-author', name: '인기 작성자', type: 'activity', icon: 'Star', condition: '좋아요 50개 이상 받기' },
+  { id: '7-day-streak', name: '7일 연속 로그인', type: 'activity', icon: 'Flame', condition: '7일 연속 로그인' },
+  { id: '10-hackathons', name: '10개 대회 참가', type: 'activity', icon: 'Tent', condition: '10개 이상 해커톤 참가' },
+  { id: 'creator', name: '대회 창작자', type: 'special', icon: 'Palette', condition: '나만의 대회 1개 이상 생성' },
+  { id: 'beta-tester', name: '베타 테스터', type: 'special', icon: 'FlaskConical', condition: 'DACLAW 베타 테스트 참여' },
+  { id: '50-comments', name: '50개 댓글', type: 'activity', icon: 'MessageSquare', condition: '커뮤니티 댓글 50개 이상 작성' },
 ];
 
 export const seedDailyMissions: DailyMission[] = [
@@ -428,7 +428,6 @@ export const defaultUserProfile: UserProfile = {
   grade: 'rookie',
   badges: [],
   points: 0,
-  avatar: '😊',
   joinedAt: '2026-03-29',
   loginStreak: 1,
 };
@@ -442,9 +441,9 @@ export function getGradeFromPoints(points: number): string {
 }
 
 export const gradeConfig: Record<string, { label: string; icon: string; color: string; min: number; max: number }> = {
-  rookie: { label: 'Rookie', icon: '🌱', color: '#9CA3AF', min: 0, max: 99 },
-  challenger: { label: 'Challenger', icon: '⚔️', color: '#3B82F6', min: 100, max: 499 },
-  expert: { label: 'Expert', icon: '💎', color: '#8B5CF6', min: 500, max: 1499 },
-  master: { label: 'Master', icon: '👑', color: '#F59E0B', min: 1500, max: 4999 },
-  legend: { label: 'Legend', icon: '🏆', color: '#EF4444', min: 5000, max: Infinity },
+  rookie: { label: 'Rookie', icon: 'Sprout', color: 'var(--color-grade-rookie)', min: 0, max: 99 },
+  challenger: { label: 'Challenger', icon: 'Swords', color: 'var(--color-grade-challenger)', min: 100, max: 499 },
+  expert: { label: 'Expert', icon: 'Gem', color: 'var(--color-grade-expert)', min: 500, max: 1499 },
+  master: { label: 'Master', icon: 'Crown', color: 'var(--color-grade-master)', min: 1500, max: 4999 },
+  legend: { label: 'Legend', icon: 'Trophy', color: 'var(--color-grade-legend)', min: 5000, max: Infinity },
 };

@@ -12,6 +12,9 @@ import {
   Clock,
   Bookmark,
   BookmarkCheck,
+  Flame,
+  Target,
+  MessageSquare,
 } from 'lucide-react';
 
 function getTimeLeft(endDate: string) {
@@ -172,7 +175,7 @@ export default function HomePage() {
       {/* Active Hackathons Highlight */}
       <section className="mb-12">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-text-primary">🔥 진행 중인 해커톤</h2>
+          <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2"><Flame size={22} className="text-primary" /> 진행 중인 해커톤</h2>
           <Link
             href="/hackathons"
             className="text-primary text-sm font-medium hover:underline flex items-center gap-1"
@@ -207,10 +210,10 @@ export default function HomePage() {
                     <span
                       className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${
                         h.type === 'quantitative'
-                          ? 'bg-blue-500/90 text-white'
+                          ? 'bg-type-quantitative/90 text-text-on-primary'
                           : h.type === 'qualitative'
-                          ? 'bg-purple-500/90 text-white'
-                          : 'bg-amber-500/90 text-white'
+                          ? 'bg-type-qualitative/90 text-text-on-primary'
+                          : 'bg-type-hybrid/90 text-text-on-primary'
                       }`}
                     >
                       {h.type === 'quantitative'
@@ -263,10 +266,10 @@ export default function HomePage() {
           <h2 className="text-xl font-bold text-text-primary mb-4">빠른 이동</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { href: '/rankings', icon: BarChart3, label: '랭킹', desc: '종합 리더보드', isComponent: true },
-              { href: '/camp', icon: Users, label: '팀 모집', desc: 'AI 매칭', isComponent: true },
-              { href: '/community', icon: '💬', label: '커뮤니티', desc: '토론 & 팁', isComponent: false },
-              { href: '/create', icon: '🎯', label: '대회 만들기', desc: '나만의 대회', isComponent: false },
+              { href: '/rankings', icon: BarChart3, label: '랭킹', desc: '종합 리더보드' },
+              { href: '/camp', icon: Users, label: '팀 모집', desc: 'AI 매칭' },
+              { href: '/community', icon: MessageSquare, label: '커뮤니티', desc: '토론 & 팁' },
+              { href: '/create', icon: Target, label: '대회 만들기', desc: '나만의 대회' },
             ].map((item) => (
               <Link
                 key={item.href}
@@ -274,11 +277,7 @@ export default function HomePage() {
                 className="bg-surface border border-border rounded-xl p-5 text-center hover:-translate-y-1 hover:border-primary-light hover:shadow-md transition-all duration-200"
               >
                 <div className="text-3xl mb-2 flex justify-center">
-                  {item.isComponent ? (
-                    <item.icon size={28} className="text-primary" />
-                  ) : (
-                    <span>{item.icon as string}</span>
-                  )}
+                  <item.icon size={28} className="text-primary" />
                 </div>
                 <div className="font-bold text-text-primary text-sm">{item.label}</div>
                 <div className="text-xs text-text-secondary mt-1">{item.desc}</div>

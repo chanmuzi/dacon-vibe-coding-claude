@@ -31,15 +31,15 @@ const TYPE_LABELS: Record<HackathonType, string> = {
 };
 
 const TYPE_COLORS: Record<HackathonType, string> = {
-  quantitative: 'bg-blue-100 text-blue-700',
-  qualitative: 'bg-purple-100 text-purple-700',
-  hybrid: 'bg-amber-100 text-amber-700',
+  quantitative: 'bg-type-quantitative-light text-type-quantitative',
+  qualitative: 'bg-type-qualitative-light text-type-qualitative',
+  hybrid: 'bg-type-hybrid-light text-type-hybrid',
 };
 
 const TYPE_BAR_COLORS: Record<HackathonType, string> = {
-  quantitative: 'bg-blue-500',
-  qualitative: 'bg-purple-500',
-  hybrid: 'bg-amber-500',
+  quantitative: 'bg-type-quantitative',
+  qualitative: 'bg-type-qualitative',
+  hybrid: 'bg-type-hybrid',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ function HackathonCard({
 
         {/* Active status badge */}
         {hackathon.status === 'active' && (
-          <span className="absolute top-3 right-12 bg-primary text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+          <span className="absolute top-3 right-12 bg-primary text-text-on-primary text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             진행중
           </span>
@@ -143,7 +143,7 @@ function HackathonCard({
           aria-label={bookmarked ? '북마크 제거' : '북마크 추가'}
         >
           {bookmarked ? (
-            <BookmarkCheck className="w-4 h-4 text-yellow-400" />
+            <BookmarkCheck className="w-4 h-4 text-warning" />
           ) : (
             <Bookmark className="w-4 h-4 text-white" />
           )}

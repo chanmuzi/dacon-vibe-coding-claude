@@ -139,7 +139,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="해커톤, 팀, 커뮤니티 검색..."
-            className="flex-1 bg-transparent text-text-primary placeholder:text-gray-400 focus:outline-none text-sm"
+            className="flex-1 bg-transparent text-text-primary placeholder:text-text-secondary focus:outline-none text-sm"
           />
           {query && (
             <button

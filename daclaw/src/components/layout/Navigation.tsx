@@ -87,7 +87,7 @@ export default function Navigation() {
                   </Link>
                   <button
                     onClick={logout}
-                    className="p-2 rounded-lg text-text-secondary hover:bg-red-50 hover:text-red-500 transition-colors"
+                    className="p-2 rounded-lg text-text-secondary hover:bg-error-light hover:text-error transition-colors"
                     aria-label="로그아웃"
                   >
                     <LogOut size={18} />
@@ -143,7 +143,7 @@ export default function Navigation() {
               {isLoggedIn ? (
                 <button
                   onClick={() => { logout(); setMobileOpen(false); }}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50"
+                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-error hover:bg-error-light"
                 >
                   <LogOut size={18} />
                   로그아웃 ({user?.nickname})
@@ -176,7 +176,7 @@ export default function Navigation() {
                 placeholder="닉네임"
                 value={authForm.nickname}
                 onChange={(e) => setAuthForm({ ...authForm, nickname: e.target.value })}
-                className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-text-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition-shadow"
+                className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition-shadow"
                 required
               />
               <input
@@ -184,13 +184,13 @@ export default function Navigation() {
                 placeholder="이메일 (선택)"
                 value={authForm.email}
                 onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
-                className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-text-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition-shadow"
+                className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition-shadow"
               />
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowAuthModal(false)}
-                  className="flex-1 px-4 py-2.5 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
                 >
                   취소
                 </button>
