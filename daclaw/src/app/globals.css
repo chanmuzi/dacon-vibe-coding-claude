@@ -52,6 +52,11 @@
   --font-sans: "Pretendard", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, monospace;
 
+  /* Interactive States */
+  --color-interactive-hover: #EBF0FB;
+  --color-interactive-active: #D9E5FC;
+  --color-interactive-focus: rgba(0, 73, 219, 0.15);
+
   /* Shadow */
   --shadow-card: 0 4px 20px rgba(0, 73, 219, 0.05);
 }

@@ -41,7 +41,20 @@ Tailwind 유틸리티 클래스(`bg-primary`, `text-success` 등)로 사용합�
 | `--color-info` | 정보, 안내 | 공지, 도움말 |
 | `--color-info-light` | Info 연한 배경 | 정보 배지 배경 |
 
-### 1.4 Type Colors (해커톤 유형)
+### 1.4 Interactive States (클릭 Affordance)
+
+| Token | 용도 | 사용 예시 |
+|-------|------|----------|
+| `--color-interactive-hover` | 인터랙티브 요소 hover 배경 | 버튼, 카드, 탭 hover |
+| `--color-interactive-active` | 인터랙티브 요소 active/pressed 배경 | 버튼 클릭 시 |
+| `--color-interactive-focus` | 포커스 링 색상 | 키보드 네비게이션 |
+
+```
+<!-- Interactive element pattern -->
+hover:bg-interactive-hover active:bg-interactive-active transition-colors cursor-pointer
+```
+
+### 1.5 Type Colors (해커톤 유형)
 
 | Token | 용도 |
 |-------|------|
@@ -49,7 +62,7 @@ Tailwind 유틸리티 클래스(`bg-primary`, `text-success` 등)로 사용합�
 | `--color-type-qualitative` / `--color-type-qualitative-light` | 정성 평가 |
 | `--color-type-hybrid` / `--color-type-hybrid-light` | 혼합 평가 |
 
-### 1.5 Grade Colors (사용자 등급)
+### 1.6 Grade Colors (사용자 등급)
 
 | Token | 용도 |
 |-------|------|
