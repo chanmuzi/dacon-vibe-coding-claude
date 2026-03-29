@@ -677,7 +677,10 @@ function StatsBar() {
     { label: '포인트', value: user.points.toLocaleString(), unit: 'pt', icon: <Zap className="w-4 h-4" /> },
     { label: '북마크', value: bookmarks.length.toString(), unit: '개', icon: <BookmarkCheck className="w-4 h-4" /> },
     { label: '참가 팀', value: myTeamCount.toString(), unit: '개', icon: <Users className="w-4 h-4" /> },
-    { label: '제출 횟수', value: submissions.length.toString(), unit: '회', icon: <TrendingUp className="w-4 h-4" /> },
+    { label: '제출 횟수', value: submissions.filter((s) => {
+      const myTeamIds = new Set(teams.filter((t) => t.members.some((m) => m.userId === user.id)).map((t) => t.id));
+      return myTeamIds.has(s.teamId) || s.teamId === `solo-${user.id}`;
+    }).length.toString(), unit: '회', icon: <TrendingUp className="w-4 h-4" /> },
     { label: '미션 완료', value: completedMissions.toString(), unit: `/${missions.length}`, icon: <Target className="w-4 h-4" /> },
   ];
 

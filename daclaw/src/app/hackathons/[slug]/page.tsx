@@ -386,8 +386,10 @@ export default function HackathonDetailPage() {
         {activeTab === 'submit' && (
           <div data-testid="tab-content-submit" className="space-y-6">
             <h2 className="text-lg font-bold">제출</h2>
-            {hackathon.status === 'ended' ? (
-              <div className="bg-surface border border-border rounded-xl p-8 text-center text-text-secondary">제출 기간이 종료되었습니다.</div>
+            {hackathon.status !== 'active' ? (
+              <div className="bg-surface border border-border rounded-xl p-8 text-center text-text-secondary">
+                {hackathon.status === 'ended' ? '제출 기간이 종료되었습니다.' : '대회가 아직 시작되지 않았습니다.'}
+              </div>
             ) : (
               <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
                 {(hackathon.type === 'quantitative' || hackathon.type === 'hybrid') && (

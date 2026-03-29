@@ -59,13 +59,13 @@ export default function CampPage() {
 
   function handleCreateTeam(e: React.FormEvent) {
     e.preventDefault();
-    if (!createForm.name.trim() || !createForm.hackathonSlug) return;
+    if (!createForm.name.trim() || !createForm.hackathonSlug || !isLoggedIn || !user) return;
     const newTeam: Team = {
       id: `team-${Date.now()}`,
       name: createForm.name,
       description: createForm.description,
       hackathonSlug: createForm.hackathonSlug,
-      members: user ? [{ userId: user.id, nickname: user.nickname, role: user.role, avatar: user.avatar }] : [],
+      members: [{ userId: user.id, nickname: user.nickname, role: user.role, avatar: user.avatar }],
       maxMembers: createForm.maxMembers,
       recruitRoles: createForm.roles,
       recruitStatus: 'open',
