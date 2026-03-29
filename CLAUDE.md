@@ -9,12 +9,12 @@
 
 ```
 dacon-vibe-coding-claude/        ← git root
-├── docs/                        ← 디자인 시스템, UI 계획, 참고 스크린샷
+├── docs/                        ← 디자인 시스템, 참고 스크린샷
 └── daclaw/                      ← Next.js 앱 (Vercel root directory: daclaw)
-    ├── src/app/                 ← 페이지 (10개)
-    ├── src/components/          ← 공통 컴포넌트
+    ├── src/app/                 ← 페이지 (14개, 동적 라우트 4개 포함)
+    ├── src/components/          ← 공통 컴포넌트 (13개)
     ├── src/data/seed.ts         ← Mock 데이터
-    ├── src/store/               ← Zustand 상태관리
+    ├── src/store/               ← Zustand 상태관리 (8개 스토어)
     └── src/types/index.ts       ← TypeScript 타입 정의
 ```
 
@@ -32,4 +32,3 @@ dacon-vibe-coding-claude/        ← git root
 
 브라우저에서 Agentation 어노테이션으로 UI 피드백을 받을 수 있습니다.
 - `watch_annotations`로 실시간 감지 → 코드 반영 → `resolve`로 완료
-- 상세 워크플로우는 `docs/ui-refinement-plan.md` 참조

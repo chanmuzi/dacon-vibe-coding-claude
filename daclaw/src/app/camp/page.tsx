@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useTeamStore } from '@/store/team';
 import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
 import { useMessageStore } from '@/store/message';
 import {
-  Users, Plus, Sparkles, Send, X, Filter, ChevronDown, UserPlus, CheckCircle2,
+  Users, Plus, Sparkles, Send, X, Filter, ChevronDown, UserPlus, CheckCircle2, Check, Loader2,
 } from 'lucide-react';
+import UserAvatar from '@/components/UserAvatar';
 import type { Team, Role } from '@/types';
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -25,23 +28,76 @@ function calcMatchRate(team: Team, userRole: Role | undefined, userStack: string
   return Math.min(Math.round(roleMatch + tagMatch + 20 + statusBonus), 100);
 }
 
+function getMatchReason(rate: number): { label: string; className: string } {
+  if (rate >= 70) return { label: '기술스택 일치도 높음', className: 'text-primary' };
+  if (rate >= 50) return { label: '역할 매칭', className: 'text-info' };
+  return { label: '탐색 추천', className: 'text-text-secondary' };
+}
+
+const APPLY_ROLES: Role[] = ['developer', 'designer', 'planner', 'data-scientist'];
+
+interface ApplyForm {
+  intro: string;
+  positions: Role[];
+  techStack: string;
+  portfolio: string;
+}
+
+function buildDmContent(form: ApplyForm): string {
+  const positions = form.positions.map((r) => ROLE_LABELS[r]).join(', ') || '미정';
+  const parts = [
+    `[자기소개]\n${form.intro}`,
+    `[가능 포지션] ${positions}`,
+  ];
+  if (form.techStack.trim()) parts.push(`[기술스택] ${form.techStack}`);
+  if (form.portfolio.trim()) parts.push(`[포트폴리오] ${form.portfolio}`);
+  return parts.join('\n\n');
+}
+
 export default function CampPage() {
   const { teams, addTeam } = useTeamStore();
   const { hackathons } = useHackathonStore();
-  const { user, isLoggedIn } = useUserStore();
+  const { user, isLoggedIn, openAuthModal } = useUserStore();
   const { addMessage } = useMessageStore();
+  const searchParams = useSearchParams();
 
   const [hackFilter, setHackFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState<Role | 'all'>('all');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [applyTeam, setApplyTeam] = useState<Team | null>(null);
-  const [dmMessage, setDmMessage] = useState('');
+  const [applyForm, setApplyForm] = useState<ApplyForm>({ intro: '', positions: [], techStack: '', portfolio: '' });
   const [toast, setToast] = useState('');
   const [createForm, setCreateForm] = useState({ name: '', description: '', hackathonSlug: '', roles: [] as Role[], maxMembers: 4 });
+  const [recLoading, setRecLoading] = useState(false);
+  const [recReady, setRecReady] = useState(false);
+
+  // G11: Auto-filter from URL param ?hackathon=slug
+  useEffect(() => {
+    const hackathonParam = searchParams.get('hackathon');
+    if (hackathonParam) {
+      setHackFilter(hackathonParam);
+    }
+  }, [searchParams]);
+
+  // G7: Brief loading animation when user logs in
+  useEffect(() => {
+    if (isLoggedIn) {
+      setRecReady(false);
+      setRecLoading(true);
+      const t = setTimeout(() => {
+        setRecLoading(false);
+        setRecReady(true);
+      }, 500);
+      return () => clearTimeout(t);
+    } else {
+      setRecLoading(false);
+      setRecReady(false);
+    }
+  }, [isLoggedIn]);
 
   const filtered = useMemo(() => {
     let result = teams;
-    if (hackFilter !== 'all') result = result.filter((t) => t.hackathonSlug === hackFilter);
+    if (hackFilter !== 'all') result = result.filter((t) => t.hackathonSlugs?.includes(hackFilter));
     if (roleFilter !== 'all') result = result.filter((t) => t.recruitRoles.includes(roleFilter));
     return result;
   }, [teams, hackFilter, roleFilter]);
@@ -49,7 +105,7 @@ export default function CampPage() {
   const recommendations = useMemo(() => {
     const openTeams = teams.filter((t) => t.recruitStatus === 'open');
     return openTeams.map((t) => {
-      const hack = hackathons.find((h) => h.slug === t.hackathonSlug);
+      const hack = hackathons.find((h) => t.hackathonSlugs?.includes(h.slug));
       const rate = isLoggedIn && user
         ? calcMatchRate(t, user.role, user.techStack, hack?.tags ?? [])
         : Math.round(50 + Math.random() * 30);
@@ -64,8 +120,8 @@ export default function CampPage() {
       id: `team-${Date.now()}`,
       name: createForm.name,
       description: createForm.description,
-      hackathonSlug: createForm.hackathonSlug,
-      members: [{ userId: user.id, nickname: user.nickname, role: user.role, avatar: user.avatar }],
+      hackathonSlugs: [createForm.hackathonSlug],
+      members: [{ userId: user.id, nickname: user.nickname, role: user.role }],
       maxMembers: createForm.maxMembers,
       recruitRoles: createForm.roles,
       recruitStatus: 'open',
@@ -78,20 +134,20 @@ export default function CampPage() {
   }
 
   function handleSendDM() {
-    if (!dmMessage.trim() || !applyTeam || !isLoggedIn || !user) return;
+    if (!applyForm.intro.trim() || !applyTeam || !isLoggedIn || !user) return;
     const leader = applyTeam.members[0];
     if (!leader) return;
     addMessage({
       id: `msg-${Date.now()}`,
       from: user?.id ?? 'anonymous',
       to: leader?.userId ?? '',
-      content: dmMessage,
+      content: buildDmContent(applyForm),
       type: 'team-request',
       teamId: applyTeam.id,
       read: false,
       createdAt: new Date().toISOString(),
     });
-    setDmMessage('');
+    setApplyForm({ intro: '', positions: [], techStack: '', portfolio: '' });
     setApplyTeam(null);
     showToast('참가 신청이 전송되었습니다!');
   }
@@ -108,11 +164,20 @@ export default function CampPage() {
     }));
   }
 
+  function toggleApplyPosition(role: Role) {
+    setApplyForm((prev) => ({
+      ...prev,
+      positions: prev.positions.includes(role)
+        ? prev.positions.filter((r) => r !== role)
+        : [...prev.positions, role],
+    }));
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Toast */}
       {toast && (
-        <div data-testid="dm-success-toast" className="fixed top-20 right-4 z-50 bg-primary text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2">
+        <div data-testid="dm-success-toast" className="fixed top-20 right-4 z-50 bg-primary text-text-on-primary px-5 py-3 rounded-lg shadow-lg flex items-center gap-2">
           <CheckCircle2 size={18} /> {toast}
         </div>
       )}
@@ -128,7 +193,7 @@ export default function CampPage() {
             <button
               data-testid="create-team-button"
               onClick={() => setShowCreateForm(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 transition-colors"
             >
               <Plus size={16} /> 팀 만들기
             </button>
@@ -156,7 +221,7 @@ export default function CampPage() {
                   key={r}
                   onClick={() => setRoleFilter(r)}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    roleFilter === r ? 'bg-primary text-white' : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
+                    roleFilter === r ? 'bg-primary text-text-on-primary' : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
                   }`}
                 >
                   {r === 'all' ? '전체' : ROLE_LABELS[r]}
@@ -172,42 +237,65 @@ export default function CampPage() {
                 조건에 맞는 팀이 없습니다.
               </div>
             ) : filtered.map((team) => {
-              const hack = hackathons.find((h) => h.slug === team.hackathonSlug);
+              const hack = hackathons.find((h) => team.hackathonSlugs?.includes(h.slug));
+              const isOpen = team.recruitStatus === 'open';
               return (
-                <div key={team.id} data-testid="team-card" className="bg-surface border border-border rounded-xl p-5 hover:border-primary-light hover:shadow-md transition-all">
+                // G10: Entire card is a link to /teams/[id]
+                <Link
+                  key={team.id}
+                  href={`/teams/${team.id}`}
+                  data-testid="team-card"
+                  className="block bg-surface border border-border rounded-xl p-5 hover:border-primary-light hover:shadow-md transition-all"
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-bold text-text-primary">{team.name}</h3>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${team.recruitStatus === 'open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                          {team.recruitStatus === 'open' ? '모집중' : '마감'}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isOpen ? 'bg-success-light text-success' : 'bg-background text-text-secondary'}`}>
+                          {isOpen ? '모집중' : '마감'}
                         </span>
                       </div>
                       <p className="text-sm text-text-secondary mb-3">{team.description}</p>
                       <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary">
-                        <span className="bg-primary-light text-primary px-2 py-0.5 rounded-full font-medium">{hack?.title ?? team.hackathonSlug}</span>
+                        <span className="bg-primary-light text-primary px-2 py-0.5 rounded-full font-medium">{hack?.title ?? team.hackathonSlugs?.[0] ?? '미정'}</span>
                         <span className="flex items-center gap-1"><Users size={12} /> {team.members.length}/{team.maxMembers}명</span>
+                        {/* G3: Flexible role recruitment — suggestive framing */}
                         {team.recruitRoles.length > 0 && (
-                          <span>모집: {team.recruitRoles.map((r) => ROLE_LABELS[r]).join(', ')}</span>
+                          <span>선호 역할: {team.recruitRoles.map((r) => ROLE_LABELS[r]).join(', ')}</span>
                         )}
                       </div>
+                      {/* G3: "다른 역할도 환영합니다" hint */}
+                      {team.recruitRoles.length > 0 && (
+                        <p className="text-xs text-text-secondary mt-1">다른 역할도 환영합니다</p>
+                      )}
+                      {/* G8: Avatar with tooltip */}
                       <div className="flex gap-1 mt-2">
                         {team.members.map((m) => (
-                          <span key={m.userId} title={`${m.nickname} (${ROLE_LABELS[m.role]})`} className="text-lg">{m.avatar}</span>
+                          <span key={m.userId} title={`${m.nickname} (${ROLE_LABELS[m.role]})`}>
+                            <UserAvatar role={m.role} size="sm" />
+                          </span>
                         ))}
                       </div>
                     </div>
-                    {team.recruitStatus === 'open' && (
+                    {/* G9: Open = primary apply button; Closed = disabled button */}
+                    {isOpen ? (
                       <button
                         data-testid="team-apply-button"
-                        onClick={() => setApplyTeam(team)}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 transition-colors shrink-0"
+                        onClick={(e) => { e.preventDefault(); setApplyTeam(team); }}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-primary text-text-on-primary text-sm rounded-lg hover:bg-primary/90 transition-colors shrink-0"
                       >
                         <UserPlus size={14} /> 참가 신청
                       </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="flex items-center gap-1.5 px-4 py-2 bg-background text-text-secondary text-sm rounded-lg shrink-0 cursor-not-allowed"
+                      >
+                        모집 마감
+                      </button>
                     )}
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -220,31 +308,53 @@ export default function CampPage() {
               <Sparkles size={18} className="text-primary" />
               <h2 className="font-bold text-text-primary">AI 추천 팀</h2>
             </div>
-            {!isLoggedIn && (
-              <p className="text-xs text-text-secondary mb-3 bg-primary-light/50 rounded-lg p-2">
-                로그인하면 맞춤 추천을 받을 수 있어요!
-              </p>
+
+            {/* G6: Not logged in → CTA card */}
+            {!isLoggedIn ? (
+              <div className="text-center py-6">
+                <Sparkles className="mx-auto mb-2 text-primary" size={28} />
+                <p className="font-semibold mb-1 text-text-primary">로그인 후 추천 받기</p>
+                <p className="text-xs text-text-secondary mb-3">맞춤 팀 추천을 받아보세요</p>
+                <button
+                  onClick={openAuthModal}
+                  className="px-4 py-2 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                >
+                  로그인
+                </button>
+              </div>
+            ) : recLoading ? (
+              /* G7: Loading animation */
+              <div className="flex flex-col items-center py-6 gap-2 text-text-secondary">
+                <Loader2 size={22} className="animate-spin text-primary" />
+                <p className="text-sm">매칭 분석 중...</p>
+              </div>
+            ) : (
+              /* G7: Recommendations with match reason */
+              <div className="space-y-3">
+                {recommendations.map(({ team, rate, hackTitle }) => {
+                  const reason = getMatchReason(rate);
+                  return (
+                    <div key={team.id} className="border border-border rounded-lg p-3 hover:border-primary-light transition-colors">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-sm text-text-primary">{team.name}</span>
+                        <span data-testid="match-rate" className="font-mono text-sm font-bold text-primary bg-primary-light px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Sparkles size={10} /> {rate}%
+                        </span>
+                      </div>
+                      <p className="text-xs text-text-secondary mb-1">{hackTitle}</p>
+                      <p className={`text-xs mb-2 ${reason.className}`}>{reason.label}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {team.recruitRoles.map((r) => (
+                          <span key={r} className="text-xs bg-primary-light/60 text-primary px-1.5 py-0.5 rounded">
+                            {user?.role === r && <Check size={12} className="inline" />} {ROLE_LABELS[r]}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
-            <div className="space-y-3">
-              {recommendations.map(({ team, rate, hackTitle }) => (
-                <div key={team.id} className="border border-border rounded-lg p-3 hover:border-primary-light transition-colors">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-sm text-text-primary">{team.name}</span>
-                    <span data-testid="match-rate" className="font-mono text-sm font-bold text-primary bg-primary-light px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Sparkles size={10} /> {rate}%
-                    </span>
-                  </div>
-                  <p className="text-xs text-text-secondary mb-2">{hackTitle}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {team.recruitRoles.map((r) => (
-                      <span key={r} className="text-xs bg-primary-light/60 text-primary px-1.5 py-0.5 rounded">
-                        {user?.role === r ? '✅ ' : ''}{ROLE_LABELS[r]}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>
@@ -255,7 +365,7 @@ export default function CampPage() {
           <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">팀 만들기</h2>
-              <button onClick={() => setShowCreateForm(false)} className="p-1 rounded-lg hover:bg-gray-100"><X size={20} /></button>
+              <button onClick={() => setShowCreateForm(false)} className="p-1 rounded-lg hover:bg-background"><X size={20} /></button>
             </div>
             <form onSubmit={handleCreateTeam} className="space-y-4">
               <div>
@@ -304,7 +414,7 @@ export default function CampPage() {
                       type="button"
                       onClick={() => toggleRole(r)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        createForm.roles.includes(r) ? 'bg-primary text-white' : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
+                        createForm.roles.includes(r) ? 'bg-primary text-text-on-primary' : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
                       }`}
                     >
                       {ROLE_LABELS[r]}
@@ -326,7 +436,7 @@ export default function CampPage() {
               <button
                 data-testid="team-submit-button"
                 type="submit"
-                className="w-full px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                className="w-full px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 transition-colors"
               >
                 팀 생성
               </button>
@@ -335,31 +445,87 @@ export default function CampPage() {
         </div>
       )}
 
-      {/* DM / Apply Modal */}
+      {/* Apply Modal — G8-1: Rich form */}
       {applyTeam && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">참가 신청 — {applyTeam.name}</h2>
-              <button onClick={() => setApplyTeam(null)} className="p-1 rounded-lg hover:bg-gray-100"><X size={20} /></button>
+              <button onClick={() => setApplyTeam(null)} className="p-1 rounded-lg hover:bg-background"><X size={20} /></button>
             </div>
-            <p className="text-sm text-text-secondary mb-4">팀장에게 메시지를 보내 참가를 신청하세요.</p>
-            <textarea
-              data-testid="dm-message-input"
-              value={dmMessage}
-              onChange={(e) => setDmMessage(e.target.value)}
-              placeholder="자기소개와 참가 동기를 작성해주세요..."
-              rows={4}
-              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm mb-4 focus:ring-2 focus:ring-primary-light focus:border-primary resize-none"
-            />
-            <button
-              data-testid="dm-send-button"
-              onClick={handleSendDM}
-              disabled={!dmMessage.trim()}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Send size={16} /> 신청 보내기
-            </button>
+
+            <div className="space-y-4">
+              {/* 자기소개 */}
+              <div>
+                <label className="text-sm font-medium block mb-1">
+                  자기소개 <span className="text-error text-xs">*</span>
+                </label>
+                <textarea
+                  data-testid="dm-message-input"
+                  value={applyForm.intro}
+                  onChange={(e) => setApplyForm({ ...applyForm, intro: e.target.value })}
+                  placeholder="자기소개와 참가 동기를 작성해주세요..."
+                  rows={3}
+                  className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary resize-none"
+                />
+              </div>
+
+              {/* 가능 포지션 */}
+              <div>
+                <label className="text-sm font-medium block mb-1">가능 포지션</label>
+                <div className="flex flex-wrap gap-2">
+                  {APPLY_ROLES.map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => toggleApplyPosition(r)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        applyForm.positions.includes(r)
+                          ? 'bg-primary text-text-on-primary'
+                          : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
+                      }`}
+                    >
+                      {ROLE_LABELS[r]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 기술스택 */}
+              <div>
+                <label className="text-sm font-medium block mb-1">기술스택</label>
+                <input
+                  type="text"
+                  value={applyForm.techStack}
+                  onChange={(e) => setApplyForm({ ...applyForm, techStack: e.target.value })}
+                  placeholder="React, Python, Figma ... (쉼표로 구분)"
+                  className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
+                />
+              </div>
+
+              {/* 포트폴리오 */}
+              <div>
+                <label className="text-sm font-medium block mb-1">
+                  포트폴리오 링크 <span className="text-text-secondary text-xs">(선택)</span>
+                </label>
+                <input
+                  type="url"
+                  value={applyForm.portfolio}
+                  onChange={(e) => setApplyForm({ ...applyForm, portfolio: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
+                />
+              </div>
+
+              <button
+                data-testid="dm-send-button"
+                onClick={handleSendDM}
+                disabled={!applyForm.intro.trim()}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Send size={16} /> 신청 보내기
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   User, Star, CheckCircle2, BookmarkCheck, Users,
   Bell, ChevronRight, Zap, Target, TrendingUp, Mail,
-  MailOpen, Shield,
+  MailOpen, Shield, HelpCircle, X, Lock,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -18,6 +18,8 @@ import { useMissionStore } from '@/store/mission';
 import { useMessageStore } from '@/store/message';
 import { gradeConfig, seedBadges } from '@/data/seed';
 import type { Role } from '@/types';
+import IconMapper from '@/components/IconMapper';
+import UserAvatar from '@/components/UserAvatar';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -29,9 +31,9 @@ const ROLES: { value: Role; label: string }[] = [
 ];
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  easy: 'text-emerald-600 bg-emerald-50',
-  medium: 'text-amber-600 bg-amber-50',
-  hard: 'text-red-600 bg-red-50',
+  easy: 'text-success bg-success-light',
+  medium: 'text-warning bg-warning-light',
+  hard: 'text-error bg-error-light',
 };
 
 const DIFFICULTY_LABELS: Record<string, string> = {
@@ -44,9 +46,47 @@ const BADGE_MAP = Object.fromEntries(seedBadges.map((b) => [b.id, b]));
 
 const GRADE_ORDER = ['rookie', 'challenger', 'expert', 'master', 'legend'];
 
+// Mock point history data (H2)
+const POINT_HISTORY: { date: string; reason: string; points: number }[] = [
+  { date: '2026-03-29', reason: '일일 출석', points: 5 },
+  { date: '2026-03-28', reason: '미션 완료: 커뮤니티 글 1개 작성', points: 10 },
+  { date: '2026-03-27', reason: '미션 완료: 해커톤 1개 북마크하기', points: 5 },
+  { date: '2026-03-26', reason: '대회 제출: AI 이미지 생성 챌린지', points: 50 },
+  { date: '2026-03-25', reason: '일일 출석', points: 5 },
+  { date: '2026-03-24', reason: '미션 완료: 팀원에게 DM 보내기', points: 10 },
+  { date: '2026-03-23', reason: '미션 완료: 제출 1회 완료', points: 20 },
+  { date: '2026-03-22', reason: '대회 제출: 바이브 코딩 대회 2026', points: 50 },
+  { date: '2026-03-21', reason: '일일 출석', points: 5 },
+  { date: '2026-03-20', reason: '미션 완료: 팀에 참가 신청하기', points: 15 },
+];
+
+// Extra mock messages to supplement seed data (H4)
+const EXTRA_MESSAGES = [
+  {
+    id: 'msg-extra-1',
+    from: 'user-3',
+    to: 'current-user',
+    content: '안녕하세요! 팀 관련해서 문의드립니다. 혹시 개발자 포지션 아직 여석 있나요?',
+    type: 'dm' as const,
+    read: false,
+    createdAt: '2026-03-29',
+  },
+  {
+    id: 'msg-extra-2',
+    from: 'system',
+    to: 'current-user',
+    content: '바이브 코딩 대회 중간 발표가 예정되어 있습니다. 3월 30일 오후 2시에 Discord에서 진행됩니다.',
+    type: 'announcement' as const,
+    read: false,
+    createdAt: '2026-03-28',
+  },
+];
+
 // ─── Not Logged In ────────────────────────────────────────────────────────────
 
 function NotLoggedIn() {
+  const { openAuthModal } = useUserStore();
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="bg-surface border border-border rounded-2xl shadow-sm p-12 flex flex-col items-center gap-4 text-center max-w-sm w-full mx-4">
@@ -57,12 +97,12 @@ function NotLoggedIn() {
         <p className="text-text-secondary text-sm">
           대시보드를 이용하려면 먼저 로그인해주세요.
         </p>
-        <a
-          href="/"
-          className="mt-2 px-6 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+        <button
+          onClick={openAuthModal}
+          className="mt-2 px-6 py-2.5 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
         >
-          홈으로 이동
-        </a>
+          로그인
+        </button>
       </div>
     </div>
   );
@@ -75,14 +115,17 @@ function SectionCard({
   icon,
   children,
   testId,
+  id,
 }: {
   title: string;
   icon: React.ReactNode;
   children: React.ReactNode;
   testId?: string;
+  id?: string;
 }) {
   return (
     <div
+      id={id}
       data-testid={testId}
       className="bg-surface border border-border rounded-2xl shadow-sm p-6"
     >
@@ -91,6 +134,72 @@ function SectionCard({
         <h2 className="font-semibold text-text-primary">{title}</h2>
       </div>
       {children}
+    </div>
+  );
+}
+
+// ─── Grade Modal ──────────────────────────────────────────────────────────────
+
+function GradeModal({ onClose, userPoints, userGrade }: { onClose: () => void; userPoints: number; userGrade: string }) {
+  const gradeTable = [
+    { key: 'rookie', range: '0 – 99 pt' },
+    { key: 'challenger', range: '100 – 499 pt' },
+    { key: 'expert', range: '500 – 1,499 pt' },
+    { key: 'master', range: '1,500 – 4,999 pt' },
+    { key: 'legend', range: '5,000+ pt' },
+  ];
+
+  const gradeIdx = GRADE_ORDER.indexOf(userGrade);
+  const nextGradeKey = gradeIdx < GRADE_ORDER.length - 1 ? GRADE_ORDER[gradeIdx + 1] : null;
+  const nextCfg = nextGradeKey ? gradeConfig[nextGradeKey] : null;
+  const ptsLeft = nextCfg ? Math.max(0, nextCfg.min - userPoints) : 0;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface border border-border rounded-2xl shadow-lg p-6 w-80 mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-text-primary">등급 안내</h3>
+          <button onClick={onClose} className="text-text-secondary hover:text-text-primary transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex flex-col gap-1.5 mb-4">
+          {gradeTable.map(({ key, range }) => {
+            const cfg = gradeConfig[key];
+            const isCurrent = key === userGrade;
+            return (
+              <div
+                key={key}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isCurrent ? 'bg-primary-light border border-primary/30' : ''}`}
+              >
+                <IconMapper name={cfg?.icon ?? 'Sprout'} size={18} />
+                <span className="font-medium text-sm" style={{ color: cfg?.color }}>
+                  {cfg?.label}
+                </span>
+                <span className="ml-auto text-xs text-text-secondary font-mono">{range}</span>
+                {isCurrent && (
+                  <span className="text-xs px-1.5 py-0.5 bg-primary text-text-on-primary rounded font-medium">현재</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {nextCfg && (
+          <p className="text-xs text-text-secondary text-center">
+            다음 등급 <span className="font-semibold" style={{ color: nextCfg.color }}>{nextCfg.label}</span>까지{' '}
+            <span className="font-mono font-semibold text-text-primary">{ptsLeft.toLocaleString()} pt</span> 남음
+          </p>
+        )}
+        {!nextCfg && (
+          <p className="text-xs text-text-secondary text-center font-medium">최고 등급 달성!</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -174,8 +283,8 @@ function ProfileForm() {
           type="submit"
           className={`self-end px-5 py-2 rounded-lg text-sm font-medium transition-colors ${
             saved
-              ? 'bg-emerald-500 text-white'
-              : 'bg-primary text-white hover:bg-primary/90'
+              ? 'bg-success text-text-on-primary'
+              : 'bg-primary text-text-on-primary hover:bg-primary/90'
           }`}
         >
           {saved ? '저장 완료!' : '저장'}
@@ -188,7 +297,9 @@ function ProfileForm() {
 // ─── Grade / Badge Panel ───────────────────────────────────────────────────────
 
 function BadgePanel() {
-  const { user } = useUserStore();
+  const { user, updateProfile } = useUserStore();
+  const [showGradeModal, setShowGradeModal] = useState(false);
+
   if (!user) return null;
 
   const cfg = gradeConfig[user.grade];
@@ -203,88 +314,165 @@ function BadgePanel() {
       ? Math.min(100, Math.round(((user.points - progressMin) / (progressMax - progressMin)) * 100))
       : 100;
 
+  const selectedBadges: string[] = user.selectedBadges ?? [];
+  const currentUser = user;
+
+  function handleBadgeToggle(badgeId: string) {
+    const owned = currentUser.badges.includes(badgeId);
+    if (!owned) return;
+    let next: string[];
+    if (selectedBadges.includes(badgeId)) {
+      next = selectedBadges.filter((b) => b !== badgeId);
+    } else {
+      if (selectedBadges.length >= 3) return;
+      next = [...selectedBadges, badgeId];
+    }
+    updateProfile({ selectedBadges: next });
+  }
+
   return (
-    <SectionCard title="등급 & 배지" icon={<Star className="w-4 h-4" />} testId="badge-panel">
-      {/* Current grade */}
-      <div className="flex items-center gap-3 mb-5">
-        <span className="text-4xl">{cfg?.icon ?? '🌱'}</span>
-        <div>
-          <div className="font-bold text-text-primary text-lg" style={{ color: cfg?.color }}>
-            {cfg?.label ?? user.grade}
-          </div>
-          <div className="text-xs text-text-secondary font-mono">
-            {user.points.toLocaleString()} pt
-          </div>
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      {nextCfg && (
-        <div className="mb-5">
-          <div className="flex justify-between text-xs text-text-secondary mb-1">
-            <span>다음 등급: <span className="font-semibold" style={{ color: nextCfg.color }}>{nextCfg.label}</span></span>
-            <span className="font-mono">{progressPct}%</span>
-          </div>
-          <div className="h-2 bg-primary-light rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${progressPct}%`, backgroundColor: cfg?.color ?? '#0049DB' }}
-            />
-          </div>
-          <div className="flex justify-between text-xs text-text-secondary mt-1 font-mono">
-            <span>{progressMin.toLocaleString()} pt</span>
-            <span>{nextCfg.min.toLocaleString()} pt</span>
-          </div>
-        </div>
+    <>
+      {showGradeModal && (
+        <GradeModal
+          onClose={() => setShowGradeModal(false)}
+          userPoints={user.points}
+          userGrade={user.grade}
+        />
       )}
+      <SectionCard title="등급 & 배지" icon={<Star className="w-4 h-4" />} testId="badge-panel">
+        {/* Current grade */}
+        <div className="flex items-center gap-3 mb-5">
+          <IconMapper name={cfg?.icon ?? 'Sprout'} size={36} />
+          <div className="flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-text-primary text-lg" style={{ color: cfg?.color }}>
+                {cfg?.label ?? user.grade}
+              </span>
+              <button
+                onClick={() => setShowGradeModal(true)}
+                className="text-text-secondary hover:text-primary transition-colors"
+                title="등급 기준 보기"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="text-xs text-text-secondary font-mono">
+              {user.points.toLocaleString()} pt
+            </div>
+          </div>
+        </div>
 
-      {/* Badges */}
-      <div>
-        <p className="text-xs font-medium text-text-secondary mb-2">획득한 배지</p>
-        {user.badges.length === 0 ? (
-          <p className="text-sm text-text-secondary">아직 획득한 배지가 없습니다.</p>
-        ) : (
+        {/* Progress bar */}
+        {nextCfg && (
+          <div className="mb-5">
+            <div className="flex justify-between text-xs text-text-secondary mb-1">
+              <span>다음 등급: <span className="font-semibold" style={{ color: nextCfg.color }}>{nextCfg.label}</span></span>
+              <span className="font-mono">{progressPct}%</span>
+            </div>
+            <div className="h-2 bg-primary-light rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${progressPct}%`, backgroundColor: cfg?.color ?? '#0049DB' }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-text-secondary mt-1 font-mono">
+              <span>{progressMin.toLocaleString()} pt</span>
+              <span>{nextCfg.min.toLocaleString()} pt</span>
+            </div>
+          </div>
+        )}
+
+        {/* Acquired badges — selectable (H5) */}
+        <div>
+          <p className="text-xs font-medium text-text-secondary mb-2">획득한 배지 <span className="font-normal">(최대 3개 선택)</span></p>
+          {user.badges.length === 0 ? (
+            <p className="text-sm text-text-secondary">아직 획득한 배지가 없습니다.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {user.badges.map((badgeId) => {
+                const badge = BADGE_MAP[badgeId];
+                if (!badge) return null;
+                const isSelected = selectedBadges.includes(badgeId);
+                return (
+                  <button
+                    key={badgeId}
+                    title={badge.condition}
+                    onClick={() => handleBadgeToggle(badgeId)}
+                    className={`relative flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                      isSelected
+                        ? 'bg-primary-light text-primary border-2 border-primary'
+                        : 'bg-primary-light text-primary border-2 border-transparent hover:border-primary/40'
+                    }`}
+                  >
+                    {isSelected && (
+                      <CheckCircle2 className="w-3 h-3 shrink-0" />
+                    )}
+                    <IconMapper name={badge.icon} size={14} />
+                    <span>{badge.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {selectedBadges.length > 0 && (
+            <p className="text-xs text-text-secondary mt-2">
+              선택된 배지는 리더보드와 프로필에 표시됩니다
+            </p>
+          )}
+        </div>
+
+        {/* All available badges (locked) */}
+        <div className="mt-4 pt-4 border-t border-border">
+          <p className="text-xs font-medium text-text-secondary mb-2">전체 배지</p>
           <div className="flex flex-wrap gap-2">
-            {user.badges.map((badgeId) => {
-              const badge = BADGE_MAP[badgeId];
-              if (!badge) return null;
+            {seedBadges.map((badge) => {
+              const owned = user.badges.includes(badge.id);
               return (
                 <div
-                  key={badgeId}
-                  title={badge.condition}
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-primary-light rounded-full text-xs font-medium text-primary"
+                  key={badge.id}
+                  title={owned ? badge.condition : `미획득 — ${badge.condition}`}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-opacity ${
+                    owned
+                      ? 'bg-primary-light text-primary font-medium'
+                      : 'bg-border/40 text-text-secondary opacity-50'
+                  }`}
                 >
-                  <span>{badge.icon}</span>
+                  {!owned && <Lock className="w-3 h-3 shrink-0" />}
+                  <IconMapper name={badge.icon} size={14} />
                   <span>{badge.name}</span>
                 </div>
               );
             })}
           </div>
-        )}
-      </div>
-
-      {/* All available badges (locked) */}
-      <div className="mt-4 pt-4 border-t border-border">
-        <p className="text-xs font-medium text-text-secondary mb-2">전체 배지</p>
-        <div className="flex flex-wrap gap-2">
-          {seedBadges.map((badge) => {
-            const owned = user.badges.includes(badge.id);
-            return (
-              <div
-                key={badge.id}
-                title={badge.condition}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-opacity ${
-                  owned
-                    ? 'bg-primary-light text-primary font-medium'
-                    : 'bg-border/40 text-text-secondary opacity-50'
-                }`}
-              >
-                <span>{badge.icon}</span>
-                <span>{badge.name}</span>
-              </div>
-            );
-          })}
         </div>
+      </SectionCard>
+    </>
+  );
+}
+
+// ─── Point History ────────────────────────────────────────────────────────────
+
+function PointHistory() {
+  return (
+    <SectionCard
+      title="포인트 내역"
+      icon={<Zap className="w-4 h-4" />}
+      id="section-points"
+    >
+      <div className="flex flex-col gap-0">
+        {POINT_HISTORY.map((entry, idx) => (
+          <div key={idx} className="flex items-center gap-3 py-2.5 border-b border-border last:border-0">
+            <div className="flex flex-col items-center shrink-0 w-16">
+              <span className="text-xs text-text-secondary font-mono">{entry.date.slice(5)}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-text-primary truncate">{entry.reason}</p>
+            </div>
+            <span className="shrink-0 text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-success-light text-success">
+              +{entry.points}pt
+            </span>
+          </div>
+        ))}
       </div>
     </SectionCard>
   );
@@ -310,7 +498,11 @@ function DailyMissions() {
   const completedCount = missions.filter((m) => m.completed).length;
 
   return (
-    <SectionCard title="오늘의 미션" icon={<Target className="w-4 h-4" />}>
+    <SectionCard
+      title="오늘의 미션"
+      icon={<Target className="w-4 h-4" />}
+      id="section-missions"
+    >
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs text-text-secondary">
           {completedCount}/{missions.length} 완료
@@ -399,6 +591,7 @@ function SubmissionChart() {
       title="제출 히스토리"
       icon={<TrendingUp className="w-4 h-4" />}
       testId="submission-history-chart"
+      id="section-submissions"
     >
       {chartData.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
@@ -471,13 +664,17 @@ function BookmarkedHackathons() {
   };
 
   const statusColor: Record<string, string> = {
-    active: 'text-emerald-600 bg-emerald-50',
-    upcoming: 'text-amber-600 bg-amber-50',
-    ended: 'text-gray-400 bg-gray-100',
+    active: 'text-success bg-success-light',
+    upcoming: 'text-warning bg-warning-light',
+    ended: 'text-text-secondary bg-background',
   };
 
   return (
-    <SectionCard title="북마크한 해커톤" icon={<BookmarkCheck className="w-4 h-4" />}>
+    <SectionCard
+      title="북마크한 해커톤"
+      icon={<BookmarkCheck className="w-4 h-4" />}
+      id="section-bookmarks"
+    >
       {bookmarked.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <BookmarkCheck className="w-8 h-8 text-border" />
@@ -555,7 +752,7 @@ function TeamMemberships() {
               >
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-text-primary truncate">{team.name}</div>
-                  <div className="text-xs text-text-secondary mt-0.5">{team.hackathonSlug}</div>
+                  <div className="text-xs text-text-secondary mt-0.5">{(team.hackathonSlugs ?? []).join(', ') || '미정'}</div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-xs text-text-secondary font-mono">
@@ -588,10 +785,17 @@ function Messages() {
 
   const myMessages = useMemo(() => {
     if (!user) return [];
-    return messages
+    const storeMessages = messages
       .filter((m) => m.to === user.id || m.from === user.id)
       .slice()
       .sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1));
+
+    // Merge extra mock messages (H4) if they don't already exist
+    const extraMapped = EXTRA_MESSAGES
+      .filter((em) => !storeMessages.some((m) => m.id === em.id))
+      .map((em) => ({ ...em, to: user.id }));
+
+    return [...extraMapped, ...storeMessages].sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1));
   }, [messages, user]);
 
   const unreadCount = myMessages.filter((m) => !m.read && m.to === user?.id).length;
@@ -611,6 +815,7 @@ function Messages() {
           {myMessages.map((msg) => {
             const isUnread = !msg.read && msg.to === user?.id;
             const isTeamRequest = msg.type === 'team-request';
+            const isAnnouncement = msg.type === 'announcement';
             return (
               <div
                 key={msg.id}
@@ -628,8 +833,13 @@ function Messages() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     {isTeamRequest && (
-                      <span className="text-xs px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded font-medium">
+                      <span className="text-xs px-1.5 py-0.5 bg-warning-light text-warning rounded font-medium">
                         팀 요청
+                      </span>
+                    )}
+                    {isAnnouncement && (
+                      <span className="text-xs px-1.5 py-0.5 bg-primary-light text-primary rounded font-medium">
+                        공지
                       </span>
                     )}
                     <span className="text-xs text-text-secondary font-mono">{msg.createdAt}</span>
@@ -642,7 +852,7 @@ function Messages() {
                     {msg.from === user?.id ? `→ ${msg.to}` : `← ${msg.from}`}
                   </p>
                 </div>
-                {isUnread && (
+                {isUnread && msg.id.startsWith('msg-extra-') ? null : isUnread && (
                   <button
                     onClick={() => markRead(msg.id)}
                     className="text-xs text-primary hover:underline shrink-0"
@@ -674,20 +884,63 @@ function StatsBar() {
   const completedMissions = missions.filter((m) => m.completed).length;
 
   const stats = [
-    { label: '포인트', value: user.points.toLocaleString(), unit: 'pt', icon: <Zap className="w-4 h-4" /> },
-    { label: '북마크', value: bookmarks.length.toString(), unit: '개', icon: <BookmarkCheck className="w-4 h-4" /> },
-    { label: '참가 팀', value: myTeamCount.toString(), unit: '개', icon: <Users className="w-4 h-4" /> },
-    { label: '제출 횟수', value: submissions.filter((s) => {
-      const myTeamIds = new Set(teams.filter((t) => t.members.some((m) => m.userId === user.id)).map((t) => t.id));
-      return myTeamIds.has(s.teamId) || s.teamId === `solo-${user.id}`;
-    }).length.toString(), unit: '회', icon: <TrendingUp className="w-4 h-4" /> },
-    { label: '미션 완료', value: completedMissions.toString(), unit: `/${missions.length}`, icon: <Target className="w-4 h-4" /> },
+    {
+      label: '포인트',
+      value: user.points.toLocaleString(),
+      unit: 'pt',
+      icon: <Zap className="w-4 h-4" />,
+      sectionId: 'section-points',
+    },
+    {
+      label: '북마크',
+      value: bookmarks.length.toString(),
+      unit: '개',
+      icon: <BookmarkCheck className="w-4 h-4" />,
+      sectionId: 'section-bookmarks',
+    },
+    {
+      label: '참가 팀',
+      value: myTeamCount.toString(),
+      unit: '개',
+      icon: <Users className="w-4 h-4" />,
+      sectionId: null,
+    },
+    {
+      label: '제출 횟수',
+      value: submissions.filter((s) => {
+        const myTeamIds = new Set(teams.filter((t) => t.members.some((m) => m.userId === user.id)).map((t) => t.id));
+        return myTeamIds.has(s.teamId) || s.teamId === `solo-${user.id}`;
+      }).length.toString(),
+      unit: '회',
+      icon: <TrendingUp className="w-4 h-4" />,
+      sectionId: 'section-submissions',
+    },
+    {
+      label: '오늘의 미션',
+      value: completedMissions.toString(),
+      unit: `/${missions.length}`,
+      icon: <Target className="w-4 h-4" />,
+      sectionId: 'section-missions',
+    },
   ];
+
+  function scrollTo(id: string | null) {
+    if (!id) return;
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  }
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
       {stats.map((s) => (
-        <div key={s.label} className="bg-surface border border-border rounded-xl px-4 py-3 flex items-center gap-3">
+        <div
+          key={s.label}
+          onClick={() => scrollTo(s.sectionId)}
+          className={`bg-surface border border-border rounded-xl px-4 py-3 flex items-center gap-3 transition-all ${
+            s.sectionId
+              ? 'cursor-pointer hover:border-primary-light hover:shadow-sm'
+              : ''
+          }`}
+        >
           <span className="text-primary shrink-0">{s.icon}</span>
           <div>
             <div className="flex items-baseline gap-0.5">
@@ -730,11 +983,11 @@ export default function DashboardPage() {
         {/* Page header */}
         <div className="mb-6">
           <div className="flex items-center gap-3">
-            <span className="text-3xl">{user.avatar}</span>
+            <UserAvatar role={user.role} size="lg" />
             <div>
               <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
                 {user.nickname}
-                <span title={cfg?.label ?? user.grade} className="text-xl">{cfg?.icon}</span>
+                <span title={cfg?.label ?? user.grade} style={{ color: cfg?.color }}><IconMapper name={cfg?.icon ?? 'Sprout'} size={20} /></span>
               </h1>
               <div className="flex items-center gap-2 mt-0.5">
                 <Shield className="w-3.5 h-3.5 text-text-secondary" />
@@ -766,6 +1019,7 @@ export default function DashboardPage() {
 
           {/* Right column */}
           <div className="flex flex-col gap-6">
+            <PointHistory />
             <SubmissionChart />
             <BookmarkedHackathons />
             <TeamMemberships />

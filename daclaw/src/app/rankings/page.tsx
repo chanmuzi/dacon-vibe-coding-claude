@@ -5,6 +5,8 @@ import { Trophy, Medal, Info } from 'lucide-react';
 import { useRankingStore } from '@/store/ranking';
 import { gradeConfig, seedBadges } from '@/data/seed';
 import type { RankingEntry } from '@/types';
+import IconMapper from '@/components/IconMapper';
+import UserAvatar from '@/components/UserAvatar';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -60,9 +62,9 @@ const BADGE_MAP = Object.fromEntries(seedBadges.map((b) => [b.id, b]));
 // ─── Rank Indicator ───────────────────────────────────────────────────────────
 
 function RankIndicator({ rank }: { rank: number }) {
-  if (rank === 1) return <span className="text-xl">🥇</span>;
-  if (rank === 2) return <span className="text-xl">🥈</span>;
-  if (rank === 3) return <span className="text-xl">🥉</span>;
+  if (rank === 1) return <Trophy size={20} style={{ color: '#D4A017' }} />;
+  if (rank === 2) return <Medal size={20} style={{ color: '#7C8A96' }} />;
+  if (rank === 3) return <Medal size={18} style={{ color: '#B87333' }} />;
   return (
     <span className="font-mono text-sm font-semibold text-text-secondary w-8 text-center inline-block">
       {rank}
@@ -84,20 +86,20 @@ function RankingRow({ rank, entry, tab }: RowProps) {
 
   const rowBg =
     rank === 1
-      ? 'bg-amber-50 border-amber-200'
+      ? 'bg-warning-light border-warning/20'
       : rank === 2
-      ? 'bg-gray-50 border-gray-200'
+      ? 'bg-info-light/50 border-info/10'
       : rank === 3
-      ? 'bg-amber-50/50 border-amber-100'
+      ? 'bg-warning-light/30 border-warning/10'
       : 'bg-surface border-border';
 
   const scoreColor =
     rank === 1
-      ? 'text-amber-600'
+      ? 'text-warning'
       : rank === 2
-      ? 'text-gray-500'
+      ? 'text-info'
       : rank === 3
-      ? 'text-amber-700'
+      ? 'text-warning'
       : 'text-primary';
 
   const scoreSizeClass = rank === 1 ? 'text-lg' : 'text-base';
@@ -113,18 +115,18 @@ function RankingRow({ rank, entry, tab }: RowProps) {
 
       {/* Avatar + Nickname + Grade */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <span className="text-2xl shrink-0">{entry.avatar}</span>
+        <UserAvatar role={entry.role} size="md" />
         <div className="min-w-0">
           <div className="flex items-center gap-1">
             <span
               className={`font-semibold truncate ${
-                rank === 1 ? 'text-base text-amber-700' : 'text-sm text-text-primary'
+                rank === 1 ? 'text-base text-warning' : 'text-sm text-text-primary'
               }`}
             >
               {entry.nickname}
             </span>
             <span title={grade?.label ?? entry.grade} className="shrink-0">
-              {grade?.icon}
+              <IconMapper name={grade?.icon ?? 'Sprout'} size={16} />
             </span>
           </div>
           <span className="text-xs text-text-secondary hidden sm:block" style={{ color: grade?.color }}>
@@ -145,7 +147,7 @@ function RankingRow({ rank, entry, tab }: RowProps) {
               className="text-base cursor-default"
               aria-label={badge.name}
             >
-              {badge.icon}
+              <IconMapper name={badge.icon} size={14} />
             </span>
           );
         })}

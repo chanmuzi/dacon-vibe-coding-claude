@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   LayoutGrid,
   Calendar,
@@ -10,6 +10,7 @@ import {
   BookmarkCheck,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Users,
   Clock,
   Tag,
@@ -18,8 +19,10 @@ import {
   GitCompare,
   X,
   Trophy,
+  Building2,
 } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathon';
+import { useUserStore } from '@/store/user';
 import type { Hackathon, HackathonStatus, HackathonType } from '@/types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -31,15 +34,21 @@ const TYPE_LABELS: Record<HackathonType, string> = {
 };
 
 const TYPE_COLORS: Record<HackathonType, string> = {
-  quantitative: 'bg-blue-100 text-blue-700',
-  qualitative: 'bg-purple-100 text-purple-700',
-  hybrid: 'bg-amber-100 text-amber-700',
+  quantitative: 'bg-type-quantitative-light text-type-quantitative',
+  qualitative: 'bg-type-qualitative-light text-type-qualitative',
+  hybrid: 'bg-type-hybrid-light text-type-hybrid',
+};
+
+const TYPE_DOT_COLORS: Record<HackathonType, string> = {
+  quantitative: 'bg-type-quantitative',
+  qualitative: 'bg-type-qualitative',
+  hybrid: 'bg-type-hybrid',
 };
 
 const TYPE_BAR_COLORS: Record<HackathonType, string> = {
-  quantitative: 'bg-blue-500',
-  qualitative: 'bg-purple-500',
-  hybrid: 'bg-amber-500',
+  quantitative: 'bg-type-quantitative',
+  qualitative: 'bg-type-qualitative',
+  hybrid: 'bg-type-hybrid',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -66,6 +75,28 @@ function buildCalendarGrid(year: number, month: number): (Date | null)[] {
   return days;
 }
 
+function isWithinPeriod(endDate: string, period: string): boolean {
+  if (period === 'all') return true;
+  const now = new Date();
+  const end = new Date(endDate);
+  if (period === 'week') {
+    const weekEnd = new Date(now);
+    weekEnd.setDate(now.getDate() + 7);
+    return end >= now && end <= weekEnd;
+  }
+  if (period === 'month') {
+    const monthEnd = new Date(now);
+    monthEnd.setMonth(now.getMonth() + 1);
+    return end >= now && end <= monthEnd;
+  }
+  if (period === '3months') {
+    const threeMonthEnd = new Date(now);
+    threeMonthEnd.setMonth(now.getMonth() + 3);
+    return end >= now && end <= threeMonthEnd;
+  }
+  return true;
+}
+
 // ─── Hackathon Card ───────────────────────────────────────────────────────────
 
 interface HackathonCardProps {
@@ -83,6 +114,7 @@ function HackathonCard({
   compareSelected,
   onToggleCompare,
 }: HackathonCardProps) {
+  const [hovered, setHovered] = useState(false);
   const remaining = daysLeft(hackathon.endDate);
 
   let deadlineLabel: string;
@@ -95,9 +127,44 @@ function HackathonCard({
     deadlineLabel = remaining > 0 ? `D-${remaining}` : '마감';
   }
 
+  // K1: Status badge config
+  let statusBadge: React.ReactNode = null;
+  if (hackathon.status === 'active') {
+    statusBadge = (
+      <span className="absolute top-3 left-3 bg-success text-text-on-primary text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+        진행중
+      </span>
+    );
+  } else if (hackathon.status === 'upcoming') {
+    statusBadge = (
+      <span className="absolute top-3 left-3 bg-info text-text-on-primary text-xs font-semibold px-2 py-1 rounded-full">
+        예정
+      </span>
+    );
+  } else {
+    statusBadge = (
+      <span className="absolute top-3 left-3 bg-text-secondary text-text-on-primary text-xs font-semibold px-2 py-1 rounded-full">
+        종료
+      </span>
+    );
+  }
+
+  function handleBookmark(e: React.MouseEvent) {
+    e.preventDefault();
+    const { isLoggedIn } = useUserStore.getState();
+    if (!isLoggedIn) {
+      useUserStore.getState().openAuthModal();
+      return;
+    }
+    onToggleBookmark(hackathon.slug);
+  }
+
   return (
     <div
       data-testid="hackathon-card"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       className="bg-surface border border-border rounded-xl shadow-sm hover:-translate-y-1 hover:border-primary-light hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col"
     >
       {/* Thumbnail */}
@@ -118,32 +185,32 @@ function HackathonCard({
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
 
-        {/* Type badge */}
-        <span
-          className={`absolute top-3 left-3 text-xs font-semibold px-2 py-1 rounded-full ${TYPE_COLORS[hackathon.type]}`}
-        >
-          {TYPE_LABELS[hackathon.type]}
-        </span>
+        {/* K1: Status badge on top-left overlay */}
+        {statusBadge}
 
-        {/* Active status badge */}
-        {hackathon.status === 'active' && (
-          <span className="absolute top-3 right-12 bg-primary text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-            진행중
-          </span>
-        )}
-
-        {/* Bookmark button */}
+        {/* K2: Compare button — hover on desktop, always visible on touch */}
         <button
           onClick={(e) => {
             e.preventDefault();
-            onToggleBookmark(hackathon.slug);
+            onToggleCompare(hackathon.slug);
           }}
+          className={`absolute bottom-2 right-2 text-xs font-medium px-2 py-1 rounded-lg transition-all ${
+            compareSelected
+              ? 'bg-primary text-text-on-primary opacity-100'
+              : 'bg-white/80 text-text-primary hover:bg-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+          }`}
+        >
+          {compareSelected ? '비교 제거' : '비교에 추가'}
+        </button>
+
+        {/* Bookmark button */}
+        <button
+          onClick={handleBookmark}
           className="absolute top-2 right-2 p-1.5 rounded-full bg-white/20 hover:bg-white/40 transition-colors"
           aria-label={bookmarked ? '북마크 제거' : '북마크 추가'}
         >
           {bookmarked ? (
-            <BookmarkCheck className="w-4 h-4 text-yellow-400" />
+            <BookmarkCheck className="w-4 h-4 fill-current text-primary" />
           ) : (
             <Bookmark className="w-4 h-4 text-white" />
           )}
@@ -152,6 +219,21 @@ function HackathonCard({
 
       {/* Card body */}
       <div className="flex flex-col flex-1 p-4 gap-3">
+        {/* D4: Organizer info */}
+        <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+          {hackathon.organizerLogo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={hackathon.organizerLogo}
+              alt={hackathon.organizer}
+              className="w-3.5 h-3.5 rounded-sm object-contain"
+            />
+          ) : (
+            <Building2 className="w-3.5 h-3.5 shrink-0" />
+          )}
+          <span className="truncate">{hackathon.organizer}</span>
+        </div>
+
         <Link href={`/hackathons/${hackathon.slug}`} className="group">
           <h3 className="font-semibold text-text-primary group-hover:text-primary transition-colors line-clamp-1">
             {hackathon.title}
@@ -160,6 +242,14 @@ function HackathonCard({
             {hackathon.description}
           </p>
         </Link>
+
+        {/* K1: Type badge in card body */}
+        <div className="flex items-center gap-1.5">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${TYPE_DOT_COLORS[hackathon.type]}`} />
+          <span className={`text-xs font-medium ${TYPE_COLORS[hackathon.type].split(' ')[1]}`}>
+            {TYPE_LABELS[hackathon.type]}
+          </span>
+        </div>
 
         {/* Tags */}
         {hackathon.tags.length > 0 && (
@@ -192,18 +282,6 @@ function HackathonCard({
           </span>
           <span className="hidden sm:block">{formatDate(hackathon.endDate)} 마감</span>
         </div>
-
-        {/* Compare checkbox */}
-        <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer select-none border-t border-border pt-2 mt-1">
-          <input
-            data-testid="compare-checkbox"
-            type="checkbox"
-            checked={compareSelected}
-            onChange={() => onToggleCompare(hackathon.slug)}
-            className="w-3.5 h-3.5 accent-primary"
-          />
-          비교에 추가
-        </label>
       </div>
     </div>
   );
@@ -398,17 +476,41 @@ function CalendarView({ hackathons }: CalendarViewProps) {
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Main Page (inner — uses useSearchParams) ─────────────────────────────────
 
 type SortKey = 'deadline' | 'newest' | 'participants';
 type ViewMode = 'list' | 'calendar';
+type PeriodFilter = 'all' | 'week' | 'month' | '3months';
 
-export default function HackathonsPage() {
+const PERIOD_LABELS: Record<PeriodFilter, string> = {
+  all: '전체',
+  week: '이번 주',
+  month: '이번 달',
+  '3months': '3개월',
+};
+
+function HackathonsPageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { hackathons, toggleBookmark, isBookmarked, init } = useHackathonStore();
 
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [statusFilter, setStatusFilter] = useState<HackathonStatus | 'all'>('all');
-  const [typeFilter, setTypeFilter] = useState<HackathonType | 'all'>('all');
+  // E3: View state from URL
+  const initialView = (searchParams.get('view') as ViewMode) === 'calendar' ? 'calendar' : 'list';
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView);
+
+  // D1: Multi-select filters
+  const [statusFilters, setStatusFilters] = useState<Set<string>>(
+    // D2: Default to active + upcoming
+    new Set(['active', 'upcoming'])
+  );
+  const [typeFilters, setTypeFilters] = useState<Set<string>>(new Set());
+
+  // D3: Period filter
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
+
+  // D4: Organizer filter
+  const [organizerFilter, setOrganizerFilter] = useState<string>('all');
+
   const [tagSearch, setTagSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('deadline');
   const [compareSet, setCompareSet] = useState<Set<string>>(new Set());
@@ -416,6 +518,40 @@ export default function HackathonsPage() {
   useEffect(() => {
     init();
   }, [init]);
+
+  // E3: Sync view mode to URL
+  function switchView(mode: ViewMode) {
+    setViewMode(mode);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('view', mode);
+    router.replace(`?${params.toString()}`);
+  }
+
+  // D1: Toggle status filter
+  function toggleStatusFilter(key: string) {
+    setStatusFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
+
+  // D1: Toggle type filter
+  function toggleTypeFilter(key: string) {
+    setTypeFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
 
   function toggleCompare(slug: string) {
     setCompareSet((prev) => {
@@ -431,21 +567,43 @@ export default function HackathonsPage() {
   }
 
   function resetFilters() {
-    setStatusFilter('all');
-    setTypeFilter('all');
+    setStatusFilters(new Set(['active', 'upcoming']));
+    setTypeFilters(new Set());
+    setPeriodFilter('all');
+    setOrganizerFilter('all');
     setTagSearch('');
     setSortKey('deadline');
   }
 
+  // D4: Extract unique organizers
+  const organizers = useMemo(() => {
+    const set = new Set(hackathons.map((h) => h.organizer));
+    return Array.from(set).sort();
+  }, [hackathons]);
+
   const filtered = useMemo(() => {
     let list = [...hackathons];
 
-    if (statusFilter !== 'all') {
-      list = list.filter((h) => h.status === statusFilter);
+    // D1: Multi-select status filter
+    if (statusFilters.size > 0) {
+      list = list.filter((h) => statusFilters.has(h.status));
     }
-    if (typeFilter !== 'all') {
-      list = list.filter((h) => h.type === typeFilter);
+
+    // D1: Multi-select type filter
+    if (typeFilters.size > 0) {
+      list = list.filter((h) => typeFilters.has(h.type));
     }
+
+    // D3: Period filter
+    if (periodFilter !== 'all') {
+      list = list.filter((h) => isWithinPeriod(h.endDate, periodFilter));
+    }
+
+    // D4: Organizer filter
+    if (organizerFilter !== 'all') {
+      list = list.filter((h) => h.organizer === organizerFilter);
+    }
+
     if (tagSearch.trim()) {
       const q = tagSearch.trim().toLowerCase();
       list = list.filter(
@@ -466,9 +624,17 @@ export default function HackathonsPage() {
     });
 
     return list;
-  }, [hackathons, statusFilter, typeFilter, tagSearch, sortKey]);
+  }, [hackathons, statusFilters, typeFilters, periodFilter, organizerFilter, tagSearch, sortKey]);
 
-  const hasActiveFilters = statusFilter !== 'all' || typeFilter !== 'all' || tagSearch.trim() !== '';
+  const hasActiveFilters =
+    statusFilters.size !== 2 ||
+    !statusFilters.has('active') ||
+    !statusFilters.has('upcoming') ||
+    typeFilters.size > 0 ||
+    periodFilter !== 'all' ||
+    organizerFilter !== 'all' ||
+    tagSearch.trim() !== '';
+
   const compareArray = Array.from(compareSet);
 
   return (
@@ -491,7 +657,7 @@ export default function HackathonsPage() {
           <div className="flex items-center gap-1 bg-surface border border-border rounded-lg p-1">
             <button
               data-testid="view-toggle-list"
-              onClick={() => setViewMode('list')}
+              onClick={() => switchView('list')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 viewMode === 'list'
                   ? 'bg-primary text-white'
@@ -504,7 +670,7 @@ export default function HackathonsPage() {
             </button>
             <button
               data-testid="view-toggle-calendar"
-              onClick={() => setViewMode('calendar')}
+              onClick={() => switchView('calendar')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 viewMode === 'calendar'
                   ? 'bg-primary text-white'
@@ -520,64 +686,10 @@ export default function HackathonsPage() {
 
         {/* Filters panel */}
         <div className="bg-surface border border-border rounded-xl shadow-sm p-4 mb-6 flex flex-col gap-4">
-          {/* Status */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-medium text-text-secondary flex items-center gap-1 mr-1 shrink-0">
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              상태
-            </span>
-            {(
-              [
-                { key: 'all', label: '전체', testId: 'filter-status-all' },
-                { key: 'active', label: '진행중', testId: 'filter-status-active' },
-                { key: 'upcoming', label: '예정', testId: 'filter-status-upcoming' },
-                { key: 'ended', label: '종료', testId: 'filter-status-ended' },
-              ] as const
-            ).map(({ key, label, testId }) => (
-              <button
-                key={key}
-                data-testid={testId}
-                onClick={() => setStatusFilter(key)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  statusFilter === key
-                    ? 'bg-primary text-white'
-                    : 'bg-background text-text-secondary hover:text-text-primary hover:bg-primary-light'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
 
-          {/* Type + Tag search */}
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-medium text-text-secondary flex items-center gap-1 shrink-0">
-                <Tag className="w-3.5 h-3.5" />
-                유형
-              </span>
-              {(
-                [
-                  { key: 'all', label: '전체' },
-                  { key: 'quantitative', label: '정량' },
-                  { key: 'qualitative', label: '정성' },
-                  { key: 'hybrid', label: '혼합' },
-                ] as const
-              ).map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setTypeFilter(key)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    typeFilter === key
-                      ? 'bg-primary text-white'
-                      : 'bg-background text-text-secondary hover:text-text-primary hover:bg-primary-light'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
+          {/* D5: Top row — Search (left) + Sort (right) */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Search input — leftmost */}
             <div className="relative flex-1 min-w-[200px]">
               <Search className="w-4 h-4 text-text-secondary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
@@ -585,7 +697,7 @@ export default function HackathonsPage() {
                 placeholder="태그 또는 제목 검색..."
                 value={tagSearch}
                 onChange={(e) => setTagSearch(e.target.value)}
-                className="bg-surface border border-border rounded-lg pl-9 pr-9 py-2 text-sm w-full focus:ring-2 focus:ring-primary-light focus:border-primary focus:outline-none text-text-primary placeholder:text-text-secondary"
+                className="bg-background border border-border rounded-lg pl-9 pr-9 py-2 text-sm w-full focus:ring-2 focus:ring-primary-light focus:border-primary focus:outline-none text-text-primary placeholder:text-text-secondary"
               />
               {tagSearch && (
                 <button
@@ -597,52 +709,155 @@ export default function HackathonsPage() {
                 </button>
               )}
             </div>
+
+            {/* K2: Compare counter badge */}
+            {compareSet.size > 0 && (
+              <Link
+                href={`/compare?slugs=${compareArray.join(',')}`}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-text-on-primary text-sm font-semibold hover:bg-primary/90 transition-colors shrink-0"
+              >
+                <GitCompare className="w-4 h-4" />
+                비교하기({compareSet.size})
+              </Link>
+            )}
+
+            {/* Sort dropdown — rightmost */}
+            <div className="ml-auto flex items-center gap-2 shrink-0">
+              <span className="text-xs font-medium text-text-secondary hidden sm:block">정렬</span>
+              <div className="flex items-center gap-1">
+                <button
+                  data-testid="sort-deadline"
+                  onClick={() => setSortKey('deadline')}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    sortKey === 'deadline'
+                      ? 'bg-primary text-text-on-primary'
+                      : 'bg-background text-text-secondary hover:bg-interactive-hover'
+                  }`}
+                >
+                  마감임박
+                </button>
+                <button
+                  data-testid="sort-newest"
+                  onClick={() => setSortKey('newest')}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    sortKey === 'newest'
+                      ? 'bg-primary text-text-on-primary'
+                      : 'bg-background text-text-secondary hover:bg-interactive-hover'
+                  }`}
+                >
+                  최신순
+                </button>
+                <button
+                  data-testid="sort-participants"
+                  onClick={() => setSortKey('participants')}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    sortKey === 'participants'
+                      ? 'bg-primary text-text-on-primary'
+                      : 'bg-background text-text-secondary hover:bg-interactive-hover'
+                  }`}
+                >
+                  참가자순
+                </button>
+              </div>
+            </div>
           </div>
 
-          {/* Sort */}
-          <div className="flex items-center gap-2 flex-wrap border-t border-border pt-3">
-            <span className="text-xs font-medium text-text-secondary shrink-0">정렬</span>
-            <button
-              data-testid="sort-deadline"
-              onClick={() => setSortKey('deadline')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                sortKey === 'deadline'
-                  ? 'bg-primary text-white'
-                  : 'bg-background text-text-secondary hover:text-text-primary hover:bg-primary-light'
-              }`}
-            >
-              마감임박순
-            </button>
-            <button
-              data-testid="sort-newest"
-              onClick={() => setSortKey('newest')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                sortKey === 'newest'
-                  ? 'bg-primary text-white'
-                  : 'bg-background text-text-secondary hover:text-text-primary hover:bg-primary-light'
-              }`}
-            >
-              최신순
-            </button>
-            <button
-              data-testid="sort-participants"
-              onClick={() => setSortKey('participants')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                sortKey === 'participants'
-                  ? 'bg-primary text-white'
-                  : 'bg-background text-text-secondary hover:text-text-primary hover:bg-primary-light'
-              }`}
-            >
-              참가자많은순
-            </button>
+          {/* D1/D2: Status filter chips */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-medium text-text-secondary flex items-center gap-1 mr-1 shrink-0">
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              상태
+            </span>
+            {(
+              [
+                { key: 'active', label: '진행중', testId: 'filter-status-active' },
+                { key: 'upcoming', label: '예정', testId: 'filter-status-upcoming' },
+                { key: 'ended', label: '종료', testId: 'filter-status-ended' },
+              ] as const
+            ).map(({ key, label, testId }) => (
+              <button
+                key={key}
+                data-testid={testId}
+                onClick={() => toggleStatusFilter(key)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  statusFilters.has(key)
+                    ? 'bg-primary text-text-on-primary'
+                    : 'bg-background text-text-secondary hover:bg-interactive-hover'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
+          {/* D1: Type filter chips */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-medium text-text-secondary flex items-center gap-1 shrink-0">
+              <Tag className="w-3.5 h-3.5" />
+              유형
+            </span>
+            {(
+              [
+                { key: 'quantitative', label: '정량' },
+                { key: 'qualitative', label: '정성' },
+                { key: 'hybrid', label: '혼합' },
+              ] as const
+            ).map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => toggleTypeFilter(key)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  typeFilters.has(key)
+                    ? 'bg-primary text-text-on-primary'
+                    : 'bg-background text-text-secondary hover:bg-interactive-hover'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* D3 + D4: Period + Organizer dropdowns */}
+          <div className="flex items-center gap-3 flex-wrap border-t border-border pt-3">
+            {/* D3: Period dropdown */}
+            <div className="relative">
+              <select
+                value={periodFilter}
+                onChange={(e) => setPeriodFilter(e.target.value as PeriodFilter)}
+                className="appearance-none border border-border rounded-lg bg-surface px-3 py-2 pr-8 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary cursor-pointer"
+              >
+                {(Object.keys(PERIOD_LABELS) as PeriodFilter[]).map((key) => (
+                  <option key={key} value={key}>
+                    {PERIOD_LABELS[key]}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-text-secondary absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            {/* D4: Organizer dropdown */}
+            <div className="relative">
+              <select
+                value={organizerFilter}
+                onChange={(e) => setOrganizerFilter(e.target.value)}
+                className="appearance-none border border-border rounded-lg bg-surface px-3 py-2 pr-8 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary cursor-pointer"
+              >
+                <option value="all">전체 주최</option>
+                {organizers.map((org) => (
+                  <option key={org} value={org}>
+                    {org}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-text-secondary absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            {/* Result count + reset */}
             <div className="ml-auto flex items-center gap-3 text-xs text-text-secondary">
-              {hasActiveFilters && (
-                <span>
-                  <span className="font-mono font-semibold text-primary">{filtered.length}</span>
-                  {' '}/ {hackathons.length} 표시중
-                </span>
-              )}
+              <span>
+                <span className="font-mono font-semibold text-primary">{filtered.length}</span>
+                {' '}/ {hackathons.length} 표시중
+              </span>
               {hasActiveFilters && (
                 <button
                   onClick={resetFilters}
@@ -677,7 +892,7 @@ export default function HackathonsPage() {
             </div>
             <button
               onClick={resetFilters}
-              className="mt-2 px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
+              className="mt-2 px-5 py-2.5 bg-primary text-text-on-primary rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
               필터 초기화
             </button>
@@ -698,13 +913,13 @@ export default function HackathonsPage() {
         )}
       </div>
 
-      {/* Floating compare button */}
+      {/* Floating compare button (shown when 2+ selected) */}
       {compareArray.length >= 2 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
           <Link
             data-testid="compare-button"
             href={`/compare?slugs=${compareArray.join(',')}`}
-            className="pointer-events-auto flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-full shadow-xl font-semibold text-sm hover:bg-primary/90 transition-all hover:shadow-2xl hover:scale-105"
+            className="pointer-events-auto flex items-center gap-2 bg-primary text-text-on-primary px-6 py-3 rounded-full shadow-xl font-semibold text-sm hover:bg-primary/90 transition-all hover:shadow-2xl hover:scale-105"
           >
             <GitCompare className="w-4 h-4" />
             {compareArray.length}개 해커톤 비교하기
@@ -712,5 +927,15 @@ export default function HackathonsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// ─── Main Page (exported — wraps inner in Suspense for useSearchParams) ───────
+
+export default function HackathonsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <HackathonsPageInner />
+    </Suspense>
   );
 }
