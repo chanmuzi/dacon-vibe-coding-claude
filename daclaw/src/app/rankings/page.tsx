@@ -62,9 +62,9 @@ const BADGE_MAP = Object.fromEntries(seedBadges.map((b) => [b.id, b]));
 // ─── Rank Indicator ───────────────────────────────────────────────────────────
 
 function RankIndicator({ rank }: { rank: number }) {
-  if (rank === 1) return <Trophy size={20} className="text-warning" />;
-  if (rank === 2) return <Medal size={20} className="text-text-secondary" />;
-  if (rank === 3) return <Trophy size={18} className="text-warning" />;
+  if (rank === 1) return <Trophy size={20} style={{ color: '#D4A017' }} />;
+  if (rank === 2) return <Medal size={20} style={{ color: '#7C8A96' }} />;
+  if (rank === 3) return <Medal size={18} style={{ color: '#B87333' }} />;
   return (
     <span className="font-mono text-sm font-semibold text-text-secondary w-8 text-center inline-block">
       {rank}
@@ -88,16 +88,16 @@ function RankingRow({ rank, entry, tab }: RowProps) {
     rank === 1
       ? 'bg-warning-light border-warning/20'
       : rank === 2
-      ? 'bg-background border-border'
+      ? 'bg-info-light/50 border-info/10'
       : rank === 3
-      ? 'bg-warning-light/50 border-warning/10'
+      ? 'bg-warning-light/30 border-warning/10'
       : 'bg-surface border-border';
 
   const scoreColor =
     rank === 1
       ? 'text-warning'
       : rank === 2
-      ? 'text-text-secondary'
+      ? 'text-info'
       : rank === 3
       ? 'text-warning'
       : 'text-primary';
