@@ -120,7 +120,7 @@ px-6 py-3 rounded-lg bg-primary text-text-on-primary font-medium hover:bg-primar
 px-6 py-3 rounded-lg border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-colors
 
 <!-- Filter chip (active) -->
-px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-white
+px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-text-on-primary
 
 <!-- Filter chip (inactive) -->
 px-3 py-1.5 rounded-lg text-sm font-medium bg-background text-text-secondary hover:text-text-primary hover:bg-primary-light
@@ -147,7 +147,7 @@ text-xs font-semibold px-2 py-1 rounded-full bg-type-quantitative-light text-typ
 text-xs bg-primary-light text-primary px-2 py-0.5 rounded-full
 
 <!-- Status badge (active) -->
-bg-primary text-white text-xs font-semibold px-2 py-1 rounded-full
+bg-primary text-text-on-primary text-xs font-semibold px-2 py-1 rounded-full
 ```
 
 ### 5.4 Input
@@ -171,7 +171,8 @@ focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary tr
 
 ## 6. Icons
 
-**Lucide React만 사용합니다. Emoji를 아이콘으로 사용하지 마세요.**
+**UI 컴포넌트에서는 Lucide React 아이콘만 사용합니다. Emoji를 아이콘으로 사용하지 마세요.**
+브랜딩 자산(파비콘, 앱 아이콘 등)은 예외로 Emoji 사용을 허용합니다.
 
 ```tsx
 import { Trophy, Users, BarChart3 } from 'lucide-react';

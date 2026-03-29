@@ -24,7 +24,7 @@ dacon-vibe-coding-claude/        ← git root
 
 ### 핵심 규칙
 - 색상은 `daclaw/src/app/globals.css`의 `@theme` 토큰만 사용 (하드코딩 Tailwind 색상 금지)
-- 아이콘은 Lucide React만 사용 (Emoji를 아이콘으로 사용 금지)
+- 아이콘은 Lucide React만 사용 (UI 컴포넌트에서 Emoji 아이콘 금지, 파비콘/브랜딩은 예외)
 - 새 색상이 필요하면 `globals.css`에 토큰을 추가한 뒤 사용
 - 컴포넌트 패턴(Card, Badge, Button 등)은 디자인 시스템 문서의 규격을 따름
 
