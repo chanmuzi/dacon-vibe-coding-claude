@@ -13,25 +13,36 @@ function getAnswer(question: string, hackathons: ReturnType<typeof useHackathonS
   const q = question.toLowerCase();
 
   if (/상금|prize|시상|award/.test(q)) {
-    const lines = hackathons.slice(0, 3).map((h) => {
-      const top = h.prizes[0];
-      return `• ${h.title}: ${top ? `1위 ${top.amount}` : '미정'}`;
-    });
-    return `현재 진행 중인 대회 상금 정보:\n${lines.join('\n')}`;
+    const lines = hackathons
+      .filter((h) => h.status === 'active')
+      .slice(0, 3)
+      .map((h) => {
+        const top = h.prizes[0];
+        return `• ${h.title}: ${top ? `1위 ${top.amount}` : '미정'}`;
+      });
+    return lines.length > 0
+      ? `현재 진행 중인 대회 상금 정보:\n${lines.join('\n')}`
+      : '현재 진행 중인 대회가 없습니다.';
   }
 
   if (/일정|마감|deadline|날짜|기간|시작|종료/.test(q)) {
-    const lines = hackathons.slice(0, 3).map((h) =>
-      `• ${h.title}: ${h.startDate} ~ ${h.endDate}`
-    );
-    return `대회 일정 정보:\n${lines.join('\n')}`;
+    const lines = hackathons
+      .filter((h) => h.status === 'active')
+      .slice(0, 3)
+      .map((h) => `• ${h.title}: ${h.startDate} ~ ${h.endDate}`);
+    return lines.length > 0
+      ? `대회 일정 정보:\n${lines.join('\n')}`
+      : '현재 진행 중인 대회가 없습니다.';
   }
 
   if (/팀|team|멤버|member|모집|recruit/.test(q)) {
-    const lines = hackathons.slice(0, 3).map((h) =>
-      `• ${h.title}: 최대 ${h.teamPolicy.maxMembers}명${h.teamPolicy.solo ? ', 개인 참가 가능' : ''}`
-    );
-    return `팀 구성 정보:\n${lines.join('\n')}`;
+    const lines = hackathons
+      .filter((h) => h.status === 'active')
+      .slice(0, 3)
+      .map((h) => `• ${h.title}: 최대 ${h.teamPolicy.maxMembers}명${h.teamPolicy.solo ? ', 개인 참가 가능' : ''}`);
+    return lines.length > 0
+      ? `팀 구성 정보:\n${lines.join('\n')}`
+      : '현재 진행 중인 대회가 없습니다.';
   }
 
   if (/제출|submit|submission|파일|upload/.test(q)) {

@@ -42,7 +42,6 @@ const TYPE_OPTIONS: { type: HackathonType; testId: string; label: string; desc: 
   },
 ];
 
-const ROLE_OPTIONS = ['developer', 'designer', 'planner', 'data-scientist'] as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

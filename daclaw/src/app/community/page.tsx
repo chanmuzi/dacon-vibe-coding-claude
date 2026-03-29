@@ -5,7 +5,7 @@ import { useCommunityStore } from '@/store/community';
 import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
 import {
-  MessageSquare, ThumbsUp, Plus, X, Send, Filter, ChevronDown, HelpCircle, Lightbulb, Users, MessageCircle,
+  MessageSquare, ThumbsUp, Plus, X, Send, ChevronDown, HelpCircle, Lightbulb, Users, MessageCircle,
 } from 'lucide-react';
 import type { CommunityPost } from '@/types';
 

@@ -9,7 +9,7 @@ interface MissionState {
   missions: DailyMission[];
   initialized: boolean;
   init: () => void;
-  toggleMission: (id: string) => void;
+  toggleMission: (id: string, onComplete?: (points: number) => void) => void;
 }
 
 export const useMissionStore = create<MissionState>((set, get) => ({
@@ -27,11 +27,17 @@ export const useMissionStore = create<MissionState>((set, get) => ({
     }
   },
 
-  toggleMission: (id) => {
+  toggleMission: (id, onComplete?: (points: number) => void) => {
+    const target = get().missions.find((m) => m.id === id);
+    if (!target) return;
+    const wasCompleted = target.completed;
     const missions = get().missions.map((m) =>
       m.id === id ? { ...m, completed: !m.completed } : m
     );
     setItem('missions', missions);
     set({ missions });
+    if (!wasCompleted && onComplete) {
+      onComplete(target.points);
+    }
   },
 }));

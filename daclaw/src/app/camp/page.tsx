@@ -6,7 +6,7 @@ import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
 import { useMessageStore } from '@/store/message';
 import {
-  Users, Plus, Sparkles, Send, X, Filter, ChevronDown, Search, UserPlus, CheckCircle2,
+  Users, Plus, Sparkles, Send, X, Filter, ChevronDown, UserPlus, CheckCircle2,
 } from 'lucide-react';
 import type { Team, Role } from '@/types';
 
@@ -80,6 +80,7 @@ export default function CampPage() {
   function handleSendDM() {
     if (!dmMessage.trim() || !applyTeam) return;
     const leader = applyTeam.members[0];
+    if (!leader) return;
     addMessage({
       id: `msg-${Date.now()}`,
       from: user?.id ?? 'anonymous',

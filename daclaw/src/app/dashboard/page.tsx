@@ -375,10 +375,15 @@ function SubmissionChart() {
   const { submissions } = useSubmissionStore();
   const { user } = useUserStore();
 
+  const { teams } = useTeamStore();
+
   const chartData = useMemo(() => {
     if (!user) return [];
+    const myTeamIds = new Set(
+      teams.filter((t) => t.members.some((m) => m.userId === user.id)).map((t) => t.id)
+    );
     const userSubs = submissions
-      .filter((s) => s.score !== undefined && s.score !== null)
+      .filter((s) => s.score !== undefined && s.score !== null && (myTeamIds.has(s.teamId) || s.teamId === `solo-${user.id}`))
       .slice()
       .sort((a, b) => a.version - b.version)
       .map((s) => ({
@@ -387,7 +392,7 @@ function SubmissionChart() {
         hackathon: s.hackathonSlug,
       }));
     return userSubs;
-  }, [submissions, user]);
+  }, [submissions, user, teams]);
 
   return (
     <SectionCard

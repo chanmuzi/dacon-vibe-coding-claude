@@ -77,23 +77,6 @@ function CompareTable({ selected }: TableProps) {
   const filled = selected.filter(Boolean) as Hackathon[];
   if (filled.length === 0) return null;
 
-  const cols = selected.length;
-
-  function cell(h: Hackathon | undefined, render: (h: Hackathon) => React.ReactNode) {
-    if (!h) {
-      return (
-        <td className="px-4 py-4 text-center text-text-secondary text-sm border border-border bg-background/40">
-          —
-        </td>
-      );
-    }
-    return (
-      <td className="px-4 py-4 text-center border border-border bg-surface">
-        {render(h)}
-      </td>
-    );
-  }
-
   const rows: { label: string; icon: React.ReactNode; render: (h: Hackathon) => React.ReactNode }[] = [
     {
       label: '제목',
@@ -221,7 +204,7 @@ function CompareTable({ selected }: TableProps) {
               <th
                 key={i}
                 className="px-4 py-3 bg-primary text-white border border-primary text-center text-xs font-semibold"
-                style={{ width: `${(100 - 20) / cols}%` }}
+                style={{ width: `${(100 - 20) / selected.length}%` }}
               >
                 {h ? h.title : <span className="text-primary-light font-normal">선택 안 됨</span>}
               </th>

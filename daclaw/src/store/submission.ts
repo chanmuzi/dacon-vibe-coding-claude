@@ -42,13 +42,17 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
 
   updateLeaderboard: (slug, teamId, teamName, score) => {
     const lbs = [...get().leaderboards];
-    const idx = lbs.findIndex((l) => l.hackathonSlug === slug);
-    if (idx === -1) return;
+    let idx = lbs.findIndex((l) => l.hackathonSlug === slug);
+    if (idx === -1) {
+      lbs.push({ hackathonSlug: slug, entries: [], status: 'live' });
+      idx = lbs.length - 1;
+    }
     const lb = { ...lbs[idx] };
     const entries = [...lb.entries];
     const eIdx = entries.findIndex((e) => e.teamId === teamId);
     if (eIdx >= 0) {
-      entries[eIdx] = { ...entries[eIdx], score, submissionCount: entries[eIdx].submissionCount + 1, lastSubmittedAt: new Date().toISOString() };
+      const bestScore = Math.max(entries[eIdx].score, score);
+      entries[eIdx] = { ...entries[eIdx], score: bestScore, submissionCount: entries[eIdx].submissionCount + 1, lastSubmittedAt: new Date().toISOString() };
     } else {
       entries.push({ teamId, teamName, score, rank: entries.length + 1, submissionCount: 1, lastSubmittedAt: new Date().toISOString() });
     }

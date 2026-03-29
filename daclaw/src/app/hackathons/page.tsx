@@ -420,8 +420,12 @@ export default function HackathonsPage() {
   function toggleCompare(slug: string) {
     setCompareSet((prev) => {
       const next = new Set(prev);
-      if (next.has(slug)) next.delete(slug);
-      else next.add(slug);
+      if (next.has(slug)) {
+        next.delete(slug);
+      } else {
+        if (next.size >= 3) return prev;
+        next.add(slug);
+      }
       return next;
     });
   }
