@@ -8,9 +8,6 @@
       "Bash(npm run lint*)",
       "Bash(npm run test*)",
       "Bash(npx next*)",
-      "Bash(npx playwright *)",
-      "Bash(npx playwright test*)",
-      "Bash(npx playwright install*)",
       "Bash(dev-browser *)",
       "Bash(npx dev-browser *)",
       "Bash(curl -s http://localhost:3000*)",
@@ -27,6 +24,8 @@
     ]
   },
   "enabledPlugins": {
-    "playwright@claude-plugins-official": true
+    "playwright@claude-plugins-official": false,
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true,
+    "frontend-design@claude-plugins-official": true
   }
 }
