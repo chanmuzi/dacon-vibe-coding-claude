@@ -30,7 +30,7 @@ const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
   free: { label: '자유', cls: 'bg-background text-text-secondary' },
 };
 
-function UserAvatar({ nickname }: { nickname: string }) {
+function InitialAvatar({ nickname }: { nickname: string }) {
   const initials = nickname.slice(0, 2).toUpperCase();
   return (
     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary-light text-primary text-xs font-bold select-none">
@@ -199,7 +199,7 @@ export default function CommunityPostDetailPage() {
               {post.title}
             </h1>
             <div className="flex items-center gap-3 mt-3">
-              <UserAvatar nickname={post.authorNickname} />
+              <InitialAvatar nickname={post.authorNickname} />
               <div className="flex items-center gap-2 text-sm text-text-secondary">
                 <AuthorPopover authorId={post.authorId} nickname={post.authorNickname} />
                 <span>·</span>
@@ -374,7 +374,7 @@ export default function CommunityPostDetailPage() {
             {post.comments.map((c) => (
               <div key={c.id} className="bg-background rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <UserAvatar nickname={c.authorNickname} />
+                  <InitialAvatar nickname={c.authorNickname} />
                   <span className="text-sm font-medium text-text-primary">{c.authorNickname}</span>
                   <span className="text-xs text-text-secondary">{c.createdAt}</span>
                 </div>

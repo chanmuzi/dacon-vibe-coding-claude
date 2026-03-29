@@ -344,7 +344,7 @@ export default function CreatePage() {
       isCustom: true,
       creatorId: user?.id,
       organizer: user?.nickname ?? '',
-      color: '#6366F1',
+      color: '#0049DB',
     };
 
     addHackathon(hackathon);

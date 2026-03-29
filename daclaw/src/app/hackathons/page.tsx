@@ -188,22 +188,20 @@ function HackathonCard({
         {/* K1: Status badge on top-left overlay */}
         {statusBadge}
 
-        {/* K2: Compare button — visible only on hover */}
-        {hovered && (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              onToggleCompare(hackathon.slug);
-            }}
-            className={`absolute bottom-2 right-2 text-xs font-medium px-2 py-1 rounded-lg transition-colors ${
-              compareSelected
-                ? 'bg-primary text-text-on-primary'
-                : 'bg-white/80 text-text-primary hover:bg-white'
-            }`}
-          >
-            {compareSelected ? '비교 제거' : '비교에 추가'}
-          </button>
-        )}
+        {/* K2: Compare button — hover on desktop, always visible on touch */}
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            onToggleCompare(hackathon.slug);
+          }}
+          className={`absolute bottom-2 right-2 text-xs font-medium px-2 py-1 rounded-lg transition-all ${
+            compareSelected
+              ? 'bg-primary text-text-on-primary opacity-100'
+              : 'bg-white/80 text-text-primary hover:bg-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+          }`}
+        >
+          {compareSelected ? '비교 제거' : '비교에 추가'}
+        </button>
 
         {/* Bookmark button */}
         <button

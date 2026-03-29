@@ -38,7 +38,7 @@ export const useUserStore = create<UserState>((set, get) => ({
   },
 
   login: (nickname, password) => {
-    // Check registered accounts in localStorage
+    // ⚠️ Mock auth only — plaintext password in localStorage (no server, demo purpose only)
     const accounts = getItem<Record<string, UserProfile>>('daclaw_accounts') ?? {};
     const account = Object.values(accounts).find(
       (a) => a.nickname === nickname || a.email === nickname

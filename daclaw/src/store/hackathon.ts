@@ -49,23 +49,19 @@ export const useHackathonStore = create<HackathonState>((set, get) => ({
     setItem('bookmarks', updated);
     set({ bookmarks: updated });
 
-    // A5: 북마크 추가 시 관련 미션 자동 완료
+    // A5: 북마크 추가 시 관련 미션 자동 완료 (mission-3 = "해커톤 1개 북마크하기")
     if (!exists) {
-      try {
-        const { useMissionStore } = require('@/store/mission');
-        const { useUserStore } = require('@/store/user');
-        const missionState = useMissionStore.getState();
-        const bookmarkMission = missionState.missions.find(
-          (m: { title: string; completed: boolean }) => m.title.includes('북마크') && !m.completed
-        );
-        if (bookmarkMission) {
-          missionState.toggleMission(bookmarkMission.id, (points: number) => {
-            useUserStore.getState().addPoints(points);
-          });
-        }
-      } catch {
-        // Mission store not yet initialized
-      }
+      setTimeout(() => {
+        try {
+          const missionStore = require('@/store/mission').useMissionStore;
+          const userStore = require('@/store/user').useUserStore;
+          const ms = missionStore.getState();
+          const target = ms.missions.find((m: { id: string; completed: boolean }) => m.id === 'mission-3' && !m.completed);
+          if (target) {
+            ms.toggleMission(target.id, (pts: number) => userStore.getState().addPoints(pts));
+          }
+        } catch { /* store not ready */ }
+      }, 0);
     }
   },
 
