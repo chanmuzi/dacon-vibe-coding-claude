@@ -21,6 +21,9 @@ export interface Hackathon {
   milestones: Milestone[];
   isCustom?: boolean;
   creatorId?: string;
+  organizer: string;
+  organizerLogo?: string;
+  color: string;
 }
 
 export interface Prize {
@@ -53,12 +56,17 @@ export interface Team {
   id: string;
   name: string;
   description: string;
-  hackathonSlug: string;
+  hackathonSlugs: string[];
   members: TeamMember[];
   maxMembers: number;
   recruitRoles: Role[];
   recruitStatus: 'open' | 'closed';
   createdAt: string;
+  requirements?: string;
+  techStack?: string[];
+  teamScore?: number;
+  hackathonCount?: number;
+  submissionCount?: number;
 }
 
 export interface TeamMember {
@@ -73,11 +81,13 @@ export interface UserProfile {
   id: string;
   nickname: string;
   email: string;
+  password?: string;
   role: Role;
   techStack: string[];
   interests: string[];
   grade: Grade;
   badges: string[];
+  selectedBadges?: string[];
   points: number;
   joinedAt: string;
   loginStreak: number;
@@ -148,7 +158,7 @@ export interface Message {
   from: string;
   to: string;
   content: string;
-  type: 'dm' | 'team-request';
+  type: 'dm' | 'team-request' | 'announcement';
   teamId?: string;
   read: boolean;
   createdAt: string;
@@ -166,6 +176,8 @@ export interface CommunityPost {
   likedBy: string[];
   comments: Comment[];
   createdAt: string;
+  thumbnailUrl?: string;
+  summary?: string;
 }
 
 export interface Comment {

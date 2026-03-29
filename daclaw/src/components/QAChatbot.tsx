@@ -99,8 +99,10 @@ export default function QAChatbot() {
     setInput('');
   };
 
+  const [isComposing, setIsComposing] = useState(false);
+
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') send();
+    if (e.key === 'Enter' && !isComposing) send();
   };
 
   return (
@@ -156,6 +158,8 @@ export default function QAChatbot() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKey}
+              onCompositionStart={() => setIsComposing(true)}
+              onCompositionEnd={() => setIsComposing(false)}
               placeholder="질문을 입력하세요..."
               className="flex-1 bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition-shadow"
             />

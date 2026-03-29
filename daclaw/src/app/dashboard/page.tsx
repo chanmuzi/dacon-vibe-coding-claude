@@ -557,7 +557,7 @@ function TeamMemberships() {
               >
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-text-primary truncate">{team.name}</div>
-                  <div className="text-xs text-text-secondary mt-0.5">{team.hackathonSlug}</div>
+                  <div className="text-xs text-text-secondary mt-0.5">{team.hackathonSlugs.join(', ') || '미정'}</div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-xs text-text-secondary font-mono">

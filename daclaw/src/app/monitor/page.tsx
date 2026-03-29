@@ -299,7 +299,9 @@ export default function MonitorPage() {
   const teamsBySlug = useMemo(() => {
     const map: Record<string, number> = {};
     for (const t of teams) {
-      map[t.hackathonSlug] = (map[t.hackathonSlug] ?? 0) + 1;
+      for (const slug of t.hackathonSlugs) {
+        map[slug] = (map[slug] ?? 0) + 1;
+      }
     }
     return map;
   }, [teams]);

@@ -343,6 +343,8 @@ export default function CreatePage() {
       milestones: [],
       isCustom: true,
       creatorId: user?.id,
+      organizer: user?.nickname ?? '',
+      color: '#6366F1',
     };
 
     addHackathon(hackathon);

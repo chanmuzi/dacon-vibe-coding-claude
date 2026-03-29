@@ -38,11 +38,11 @@ export default function CampPage() {
   const [applyTeam, setApplyTeam] = useState<Team | null>(null);
   const [dmMessage, setDmMessage] = useState('');
   const [toast, setToast] = useState('');
-  const [createForm, setCreateForm] = useState({ name: '', description: '', hackathonSlug: '', roles: [] as Role[], maxMembers: 4 });
+  const [createForm, setCreateForm] = useState({ name: '', description: '', hackathonSlug: '' /* used as single-select, stored as array */, roles: [] as Role[], maxMembers: 4 });
 
   const filtered = useMemo(() => {
     let result = teams;
-    if (hackFilter !== 'all') result = result.filter((t) => t.hackathonSlug === hackFilter);
+    if (hackFilter !== 'all') result = result.filter((t) => t.hackathonSlugs.includes(hackFilter));
     if (roleFilter !== 'all') result = result.filter((t) => t.recruitRoles.includes(roleFilter));
     return result;
   }, [teams, hackFilter, roleFilter]);
@@ -50,7 +50,7 @@ export default function CampPage() {
   const recommendations = useMemo(() => {
     const openTeams = teams.filter((t) => t.recruitStatus === 'open');
     return openTeams.map((t) => {
-      const hack = hackathons.find((h) => h.slug === t.hackathonSlug);
+      const hack = hackathons.find((h) => t.hackathonSlugs.includes(h.slug));
       const rate = isLoggedIn && user
         ? calcMatchRate(t, user.role, user.techStack, hack?.tags ?? [])
         : Math.round(50 + Math.random() * 30);
@@ -65,7 +65,7 @@ export default function CampPage() {
       id: `team-${Date.now()}`,
       name: createForm.name,
       description: createForm.description,
-      hackathonSlug: createForm.hackathonSlug,
+      hackathonSlugs: [createForm.hackathonSlug],
       members: [{ userId: user.id, nickname: user.nickname, role: user.role }],
       maxMembers: createForm.maxMembers,
       recruitRoles: createForm.roles,
@@ -173,7 +173,7 @@ export default function CampPage() {
                 조건에 맞는 팀이 없습니다.
               </div>
             ) : filtered.map((team) => {
-              const hack = hackathons.find((h) => h.slug === team.hackathonSlug);
+              const hack = hackathons.find((h) => team.hackathonSlugs.includes(h.slug));
               return (
                 <div key={team.id} data-testid="team-card" className="bg-surface border border-border rounded-xl p-5 hover:border-primary-light hover:shadow-md transition-all">
                   <div className="flex items-start justify-between">
@@ -186,7 +186,7 @@ export default function CampPage() {
                       </div>
                       <p className="text-sm text-text-secondary mb-3">{team.description}</p>
                       <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary">
-                        <span className="bg-primary-light text-primary px-2 py-0.5 rounded-full font-medium">{hack?.title ?? team.hackathonSlug}</span>
+                        <span className="bg-primary-light text-primary px-2 py-0.5 rounded-full font-medium">{hack?.title ?? team.hackathonSlugs[0] ?? '미정'}</span>
                         <span className="flex items-center gap-1"><Users size={12} /> {team.members.length}/{team.maxMembers}명</span>
                         {team.recruitRoles.length > 0 && (
                           <span>모집: {team.recruitRoles.map((r) => ROLE_LABELS[r]).join(', ')}</span>
