@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Fuse from 'fuse.js';
 import { Search, X, Trophy, Users, MessageSquare } from 'lucide-react';
@@ -23,71 +23,67 @@ interface GlobalSearchProps {
 export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const hackathons = useHackathonStore((s) => s.hackathons);
   const teams = useTeamStore((s) => s.teams);
   const posts = useCommunityStore((s) => s.posts);
 
-  const search = useCallback(
-    (q: string) => {
-      if (!q.trim()) {
-        setResults([]);
-        return;
-      }
+  // Reset query when modal opens (setState during render on prop change — React 19 pattern)
+  const [prevIsOpen, setPrevIsOpen] = useState(false);
+  if (isOpen && !prevIsOpen) {
+    setQuery('');
+  }
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+  }
 
-      const hackathonItems = hackathons.map((h) => ({
-        category: '해커톤' as const,
-        title: h.title,
-        description: h.description.slice(0, 80),
-        href: `/hackathons/${h.slug}`,
-        _search: `${h.title} ${h.description} ${h.tags.join(' ')}`,
-      }));
+  // Derive results from query via useMemo (no setState in effect needed)
+  const results = useMemo<SearchResult[]>(() => {
+    if (!query.trim()) return [];
 
-      const teamItems = teams.map((t) => ({
-        category: '팀' as const,
-        title: t.name,
-        description: t.description.slice(0, 80),
-        href: t.hackathonSlugs?.length > 0 ? `/hackathons/${t.hackathonSlugs[0]}` : '/camp',
-        _search: `${t.name} ${t.description}`,
-      }));
+    const hackathonItems = hackathons.map((h) => ({
+      category: '해커톤' as const,
+      title: h.title,
+      description: h.description.slice(0, 80),
+      href: `/hackathons/${h.slug}`,
+      _search: `${h.title} ${h.description} ${h.tags.join(' ')}`,
+    }));
 
-      const postItems = posts.map((p) => ({
-        category: '커뮤니티' as const,
-        title: p.title,
-        description: p.content.slice(0, 80),
-        href: `/community`,
-        _search: `${p.title} ${p.content}`,
-      }));
+    const teamItems = teams.map((t) => ({
+      category: '팀' as const,
+      title: t.name,
+      description: t.description.slice(0, 80),
+      href: `/teams/${t.id}`,
+      _search: `${t.name} ${t.description}`,
+    }));
 
-      const allItems = [...hackathonItems, ...teamItems, ...postItems];
+    const postItems = posts.map((p) => ({
+      category: '커뮤니티' as const,
+      title: p.title,
+      description: p.content.slice(0, 80),
+      href: `/community/${p.id}`,
+      _search: `${p.title} ${p.content}`,
+    }));
 
-      const fuse = new Fuse(allItems, {
-        keys: ['_search'],
-        threshold: 0.4,
-        includeScore: true,
-      });
+    const allItems = [...hackathonItems, ...teamItems, ...postItems];
 
-      const fuseResults = fuse.search(q).slice(0, 12);
-      setResults(fuseResults.map((r) => ({
-        category: r.item.category,
-        title: r.item.title,
-        description: r.item.description,
-        href: r.item.href,
-      })));
-    },
-    [hackathons, teams, posts]
-  );
+    const fuse = new Fuse(allItems, {
+      keys: ['_search'],
+      threshold: 0.4,
+      includeScore: true,
+    });
 
-  useEffect(() => {
-    search(query);
-  }, [query, search]);
+    return fuse.search(query).slice(0, 12).map((r) => ({
+      category: r.item.category,
+      title: r.item.title,
+      description: r.item.description,
+      href: r.item.href,
+    }));
+  }, [query, hackathons, teams, posts]);
 
   useEffect(() => {
     if (isOpen) {
-      setQuery('');
-      setResults([]);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);
@@ -197,7 +193,6 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
         {/* Footer hint */}
         <div className="px-4 py-2 border-t border-border text-xs text-text-secondary flex gap-3">
           <span>ESC 닫기</span>
-          <span>Enter 이동</span>
         </div>
       </div>
     </div>

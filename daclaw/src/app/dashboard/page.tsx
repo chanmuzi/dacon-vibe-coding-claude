@@ -490,9 +490,10 @@ function DailyMissions() {
 
   function handleToggle(id: string, points: number, completed: boolean) {
     if (!completed) {
-      addPoints(points);
+      toggleMission(id, (pts) => addPoints(pts));
+    } else {
+      toggleMission(id);
     }
-    toggleMission(id);
   }
 
   const completedCount = missions.filter((m) => m.completed).length;

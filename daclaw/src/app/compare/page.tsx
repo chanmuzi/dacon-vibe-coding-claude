@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { GitCompare, ChevronDown, X, Trophy, Users, Calendar, Tag, Award, CheckCircle2 } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathon';
@@ -239,19 +239,27 @@ function CompareInner() {
   const searchParams = useSearchParams();
   const { hackathons, init } = useHackathonStore();
 
-  const [slugs, setSlugs] = useState<[string, string, string]>(['', '', '']);
+  const initialSlugs = useMemo<[string, string, string]>(() => {
+    const param = searchParams.get('slugs');
+    if (param) {
+      const parts = param.split(',').slice(0, 3);
+      return [parts[0] ?? '', parts[1] ?? '', parts[2] ?? ''];
+    }
+    return ['', '', ''];
+  }, [searchParams]);
+
+  const [slugs, setSlugs] = useState<[string, string, string]>(initialSlugs);
 
   useEffect(() => {
     init();
   }, [init]);
 
-  useEffect(() => {
-    const param = searchParams.get('slugs');
-    if (param) {
-      const parts = param.split(',').slice(0, 3);
-      setSlugs([parts[0] ?? '', parts[1] ?? '', parts[2] ?? '']);
-    }
-  }, [searchParams]);
+  // Sync slugs when URL params change
+  const [prevInitial, setPrevInitial] = useState(initialSlugs);
+  if (prevInitial !== initialSlugs) {
+    setPrevInitial(initialSlugs);
+    setSlugs(initialSlugs);
+  }
 
   function setSlug(index: 0 | 1 | 2, value: string) {
     setSlugs((prev) => {
@@ -283,7 +291,7 @@ function CompareInner() {
             </div>
             <h1 className="text-2xl font-bold text-text-primary">해커톤 비교</h1>
           </div>
-          <p className="text-text-secondary text-sm ml-13">
+          <p className="text-text-secondary text-sm ml-[3.25rem]">
             최대 3개의 해커톤을 선택해 나란히 비교하세요.
           </p>
         </div>

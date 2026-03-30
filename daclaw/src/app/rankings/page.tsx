@@ -235,7 +235,7 @@ function GradeLegend() {
               key={gradeKey}
               className="flex items-center gap-3 px-3 py-2 rounded-lg bg-background"
             >
-              <span className="text-xl shrink-0">{cfg.icon}</span>
+              <span className="text-xl shrink-0"><IconMapper name={cfg.icon} className="w-5 h-5" /></span>
               <span className="font-semibold text-sm" style={{ color: cfg.color, minWidth: 80 }}>
                 {cfg.label}
               </span>

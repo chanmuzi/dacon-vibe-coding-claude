@@ -57,8 +57,8 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
       entries.push({ teamId, teamName, score, rank: entries.length + 1, submissionCount: 1, lastSubmittedAt: new Date().toISOString() });
     }
     entries.sort((a, b) => b.score - a.score);
-    entries.forEach((e, i) => { e.rank = i + 1; });
-    lb.entries = entries;
+    const rankedEntries = entries.map((e, i) => ({ ...e, rank: i + 1 }));
+    lb.entries = rankedEntries;
     lbs[idx] = lb;
     setItem('leaderboards', lbs);
     set({ leaderboards: lbs });

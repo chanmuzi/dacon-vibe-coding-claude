@@ -28,6 +28,19 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id'];
 
+// Module-level helpers — extracted to satisfy React purity rules
+function generateMockScore(): number {
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  return Math.round((60 + (arr[0] % 3500) / 100) * 10) / 10;
+}
+function generateId(prefix: string): string {
+  return `${prefix}-${crypto.randomUUID()}`;
+}
+function todayString(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
   quantitative: { label: '정량 평가', cls: 'bg-type-quantitative/90 text-text-on-primary' },
   qualitative: { label: '정성 평가', cls: 'bg-type-qualitative/90 text-text-on-primary' },
@@ -185,9 +198,9 @@ export default function HackathonDetailPage() {
     const teamId = myTeam?.id ?? `solo-${user.id}`;
     const teamName = myTeam?.name ?? user?.nickname ?? '익명';
     const version = hackSubs.filter((s) => s.teamId === teamId).length + 1;
-    const score = hackathon.type !== 'qualitative' ? Math.round((60 + Math.random() * 35) * 10) / 10 : undefined;
+    const score = hackathon.type !== 'qualitative' ? generateMockScore() : undefined;
     const sub = {
-      id: `sub-${Date.now()}`,
+      id: generateId('sub'),
       hackathonSlug: slug,
       teamId,
       version,
@@ -196,19 +209,12 @@ export default function HackathonDetailPage() {
       fileName: submitForm.fileName || undefined,
       fileSize: submitForm.fileSize ? Number(submitForm.fileSize) : undefined,
       score,
-      createdAt: new Date().toISOString().slice(0, 10),
+      createdAt: todayString(),
     };
     addSubmission(sub);
     if (score !== undefined) updateLeaderboard(slug, teamId, teamName, score);
     setSubmitForm({ content: '', memo: '', fileName: '', fileSize: '' });
     setToast('제출이 완료되었습니다!');
-  }
-
-  function handleCopyJSON() {
-    if (!hackathon) return;
-    const data = { title: hackathon.title, type: hackathon.type, description: hackathon.description, tags: hackathon.tags, dates: { start: hackathon.startDate, end: hackathon.endDate }, metrics: hackathon.metrics, evaluationCriteria: hackathon.evaluationCriteria };
-    navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-    setToast('JSON이 클립보드에 복사되었습니다');
   }
 
   function handleDownloadJSON() {
@@ -225,9 +231,9 @@ export default function HackathonDetailPage() {
     if (!hackathon) return;
     setIdeDropdownOpen(false);
     if (action === 'cursor') {
-      window.location.href = `cursor://open?url=${encodeURIComponent(hackathon.title)}`;
+      window.open(`cursor://open?url=${encodeURIComponent(hackathon.title)}`, '_self');
     } else if (action === 'vscode') {
-      window.location.href = `vscode://`;
+      window.open('vscode://', '_self');
     } else if (action === 'chatgpt') {
       window.open('https://chat.openai.com', '_blank');
     } else if (action === 'claude') {
