@@ -5,6 +5,22 @@ import type { UserProfile } from '@/types';
 import { getItem, setItem, removeItem } from '@/lib/localStorage';
 import { defaultUserProfile, getGradeFromPoints } from '@/data/seed';
 
+// 비밀번호 평문 저장 방지 — 클라이언트 전용 해싱 (프로덕션에서는 서버사이드 bcrypt/argon2 필수)
+function hashPassword(pw: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < pw.length; i++) {
+    h ^= pw.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  const h1 = (h >>> 0).toString(16).padStart(8, '0');
+  h = 0xc6a4a793;
+  for (let i = 0; i < pw.length; i++) {
+    h ^= pw.charCodeAt(i);
+    h = Math.imul(h, 0x5bd1e995);
+  }
+  return h1 + (h >>> 0).toString(16).padStart(8, '0');
+}
+
 interface UserState {
   user: UserProfile | null;
   isLoggedIn: boolean;
@@ -44,7 +60,7 @@ export const useUserStore = create<UserState>((set, get) => ({
       (a) => a.nickname === nickname || a.email === nickname
     );
     if (!account) return { success: false, error: '등록되지 않은 계정입니다.' };
-    if (account.password !== password) return { success: false, error: '비밀번호가 일치하지 않습니다.' };
+    if (account.password !== hashPassword(password)) return { success: false, error: '비밀번호가 일치하지 않습니다.' };
 
     const user = { ...account };
     delete user.password; // Don't keep password in active session
@@ -70,7 +86,7 @@ export const useUserStore = create<UserState>((set, get) => ({
       id,
       nickname,
       email,
-      password,
+      password: hashPassword(password),
       role,
       joinedAt: new Date().toISOString().slice(0, 10),
     };
@@ -115,13 +131,18 @@ export const useUserStore = create<UserState>((set, get) => ({
     const updated = { ...current, points: newPoints, grade: grade as UserProfile['grade'] };
     setItem('userProfile', updated);
     set({ user: updated });
+    // 계정 저장소도 동기화하여 재로그인 시 롤백 방지
+    const accounts = getItem<Record<string, UserProfile>>('daclaw_accounts') ?? {};
+    if (accounts[current.id]) {
+      accounts[current.id] = { ...accounts[current.id], points: newPoints, grade: grade as UserProfile['grade'] };
+      setItem('daclaw_accounts', accounts);
+    }
   },
 
   setApiKey: (key) => {
     const current = get().user;
     if (!current) return;
-    const updated = { ...current, apiKey: key };
-    setItem('userProfile', updated);
-    set({ user: updated });
+    // API 키는 메모리에만 보관, localStorage에 persist하지 않음
+    set({ user: { ...current, apiKey: key } });
   },
 }));
