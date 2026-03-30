@@ -12,8 +12,8 @@ interface CommunityState {
   addPost: (p: CommunityPost) => void;
   addComment: (postId: string, comment: Comment) => void;
   toggleLike: (postId: string, userId: string) => void;
-  updatePost: (id: string, updates: Partial<CommunityPost>) => void;
-  deletePost: (id: string) => void;
+  updatePost: (id: string, updates: Partial<CommunityPost>, userId: string) => void;
+  deletePost: (id: string, userId: string) => void;
 }
 
 export const useCommunityStore = create<CommunityState>((set, get) => ({
@@ -59,13 +59,17 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
     set({ posts });
   },
 
-  updatePost: (id, updates) => {
+  updatePost: (id, updates, userId) => {
+    const target = get().posts.find((p) => p.id === id);
+    if (!target || target.authorId !== userId) return;
     const posts = get().posts.map((p) => (p.id === id ? { ...p, ...updates } : p));
     setItem('community', posts);
     set({ posts });
   },
 
-  deletePost: (id) => {
+  deletePost: (id, userId) => {
+    const target = get().posts.find((p) => p.id === id);
+    if (!target || target.authorId !== userId) return;
     const posts = get().posts.filter((p) => p.id !== id);
     setItem('community', posts);
     set({ posts });

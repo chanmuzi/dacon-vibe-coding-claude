@@ -74,8 +74,8 @@ export default function Navigation() {
       setAuthError('필수 항목을 모두 입력해주세요.');
       return;
     }
-    if (registerForm.password.length < 4) {
-      setAuthError('비밀번호는 4자 이상이어야 합니다.');
+    if (registerForm.password.length < 8) {
+      setAuthError('비밀번호는 8자 이상이어야 합니다.');
       return;
     }
     if (registerForm.password !== registerForm.passwordConfirm) {

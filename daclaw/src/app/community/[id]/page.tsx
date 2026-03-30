@@ -8,6 +8,7 @@ import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import rehypeHighlight from 'rehype-highlight';
+import rehypeSanitize from 'rehype-sanitize';
 import 'katex/dist/katex.min.css';
 import {
   ArrowLeft,
@@ -133,7 +134,7 @@ export default function CommunityPostDetailPage() {
 
   function handleSaveEdit() {
     if (!post || !editContent.trim()) return;
-    updatePost(post.id, { content: editContent });
+    updatePost(post.id, { content: editContent }, user!.id);
     setIsEditing(false);
   }
 
@@ -145,7 +146,7 @@ export default function CommunityPostDetailPage() {
   function handleDelete() {
     if (!post) return;
     if (window.confirm('게시글을 삭제하시겠습니까?')) {
-      deletePost(post.id);
+      deletePost(post.id, user!.id);
       router.push('/community');
     }
   }
@@ -258,7 +259,7 @@ export default function CommunityPostDetailPage() {
             <div className="prose-content text-sm text-text-primary leading-relaxed">
               <ReactMarkdown
                 remarkPlugins={[remarkMath, remarkGfm]}
-                rehypePlugins={[rehypeKatex, rehypeHighlight]}
+                rehypePlugins={[rehypeSanitize, rehypeKatex, rehypeHighlight]}
                 components={{
                   h1: ({ children }) => (
                     <h1 className="text-xl font-bold text-text-primary mt-6 mb-3">{children}</h1>
@@ -290,16 +291,19 @@ export default function CommunityPostDetailPage() {
                       {children}
                     </pre>
                   ),
-                  a: ({ href, children }) => (
-                    <a
-                      href={href}
-                      className="text-primary hover:underline"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {children}
-                    </a>
-                  ),
+                  a: ({ href, children }) => {
+                    const safe = href && (href.startsWith('https://') || href.startsWith('http://') || href.startsWith('/'));
+                    return safe ? (
+                      <a
+                        href={href}
+                        className="text-primary hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {children}
+                      </a>
+                    ) : <span className="text-primary">{children}</span>;
+                  },
                   ul: ({ children }) => (
                     <ul className="list-disc list-inside space-y-1 mb-3 pl-2">{children}</ul>
                   ),
