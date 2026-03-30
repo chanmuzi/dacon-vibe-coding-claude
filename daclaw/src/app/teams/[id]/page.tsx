@@ -59,7 +59,7 @@ export default function TeamPublicPage() {
     const leader = team.members[0];
     if (!leader) return;
     addMessage({
-      id: `msg-${Date.now()}`,
+      id: `msg-${crypto.randomUUID()}`,
       from: user.id,
       to: leader.userId,
       content: dmMessage,

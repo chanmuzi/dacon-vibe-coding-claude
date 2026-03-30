@@ -35,40 +35,39 @@ export default function UserProfilePage() {
   const submissions = useSubmissionStore((s) => s.submissions);
 
   // Construct user profile from ranking + team data
-  const user = useMemo(() => {
-    const rankEntry = rankings.find((r) => r.userId === userId);
-    if (rankEntry) {
-      return {
-        id: rankEntry.userId,
-        nickname: rankEntry.nickname,
-        role: rankEntry.role as Role,
-        grade: rankEntry.grade as Grade,
-        badges: rankEntry.badges,
-        points: rankEntry.totalScore,
-        techStack: [] as string[],
-        joinedAt: '2026-01-01',
-        selectedBadges: rankEntry.badges.slice(0, 3),
-      };
-    }
-    // Fallback: look through team members
+  const rankEntry = rankings.find((r) => r.userId === userId);
+  let user: { id: string; nickname: string; role: Role; grade: Grade; badges: string[]; points: number; techStack: string[]; joinedAt: string; selectedBadges: string[] } | null = null;
+  if (rankEntry) {
+    user = {
+      id: rankEntry.userId,
+      nickname: rankEntry.nickname,
+      role: rankEntry.role as Role,
+      grade: rankEntry.grade as Grade,
+      badges: rankEntry.badges,
+      points: rankEntry.totalScore,
+      techStack: [],
+      joinedAt: '2026-01-01',
+      selectedBadges: rankEntry.badges.slice(0, 3),
+    };
+  } else {
     for (const t of teams) {
       const member = t.members.find((m) => m.userId === userId);
       if (member) {
-        return {
+        user = {
           id: member.userId,
           nickname: member.nickname,
           role: member.role as Role,
           grade: 'rookie' as Grade,
-          badges: [] as string[],
+          badges: [],
           points: 0,
-          techStack: [] as string[],
+          techStack: [],
           joinedAt: '2026-01-01',
-          selectedBadges: [] as string[],
+          selectedBadges: [],
         };
+        break;
       }
     }
-    return null;
-  }, [rankings, teams, userId]);
+  }
 
   const ranking = useMemo(() => {
     return rankings.find((r) => r.userId === userId);

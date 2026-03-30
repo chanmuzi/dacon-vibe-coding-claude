@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
-import type { Hackathon, HackathonStatus, HackathonType } from '@/types';
+import type { Hackathon, HackathonType } from '@/types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -114,7 +114,7 @@ function HackathonCard({
   compareSelected,
   onToggleCompare,
 }: HackathonCardProps) {
-  const [hovered, setHovered] = useState(false);
+  const [, setHovered] = useState(false);
   const remaining = daysLeft(hackathon.endDate);
 
   let deadlineLabel: string;

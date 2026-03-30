@@ -99,11 +99,17 @@ export default function QAChatbot() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const hackathons = useHackathonStore((s) => s.hackathons);
 
-  // M1: Manage visibility with delay on close for animation
+  // M1: Manage visibility — React 19 prop-change pattern for open transition
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open && !prevOpen) {
+    setVisible(true);
+  }
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+  }
+  // Delay hide for close animation
   useEffect(() => {
-    if (open) {
-      setVisible(true);
-    } else {
+    if (!open) {
       const timer = setTimeout(() => setVisible(false), 300);
       return () => clearTimeout(timer);
     }

@@ -69,31 +69,32 @@ export default function CampPage() {
   const [toast, setToast] = useState('');
   const [createForm, setCreateForm] = useState({ name: '', description: '', hackathonSlug: '', roles: [] as Role[], maxMembers: 4 });
   const [recLoading, setRecLoading] = useState(false);
-  const [recReady, setRecReady] = useState(false);
 
-  // G11: Auto-filter from URL param ?hackathon=slug
-  useEffect(() => {
+  // G11: Auto-filter from URL param ?hackathon=slug (React 19 prop-change pattern)
+  const [prevSearchParams, setPrevSearchParams] = useState(searchParams);
+  if (searchParams !== prevSearchParams) {
+    setPrevSearchParams(searchParams);
     const hackathonParam = searchParams.get('hackathon');
     if (hackathonParam) {
       setHackFilter(hackathonParam);
     }
-  }, [searchParams]);
+  }
 
-  // G7: Brief loading animation when user logs in
-  useEffect(() => {
+  // G7: Brief loading animation when user logs in (React 19 prop-change pattern)
+  const [prevLoggedIn, setPrevLoggedIn] = useState(isLoggedIn);
+  if (isLoggedIn !== prevLoggedIn) {
+    setPrevLoggedIn(isLoggedIn);
     if (isLoggedIn) {
-      setRecReady(false);
       setRecLoading(true);
-      const t = setTimeout(() => {
-        setRecLoading(false);
-        setRecReady(true);
-      }, 500);
-      return () => clearTimeout(t);
     } else {
       setRecLoading(false);
-      setRecReady(false);
     }
-  }, [isLoggedIn]);
+  }
+  useEffect(() => {
+    if (!recLoading) return;
+    const t = setTimeout(() => setRecLoading(false), 500);
+    return () => clearTimeout(t);
+  }, [recLoading]);
 
   const filtered = useMemo(() => {
     let result = teams;
@@ -108,7 +109,7 @@ export default function CampPage() {
       const hack = hackathons.find((h) => t.hackathonSlugs?.includes(h.slug));
       const rate = isLoggedIn && user
         ? calcMatchRate(t, user.role, user.techStack, hack?.tags ?? [])
-        : Math.round(50 + Math.random() * 30);
+        : 50 + (t.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 30);
       return { team: t, rate, hackTitle: hack?.title ?? '' };
     }).sort((a, b) => b.rate - a.rate).slice(0, 5);
   }, [teams, hackathons, user, isLoggedIn]);
@@ -117,7 +118,7 @@ export default function CampPage() {
     e.preventDefault();
     if (!createForm.name.trim() || !createForm.hackathonSlug || !isLoggedIn || !user) return;
     const newTeam: Team = {
-      id: `team-${Date.now()}`,
+      id: `team-${crypto.randomUUID()}`,
       name: createForm.name,
       description: createForm.description,
       hackathonSlugs: [createForm.hackathonSlug],
@@ -138,7 +139,7 @@ export default function CampPage() {
     const leader = applyTeam.members[0];
     if (!leader) return;
     addMessage({
-      id: `msg-${Date.now()}`,
+      id: `msg-${crypto.randomUUID()}`,
       from: user?.id ?? 'anonymous',
       to: leader?.userId ?? '',
       content: buildDmContent(applyForm),

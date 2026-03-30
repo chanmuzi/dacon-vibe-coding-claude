@@ -79,10 +79,11 @@ export default function HomePage() {
   }, [init, communityInitFn, teamInitFn]);
 
   const activeHackathons = hackathons.filter((h) => h.status === 'active');
+  const [now] = useState(() => Date.now());
 
   // Find nearest deadline hackathon (L2)
   const imminentHackathon = activeHackathons
-    .filter((h) => new Date(h.endDate).getTime() > Date.now())
+    .filter((h) => new Date(h.endDate).getTime() > now)
     .sort(
       (a, b) =>
         new Date(a.endDate).getTime() - new Date(b.endDate).getTime()
@@ -96,7 +97,6 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!countdownTarget) return;
-    setTimeLeft(getTimeLeft(countdownTarget.endDate));
     const interval = setInterval(() => {
       setTimeLeft(getTimeLeft(countdownTarget.endDate));
     }, 1000);

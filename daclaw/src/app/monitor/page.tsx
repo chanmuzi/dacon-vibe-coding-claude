@@ -316,7 +316,7 @@ export default function MonitorPage() {
 
   const totalParticipants = activeHackathons.reduce((s, h) => s + h.participantCount, 0);
   const totalTeams = activeHackathons.reduce((s, h) => s + (teamsBySlug[h.slug] ?? 0), 0);
-  const totalSubmissions = activeHackathons.reduce((s, h) => s + (submissionsBySlug[h.slug] ?? 0), 0);
+
   const anomalyCount = activeHackathons.filter(
     (h) => h.participantCount < 50 || (submissionsBySlug[h.slug] ?? 0) < 3
   ).length;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useHackathonStore } from '@/store/hackathon';
 import { useTeamStore } from '@/store/team';
 import { useUserStore } from '@/store/user';
@@ -11,8 +11,6 @@ import { useRankingStore } from '@/store/ranking';
 import { useMissionStore } from '@/store/mission';
 
 export default function ClientProvider({ children }: { children: React.ReactNode }) {
-  const [ready, setReady] = useState(false);
-
   const initHackathon = useHackathonStore((s) => s.init);
   const initTeam = useTeamStore((s) => s.init);
   const initUser = useUserStore((s) => s.init);
@@ -21,6 +19,15 @@ export default function ClientProvider({ children }: { children: React.ReactNode
   const initMessage = useMessageStore((s) => s.init);
   const initRanking = useRankingStore((s) => s.init);
   const initMission = useMissionStore((s) => s.init);
+
+  const hackathonReady = useHackathonStore((s) => s.initialized);
+  const teamReady = useTeamStore((s) => s.initialized);
+  const userReady = useUserStore((s) => s.initialized);
+  const submissionReady = useSubmissionStore((s) => s.initialized);
+  const communityReady = useCommunityStore((s) => s.initialized);
+  const messageReady = useMessageStore((s) => s.initialized);
+  const rankingReady = useRankingStore((s) => s.initialized);
+  const missionReady = useMissionStore((s) => s.initialized);
 
   useEffect(() => {
     initHackathon();
@@ -31,8 +38,9 @@ export default function ClientProvider({ children }: { children: React.ReactNode
     initMessage();
     initRanking();
     initMission();
-    setReady(true);
   }, [initHackathon, initTeam, initUser, initSubmission, initCommunity, initMessage, initRanking, initMission]);
+
+  const ready = hackathonReady && teamReady && userReady && submissionReady && communityReady && messageReady && rankingReady && missionReady;
 
   if (!ready) {
     return (
