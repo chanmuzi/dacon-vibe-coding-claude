@@ -61,6 +61,10 @@ export default function CommunityPage() {
 
   function handleWritePost(e: React.FormEvent) {
     e.preventDefault();
+    if (!isLoggedIn || !user) {
+      openAuthModal();
+      return;
+    }
     if (!writeForm.title.trim() || !writeForm.content.trim()) return;
     const post: CommunityPost = {
       id: `post-${Date.now()}`,
@@ -68,8 +72,8 @@ export default function CommunityPage() {
       title: writeForm.title,
       content: writeForm.content,
       summary: writeForm.content.slice(0, 100),
-      authorId: user?.id ?? 'anonymous',
-      authorNickname: user?.nickname ?? '익명',
+      authorId: user.id,
+      authorNickname: user.nickname,
       hackathonTag: writeForm.hackathonTag || undefined,
       likes: 0,
       likedBy: [],
@@ -100,7 +104,10 @@ export default function CommunityPage() {
         </div>
         <button
           data-testid="write-post-button"
-          onClick={() => setShowWrite(true)}
+          onClick={() => {
+            if (!isLoggedIn || !user) { openAuthModal(); return; }
+            setShowWrite(true);
+          }}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
         >
           <Plus size={16} /> 글쓰기

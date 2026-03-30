@@ -263,7 +263,7 @@ function CriterionEditor({ criteria, onChange }: CriterionEditorProps) {
 export default function CreatePage() {
   const router = useRouter();
   const { addHackathon, init: initHackathon } = useHackathonStore();
-  const { user, init: initUser } = useUserStore();
+  const { user, isLoggedIn, openAuthModal, init: initUser } = useUserStore();
 
   const [step, setStep] = useState<'type' | 'form'>('type');
   const [selectedType, setSelectedType] = useState<HackathonType | null>(null);
@@ -298,6 +298,10 @@ export default function CreatePage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!isLoggedIn || !user) {
+      openAuthModal();
+      return;
+    }
     if (!selectedType) return;
     if (!validate()) return;
 
