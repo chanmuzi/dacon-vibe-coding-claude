@@ -1,7 +1,10 @@
+# Agent tools (local only)
 .omx/
 .omc/
-.claude/
 .codex/
 .playwright-mcp/
-*.png
 AGENTS.md
+
+# Claude Code (settings tracked via .claude/settings.json)
+.claude/*
+!.claude/settings.json

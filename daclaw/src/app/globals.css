@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  /* Core */
+  --color-primary: #0049DB;
+  --color-primary-light: #D9E5FC;
+  --color-background: #E9EFF9;
+  --color-surface: #FFFFFF;
+  --color-border: #E8EEF2;
+  --color-surface-alt: #F3F4F6;
+
+  /* Text */
+  --color-text-primary: #111827;
+  --color-text-secondary: #4B5563;
+  --color-text-on-primary: #FFFFFF;
+
+  /* Semantic: Status */
+  --color-success: #059669;
+  --color-success-light: #ECFDF5;
+  --color-warning: #D97706;
+  --color-warning-light: #FFFBEB;
+  --color-error: #DC2626;
+  --color-error-light: #FEF2F2;
+  --color-info: #2563EB;
+  --color-info-light: #EFF6FF;
+
+  /* Semantic: Hackathon Type */
+  --color-type-quantitative: #2563EB;
+  --color-type-quantitative-light: #DBEAFE;
+  --color-type-qualitative: #7C3AED;
+  --color-type-qualitative-light: #EDE9FE;
+  --color-type-hybrid: #D97706;
+  --color-type-hybrid-light: #FEF3C7;
+
+  /* Semantic: User Grade */
+  --color-grade-rookie: #6B7280;
+  --color-grade-challenger: #2563EB;
+  --color-grade-expert: #059669;
+  --color-grade-master: #D97706;
+  --color-grade-legend: #DC2626;
+
+  /* Semantic: User Role */
+  --color-role-developer: #06B6D4;
+  --color-role-developer-light: #CFFAFE;
+  --color-role-designer: #EC4899;
+  --color-role-designer-light: #FCE7F3;
+  --color-role-planner: #6366F1;
+  --color-role-planner-light: #E0E7FF;
+  --color-role-data-scientist: #14B8A6;
+  --color-role-data-scientist-light: #CCFBF1;
+
+  /* Typography */
+  --font-sans: "Pretendard", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, monospace;
+
+  /* Interactive States */
+  --color-interactive-hover: #EBF0FB;
+  --color-interactive-active: #D9E5FC;
+  --color-interactive-focus: rgba(0, 73, 219, 0.15);
+
+  /* Shadow */
+  --shadow-card: 0 4px 20px rgba(0, 73, 219, 0.05);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+  }
+}
+
+@layer utilities {
+  .animate-pulse-dot {
+    animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .animate-breathing {
+    animation: breathing 3s ease-in-out infinite;
+  }
+
+  @keyframes breathing {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 73, 219, 0.15); }
+    50% { box-shadow: 0 0 20px 8px rgba(0, 73, 219, 0.08); }
+  }
+}

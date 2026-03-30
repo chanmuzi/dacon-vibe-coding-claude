@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev*)",
+      "Bash(npm run build*)",
+      "Bash(npm run preview*)",
+      "Bash(npm install*)",
+      "Bash(npm run lint*)",
+      "Bash(npm run test*)",
+      "Bash(npx next*)",
+      "Bash(dev-browser *)",
+      "Bash(npx dev-browser *)",
+      "Bash(curl -s http://localhost:3000*)",
+      "Bash(lsof -ti:3000*)",
+      "Bash(kill *)",
+      "Bash(mkdir -p *)",
+      "Bash(ls *)",
+      "Bash(cat package.json*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add*)",
+      "Bash(git branch*)"
+    ]
+  },
+  "enabledPlugins": {
+    "playwright@claude-plugins-official": false,
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true,
+    "frontend-design@claude-plugins-official": true
+  }
+}
