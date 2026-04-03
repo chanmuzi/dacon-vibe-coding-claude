@@ -18,6 +18,24 @@ dacon-vibe-coding-claude/        ← git root
     └── src/types/index.ts       ← TypeScript 타입 정의
 ```
 
+## 대회 심사 기준
+
+| 항목 | 배점 |
+|---|---|
+| 기본 구현 | 30 |
+| 확장/아이디어 | 30 |
+| 완성도 | 25 |
+| 문서 | 15 |
+
+## 기술 스택
+
+Next.js 16 App Router, TypeScript, Tailwind CSS v4, Zustand, Recharts, Fuse.js, react-markdown, rehype-katex
+
+## 데이터 아키텍처
+
+- localStorage 기반 mock 인증 (서버 없음)
+- 클라이언트 사이드 시드 데이터 (`src/data/seed.ts`)
+
 ## Design System
 
 모든 UI/프론트엔드 작업 전 `docs/designsystem.md`를 반드시 참조하세요.
