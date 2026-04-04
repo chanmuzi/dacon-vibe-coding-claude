@@ -73,11 +73,14 @@ export default function Modal({
       />
       {/* Content */}
       <div
+        role="dialog"
+        aria-modal="true"
         className={`relative bg-surface rounded-2xl shadow-xl ${maxWidth} w-full p-6 modal-panel ${entering ? 'entering' : ''} ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         {showCloseButton && (
           <button
+            type="button"
             onClick={onClose}
             className="absolute right-4 top-4 p-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-background transition-all duration-200 active:scale-95"
           >

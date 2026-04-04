@@ -141,7 +141,7 @@ function SectionCard({
 
 // ─── Grade Modal ──────────────────────────────────────────────────────────────
 
-function GradeModal({ onClose, userPoints, userGrade }: { onClose: () => void; userPoints: number; userGrade: string }) {
+function GradeModal({ isOpen, onClose, userPoints, userGrade }: { isOpen: boolean; onClose: () => void; userPoints: number; userGrade: string }) {
   const gradeTable = [
     { key: 'rookie', range: '0 – 99 pt' },
     { key: 'challenger', range: '100 – 499 pt' },
@@ -156,7 +156,7 @@ function GradeModal({ onClose, userPoints, userGrade }: { onClose: () => void; u
   const ptsLeft = nextCfg ? Math.max(0, nextCfg.min - userPoints) : 0;
 
   return (
-    <Modal isOpen={true} onClose={onClose} maxWidth="max-w-xs">
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-xs">
       <h3 className="font-semibold text-text-primary mb-4">등급 안내</h3>
       <div className="flex flex-col gap-1.5 mb-4">
         {gradeTable.map(({ key, range }) => {
@@ -320,13 +320,12 @@ function BadgePanel() {
 
   return (
     <>
-      {showGradeModal && (
-        <GradeModal
-          onClose={() => setShowGradeModal(false)}
-          userPoints={user.points}
-          userGrade={user.grade}
-        />
-      )}
+      <GradeModal
+        isOpen={showGradeModal}
+        onClose={() => setShowGradeModal(false)}
+        userPoints={user.points}
+        userGrade={user.grade}
+      />
       <SectionCard title="등급 & 배지" icon={<Star className="w-4 h-4" />} testId="badge-panel">
         {/* Current grade */}
         <div className="flex items-center gap-3 mb-5">
