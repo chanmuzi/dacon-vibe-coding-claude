@@ -358,7 +358,7 @@ export default function CreatePage() {
   // ── Type selection step ────────────────────────────────────────────────────
   if (step === 'type') {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-center gap-3 mb-10">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-sm">
@@ -404,7 +404,7 @@ export default function CreatePage() {
   const typeMeta = TYPE_OPTIONS.find((o) => o.type === selectedType)!;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">

@@ -8,8 +8,9 @@ import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
 import { useMessageStore } from '@/store/message';
 import {
-  Users, Plus, Sparkles, Send, X, Filter, ChevronDown, UserPlus, CheckCircle2, Check, Loader2,
+  Users, Plus, Sparkles, Send, Filter, ChevronDown, UserPlus, CheckCircle2, Check, Loader2,
 } from 'lucide-react';
+import Modal from '@/components/Modal';
 import UserAvatar from '@/components/UserAvatar';
 import type { Team, Role } from '@/types';
 
@@ -175,7 +176,7 @@ export default function CampPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
       {/* Toast */}
       {toast && (
         <div data-testid="dm-success-toast" className="fixed top-20 right-4 z-50 bg-primary text-text-on-primary px-5 py-3 rounded-lg shadow-lg flex items-center gap-2">
@@ -361,175 +362,161 @@ export default function CampPage() {
       </div>
 
       {/* Create Team Modal */}
-      {showCreateForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">팀 만들기</h2>
-              <button onClick={() => setShowCreateForm(false)} className="p-1 rounded-lg hover:bg-background"><X size={20} /></button>
-            </div>
-            <form onSubmit={handleCreateTeam} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium block mb-1">팀 이름</label>
-                <input
-                  data-testid="team-name-input"
-                  type="text"
-                  value={createForm.name}
-                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                  placeholder="팀 이름을 입력하세요"
-                  className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium block mb-1">팀 소개</label>
-                <textarea
-                  data-testid="team-description-input"
-                  value={createForm.description}
-                  onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-                  placeholder="팀 소개를 작성하세요"
-                  rows={3}
-                  className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary resize-none"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium block mb-1">해커톤</label>
-                <select
-                  value={createForm.hackathonSlug}
-                  onChange={(e) => setCreateForm({ ...createForm, hackathonSlug: e.target.value })}
-                  className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-                  required
-                >
-                  <option value="">선택하세요</option>
-                  {hackathons.filter((h) => h.status !== 'ended').map((h) => (
-                    <option key={h.slug} value={h.slug}>{h.title}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium block mb-1">모집 역할</label>
-                <div className="flex flex-wrap gap-2">
-                  {(Object.keys(ROLE_LABELS) as Role[]).map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => toggleRole(r)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        createForm.roles.includes(r) ? 'bg-primary text-text-on-primary' : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
-                      }`}
-                    >
-                      {ROLE_LABELS[r]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium block mb-1">최대 인원</label>
-                <input
-                  type="number"
-                  min={2}
-                  max={10}
-                  value={createForm.maxMembers}
-                  onChange={(e) => setCreateForm({ ...createForm, maxMembers: Number(e.target.value) })}
-                  className="w-24 bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-                />
-              </div>
-              <button
-                data-testid="team-submit-button"
-                type="submit"
-                className="w-full px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 transition-colors"
-              >
-                팀 생성
-              </button>
-            </form>
+      <Modal isOpen={showCreateForm} onClose={() => setShowCreateForm(false)} maxWidth="max-w-md">
+        <h2 className="text-lg font-bold mb-4">팀 만들기</h2>
+        <form onSubmit={handleCreateTeam} className="space-y-4">
+          <div>
+            <label className="text-sm font-medium block mb-1">팀 이름</label>
+            <input
+              data-testid="team-name-input"
+              type="text"
+              value={createForm.name}
+              onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+              placeholder="팀 이름을 입력하세요"
+              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
+              required
+            />
           </div>
-        </div>
-      )}
+          <div>
+            <label className="text-sm font-medium block mb-1">팀 소개</label>
+            <textarea
+              data-testid="team-description-input"
+              value={createForm.description}
+              onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+              placeholder="팀 소개를 작성하세요"
+              rows={3}
+              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary resize-none"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1">해커톤</label>
+            <select
+              value={createForm.hackathonSlug}
+              onChange={(e) => setCreateForm({ ...createForm, hackathonSlug: e.target.value })}
+              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
+              required
+            >
+              <option value="">선택하세요</option>
+              {hackathons.filter((h) => h.status !== 'ended').map((h) => (
+                <option key={h.slug} value={h.slug}>{h.title}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1">모집 역할</label>
+            <div className="flex flex-wrap gap-2">
+              {(Object.keys(ROLE_LABELS) as Role[]).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => toggleRole(r)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    createForm.roles.includes(r) ? 'bg-primary text-text-on-primary' : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
+                  }`}
+                >
+                  {ROLE_LABELS[r]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1">최대 인원</label>
+            <input
+              type="number"
+              min={2}
+              max={10}
+              value={createForm.maxMembers}
+              onChange={(e) => setCreateForm({ ...createForm, maxMembers: Number(e.target.value) })}
+              className="w-24 bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
+            />
+          </div>
+          <button
+            data-testid="team-submit-button"
+            type="submit"
+            className="w-full px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
+          >
+            팀 생성
+          </button>
+        </form>
+      </Modal>
 
       {/* Apply Modal — G8-1: Rich form */}
-      {applyTeam && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">참가 신청 — {applyTeam.name}</h2>
-              <button onClick={() => setApplyTeam(null)} className="p-1 rounded-lg hover:bg-background"><X size={20} /></button>
-            </div>
+      <Modal isOpen={!!applyTeam} onClose={() => setApplyTeam(null)} maxWidth="max-w-md">
+        <h2 className="text-lg font-bold mb-4">참가 신청 — {applyTeam?.name}</h2>
 
-            <div className="space-y-4">
-              {/* 자기소개 */}
-              <div>
-                <label className="text-sm font-medium block mb-1">
-                  자기소개 <span className="text-error text-xs">*</span>
-                </label>
-                <textarea
-                  data-testid="dm-message-input"
-                  value={applyForm.intro}
-                  onChange={(e) => setApplyForm({ ...applyForm, intro: e.target.value })}
-                  placeholder="자기소개와 참가 동기를 작성해주세요..."
-                  rows={3}
-                  className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary resize-none"
-                />
-              </div>
+        <div className="space-y-4">
+          {/* 자기소개 */}
+          <div>
+            <label className="text-sm font-medium block mb-1">
+              자기소개 <span className="text-error text-xs">*</span>
+            </label>
+            <textarea
+              data-testid="dm-message-input"
+              value={applyForm.intro}
+              onChange={(e) => setApplyForm({ ...applyForm, intro: e.target.value })}
+              placeholder="자기소개와 참가 동기를 작성해주세요..."
+              rows={3}
+              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary resize-none"
+            />
+          </div>
 
-              {/* 가능 포지션 */}
-              <div>
-                <label className="text-sm font-medium block mb-1">가능 포지션</label>
-                <div className="flex flex-wrap gap-2">
-                  {APPLY_ROLES.map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => toggleApplyPosition(r)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        applyForm.positions.includes(r)
-                          ? 'bg-primary text-text-on-primary'
-                          : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
-                      }`}
-                    >
-                      {ROLE_LABELS[r]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 기술스택 */}
-              <div>
-                <label className="text-sm font-medium block mb-1">기술스택</label>
-                <input
-                  type="text"
-                  value={applyForm.techStack}
-                  onChange={(e) => setApplyForm({ ...applyForm, techStack: e.target.value })}
-                  placeholder="React, Python, Figma ... (쉼표로 구분)"
-                  className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-                />
-              </div>
-
-              {/* 포트폴리오 */}
-              <div>
-                <label className="text-sm font-medium block mb-1">
-                  포트폴리오 링크 <span className="text-text-secondary text-xs">(선택)</span>
-                </label>
-                <input
-                  type="url"
-                  value={applyForm.portfolio}
-                  onChange={(e) => setApplyForm({ ...applyForm, portfolio: e.target.value })}
-                  placeholder="https://..."
-                  className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-                />
-              </div>
-
-              <button
-                data-testid="dm-send-button"
-                onClick={handleSendDM}
-                disabled={!applyForm.intro.trim()}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <Send size={16} /> 신청 보내기
-              </button>
+          {/* 가능 포지션 */}
+          <div>
+            <label className="text-sm font-medium block mb-1">가능 포지션</label>
+            <div className="flex flex-wrap gap-2">
+              {APPLY_ROLES.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => toggleApplyPosition(r)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    applyForm.positions.includes(r)
+                      ? 'bg-primary text-text-on-primary'
+                      : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
+                  }`}
+                >
+                  {ROLE_LABELS[r]}
+                </button>
+              ))}
             </div>
           </div>
+
+          {/* 기술스택 */}
+          <div>
+            <label className="text-sm font-medium block mb-1">기술스택</label>
+            <input
+              type="text"
+              value={applyForm.techStack}
+              onChange={(e) => setApplyForm({ ...applyForm, techStack: e.target.value })}
+              placeholder="React, Python, Figma ... (쉼표로 구분)"
+              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
+            />
+          </div>
+
+          {/* 포트폴리오 */}
+          <div>
+            <label className="text-sm font-medium block mb-1">
+              포트폴리오 링크 <span className="text-text-secondary text-xs">(선택)</span>
+            </label>
+            <input
+              type="url"
+              value={applyForm.portfolio}
+              onChange={(e) => setApplyForm({ ...applyForm, portfolio: e.target.value })}
+              placeholder="https://..."
+              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
+            />
+          </div>
+
+          <button
+            data-testid="dm-send-button"
+            onClick={handleSendDM}
+            disabled={!applyForm.intro.trim()}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
+          >
+            <Send size={16} /> 신청 보내기
+          </button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

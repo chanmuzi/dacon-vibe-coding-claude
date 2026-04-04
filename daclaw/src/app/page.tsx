@@ -199,7 +199,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
       {/* Hero Section */}
       <section className="text-center py-12 sm:py-20">
         <h1 className="text-4xl sm:text-5xl font-bold text-text-primary mb-4">

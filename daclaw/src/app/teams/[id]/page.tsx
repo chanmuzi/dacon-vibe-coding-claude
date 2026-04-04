@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Users, Trophy, Send, X, CheckCircle2,
+  ArrowLeft, Users, Trophy, Send, CheckCircle2,
   Star, BarChart3, Layers, MessageSquare,
 } from 'lucide-react';
+import Modal from '@/components/Modal';
 import { useTeamStore } from '@/store/team';
 import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
@@ -97,7 +98,7 @@ export default function TeamPublicPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
       {/* Toast */}
       {toast && (
         <div className="fixed top-20 right-4 z-50 bg-primary text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2">
@@ -295,38 +296,26 @@ export default function TeamPublicPage() {
       </div>
 
       {/* Apply Modal */}
-      {showApplyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-text-primary">참가 신청 — {team.name}</h2>
-              <button
-                onClick={() => setShowApplyModal(false)}
-                className="p-1 rounded-lg hover:bg-background transition-colors"
-              >
-                <X size={20} className="text-text-secondary" />
-              </button>
-            </div>
-            <p className="text-sm text-text-secondary mb-4">
-              팀장에게 메시지를 보내 참가를 신청하세요.
-            </p>
-            <textarea
-              value={dmMessage}
-              onChange={(e) => setDmMessage(e.target.value)}
-              placeholder="자기소개와 참가 동기를 작성해주세요..."
-              rows={4}
-              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm mb-4 focus:ring-2 focus:ring-primary-light focus:border-primary resize-none text-text-primary placeholder:text-text-secondary"
-            />
-            <button
-              onClick={handleSendApply}
-              disabled={!dmMessage.trim()}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Send size={16} /> 신청 보내기
-            </button>
-          </div>
-        </div>
-      )}
+      <Modal isOpen={showApplyModal} onClose={() => setShowApplyModal(false)} maxWidth="max-w-md">
+        <h2 className="text-lg font-bold text-text-primary mb-4">참가 신청 — {team.name}</h2>
+        <p className="text-sm text-text-secondary mb-4">
+          팀장에게 메시지를 보내 참가를 신청하세요.
+        </p>
+        <textarea
+          value={dmMessage}
+          onChange={(e) => setDmMessage(e.target.value)}
+          placeholder="자기소개와 참가 동기를 작성해주세요..."
+          rows={4}
+          className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm mb-4 focus:ring-2 focus:ring-primary-light focus:border-primary resize-none text-text-primary placeholder:text-text-secondary"
+        />
+        <button
+          onClick={handleSendApply}
+          disabled={!dmMessage.trim()}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
+        >
+          <Send size={16} /> 신청 보내기
+        </button>
+      </Modal>
     </div>
   );
 }

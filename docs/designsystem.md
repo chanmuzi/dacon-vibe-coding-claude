@@ -219,15 +219,51 @@ import { Trophy, Users, BarChart3 } from 'lucide-react';
 
 ## 7. Animation & Transition
 
-| 패턴 | 규칙 |
-|------|------|
+CSS 순수 애니메이션 기반. `tw-animate-css` (Tailwind v4 전용)를 사용합니다.
+JS 애니메이션 라이브러리(framer-motion 등)는 사용하지 않습니다.
+
+### 7.1 전환 (Transition)
+
+| 패턴 | 클래스 |
+|------|--------|
 | 카드 hover | `transition-all duration-200` |
 | 색상 변화 | `transition-colors` |
 | 그림자 변화 | `transition-shadow` |
-| 커스텀 pulse | `animate-pulse-dot` (globals.css에 정의) |
-| 커스텀 breathing | `animate-breathing` (globals.css에 정의) |
+| 버튼 클릭 피드백 | `transition-all duration-200 active:scale-[0.98]` |
+| 아이콘 버튼 클릭 | `transition-all duration-200 active:scale-95` |
 
-Framer Motion은 페이지 전환, 리스트 애니메이션 등 복잡한 경우에만 사용합니다.
+### 7.2 진입 애니메이션 (tw-animate-css)
+
+| 패턴 | 클래스 | 타이밍 |
+|------|--------|--------|
+| 페이지 진입 | `animate-in fade-in-0 slide-in-from-bottom-2 duration-500` | 500ms |
+| 모달 오버레이 | `animate-in fade-in-0 duration-300` | 300ms |
+| 모달 콘텐츠 (열기) | `animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 duration-300` | 300ms |
+| 모달 콘텐츠 (닫기) | `animate-out fade-out-0 zoom-out-95 slide-out-to-bottom-4 duration-200` | 200ms |
+| 모바일 메뉴 | `animate-in fade-in-0 slide-in-from-top-2 duration-200` | 200ms |
+| 챗봇 팝업 (열기) | `animate-in fade-in-0 slide-in-from-bottom-4 zoom-in-95 duration-300` | 300ms |
+| 챗봇 팝업 (닫기) | `animate-out fade-out-0 slide-out-to-bottom-4 zoom-out-95 duration-200` | 200ms |
+
+### 7.3 커스텀 keyframes (globals.css)
+
+| 유틸리티 | 용도 |
+|---------|------|
+| `animate-pulse-dot` | 알림 점 깜박임 (2s) |
+| `animate-breathing` | 카드 호흡 효과 (3s) |
+| `shimmer` keyframe | Skeleton 로딩 shimmer (1.8s) |
+
+### 7.4 Modal 컴포넌트
+
+모든 모달은 `@/components/Modal` 컴포넌트를 사용합니다.
+애니메이션, 오버레이, ESC 닫기, 닫기 버튼이 내장되어 있습니다.
+
+```tsx
+import Modal from '@/components/Modal';
+
+<Modal isOpen={show} onClose={() => setShow(false)} maxWidth="max-w-md">
+  {children}
+</Modal>
+```
 
 ---
 
