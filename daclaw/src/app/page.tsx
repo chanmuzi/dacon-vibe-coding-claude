@@ -448,7 +448,7 @@ export default function HomePage() {
             {recentPosts.map((post) => (
               <Link
                 key={post.id}
-                href="/community"
+                href={`/community/${post.id}`}
                 className="block bg-surface border border-border rounded-xl p-4 hover:-translate-y-1 hover:border-primary-light hover:shadow-md transition-all duration-200"
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -502,7 +502,7 @@ export default function HomePage() {
               return (
                 <Link
                   key={team.id}
-                  href="/camp"
+                  href={`/teams/${team.id}`}
                   className="block bg-surface border border-border rounded-xl p-4 hover:-translate-y-1 hover:border-primary-light hover:shadow-md transition-all duration-200"
                 >
                   <div className="flex items-start justify-between mb-2">
