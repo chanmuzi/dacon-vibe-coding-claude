@@ -194,8 +194,8 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                         data-result-index={globalIndex}
                         onClick={() => handleResultClick(item.href)}
                         onMouseEnter={() => setFocusedIndex(globalIndex)}
-                        className={`w-full text-left px-4 py-2.5 transition-colors ${
-                          globalIndex === focusedIndex ? 'bg-primary-light' : 'hover:bg-primary-light'
+                        className={`w-full text-left px-4 py-2.5 hover:bg-primary-light transition-colors ${
+                          globalIndex === focusedIndex ? 'bg-primary-light' : ''
                         }`}
                       >
                         <div className="text-sm font-medium text-text-primary">{item.title}</div>
