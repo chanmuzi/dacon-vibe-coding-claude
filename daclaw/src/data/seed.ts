@@ -408,7 +408,7 @@ export const seedCommunityPosts: CommunityPost[] = [
     ], createdAt: '2026-03-20',
   },
   {
-    id: 'post-6', type: 'tip', title: 'Framer Motion으로 멋진 페이지 전환 만들기', summary: 'Next.js App Router에서 Framer Motion을 활용해 부드러운 페이지 전환 애니메이션을 구현하는 방법을 코드와 함께 공유합니다.', content: 'Next.js App Router에서 Framer Motion을 활용한 페이지 전환 애니메이션 구현 방법을 공유합니다.\n\n```tsx\nimport { motion } from "framer-motion";\n\nexport default function Template({ children }) {\n  return (\n    <motion.div\n      initial={{ opacity: 0, y: 20 }}\n      animate={{ opacity: 1, y: 0 }}\n      transition={{ ease: "easeOut", duration: 0.3 }}\n    >\n      {children}\n    </motion.div>\n  );\n}\n```',
+    id: 'post-6', type: 'tip', title: 'CSS 순수 애니메이션으로 부드러운 UI 만들기', summary: 'tw-animate-css를 활용해 JS 없이 부드러운 모달·페이지 전환 애니메이션을 구현하는 방법을 코드와 함께 공유합니다.', content: 'tw-animate-css를 활용한 CSS 순수 애니메이션 구현 방법을 공유합니다. JS 런타임 비용 없이 부드러운 모션을 만들 수 있어요!\n\n```tsx\n// 페이지 진입 애니메이션\n<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-500">\n  {children}\n</div>\n\n// 모달 오픈 애니메이션\n<div className="animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 duration-300">\n  {content}\n</div>\n```',
     authorId: 'user-4', authorNickname: '박프론트', hackathonTag: 'vibe-coding-challenge', likes: 18, likedBy: ['user-8', 'user-9'], comments: [], createdAt: '2026-03-19',
   },
   {

@@ -9,6 +9,7 @@ import {
   Menu, X, Search, LogIn, LogOut, User, Eye, EyeOff,
 } from 'lucide-react';
 import GlobalSearch from '@/components/GlobalSearch';
+import Modal from '@/components/Modal';
 import type { Role } from '@/types';
 
 const navItems = [
@@ -166,7 +167,7 @@ export default function Navigation() {
                 <button
                   data-testid="login-button"
                   onClick={openAuthModal}
-                  className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-colors"
+                  className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
                 >
                   <LogIn size={16} />
                   로그인
@@ -188,7 +189,7 @@ export default function Navigation() {
 
         {/* Mobile Menu */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-border bg-surface">
+          <div className="md:hidden border-t border-border bg-surface animate-in fade-in-0 slide-in-from-top-2 duration-200">
             <div className="px-4 py-3 space-y-1">
               {navItems.map((item) => {
                 const active = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -220,7 +221,7 @@ export default function Navigation() {
               ) : (
                 <button
                   onClick={() => { openAuthModal(); setMobileOpen(false); }}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium bg-primary text-text-on-primary"
+                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium bg-primary text-text-on-primary transition-all duration-200 active:scale-[0.98]"
                 >
                   <LogIn size={18} />
                   로그인
@@ -235,9 +236,7 @@ export default function Navigation() {
       <GlobalSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />
 
       {/* Auth Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={handleModalClose}>
-          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+      <Modal isOpen={showAuthModal} onClose={handleModalClose} maxWidth="max-w-sm" zIndex={60}>
             {/* Tab Header */}
             <div className="flex border-b border-border mb-5">
               <button
@@ -307,7 +306,7 @@ export default function Navigation() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2.5 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
                   >
                     로그인
                   </button>
@@ -389,41 +388,37 @@ export default function Navigation() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2.5 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
                   >
                     가입하기
                   </button>
                 </div>
               </form>
             )}
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Logout Confirm Dialog */}
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-xs p-6 text-center">
-            <LogOut size={32} className="mx-auto text-error mb-3" />
-            <h3 className="font-bold text-text-primary mb-2">로그아웃</h3>
-            <p className="text-sm text-text-secondary mb-5">정말 로그아웃하시겠습니까?</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 px-4 py-2.5 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={confirmLogout}
-                className="flex-1 px-4 py-2.5 rounded-lg bg-error text-white text-sm font-medium hover:bg-error/90 transition-colors"
-              >
-                로그아웃
-              </button>
-            </div>
+      <Modal isOpen={showLogoutConfirm} onClose={() => setShowLogoutConfirm(false)} maxWidth="max-w-xs" zIndex={60} showCloseButton={false}>
+        <div className="text-center">
+          <LogOut size={32} className="mx-auto text-error mb-3" />
+          <h3 className="font-bold text-text-primary mb-2">로그아웃</h3>
+          <p className="text-sm text-text-secondary mb-5">정말 로그아웃하시겠습니까?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowLogoutConfirm(false)}
+              className="flex-1 px-4 py-2.5 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
+            >
+              취소
+            </button>
+            <button
+              onClick={confirmLogout}
+              className="flex-1 px-4 py-2.5 rounded-lg bg-error text-white text-sm font-medium hover:bg-error/90 transition-colors"
+            >
+              로그아웃
+            </button>
           </div>
         </div>
-      )}
+      </Modal>
     </>
   );
 }

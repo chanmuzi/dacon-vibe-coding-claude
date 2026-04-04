@@ -367,7 +367,7 @@ export default function HackathonDetailPage() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
       {/* Toast */}
       {toast && (
         <div data-testid="toast-message" className="fixed top-20 right-4 z-50 bg-primary text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in">

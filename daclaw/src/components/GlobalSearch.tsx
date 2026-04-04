@@ -7,6 +7,7 @@ import { Search, X, Trophy, Users, MessageSquare } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathon';
 import { useTeamStore } from '@/store/team';
 import { useCommunityStore } from '@/store/community';
+import Modal from '@/components/Modal';
 
 interface SearchResult {
   category: '해커톤' | '팀' | '커뮤니티';
@@ -88,16 +89,6 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
 
   const grouped = results.reduce<Record<string, SearchResult[]>>((acc, r) => {
     if (!acc[r.category]) acc[r.category] = [];
@@ -117,14 +108,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[70] flex items-start justify-center pt-20 px-4 bg-black/50"
-      onClick={onClose}
-    >
-      <div
-        className="bg-surface rounded-2xl shadow-xl border border-border w-full max-w-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-xl" zIndex={70} showCloseButton={false} className="p-0">
         {/* Search Input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
           <Search size={20} className="text-text-secondary shrink-0" />
@@ -194,7 +178,6 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
         <div className="px-4 py-2 border-t border-border text-xs text-text-secondary flex gap-3">
           <span>ESC 닫기</span>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

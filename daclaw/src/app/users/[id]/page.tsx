@@ -116,7 +116,7 @@ export default function UserProfilePage() {
     .filter(Boolean);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
       {/* Back button */}
       <Link
         href="/"

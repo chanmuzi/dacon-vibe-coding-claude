@@ -126,11 +126,11 @@ Tailwind 기본 스케일 사용. 주요 패턴:
 ### 5.1 Button
 
 ```
-<!-- Primary -->
-px-6 py-3 rounded-lg bg-primary text-text-on-primary font-medium hover:bg-primary/90 transition-colors
+<!-- Primary (CTA) -->
+px-6 py-3 rounded-lg bg-primary text-text-on-primary font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]
 
 <!-- Secondary (outline) -->
-px-6 py-3 rounded-lg border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-colors
+px-6 py-3 rounded-lg border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-all duration-200 active:scale-[0.98]
 
 <!-- Filter chip (active) -->
 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-text-on-primary
@@ -219,15 +219,66 @@ import { Trophy, Users, BarChart3 } from 'lucide-react';
 
 ## 7. Animation & Transition
 
-| 패턴 | 규칙 |
-|------|------|
+CSS 순수 애니메이션 기반. `tw-animate-css` (Tailwind v4 전용)를 사용합니다.
+JS 애니메이션 라이브러리(framer-motion 등)는 사용하지 않습니다.
+
+### 7.1 전환 (Transition)
+
+| 패턴 | 클래스 |
+|------|--------|
 | 카드 hover | `transition-all duration-200` |
 | 색상 변화 | `transition-colors` |
 | 그림자 변화 | `transition-shadow` |
-| 커스텀 pulse | `animate-pulse-dot` (globals.css에 정의) |
-| 커스텀 breathing | `animate-breathing` (globals.css에 정의) |
+| 버튼 클릭 피드백 | `transition-all duration-200 active:scale-[0.98]` |
+| 아이콘 버튼 클릭 | `transition-all duration-200 active:scale-95` |
 
-Framer Motion은 페이지 전환, 리스트 애니메이션 등 복잡한 경우에만 사용합니다.
+### 7.2 페이지 진입 애니메이션 (tw-animate-css)
+
+| 패턴 | 클래스 | 타이밍 |
+|------|--------|--------|
+| 페이지 진입 | `animate-in fade-in-0 slide-in-from-bottom-2 duration-500` | 500ms |
+| 모바일 메뉴 | `animate-in fade-in-0 slide-in-from-top-2 duration-200` | 200ms |
+
+### 7.3 모달/패널 트랜지션 (CSS transition + @starting-style)
+
+모달과 챗봇 팝업은 tw-animate-css 클래스 스왑 대신 **CSS transition**을 사용합니다.
+`globals.css`에 정의된 `.modal-overlay` / `.modal-panel` 클래스 + `.entering` 토글 방식.
+
+| 요소 | 열기 | 닫기 | 방식 |
+|------|------|------|------|
+| 모달 오버레이 | 200ms ease-out | 150ms ease-out | `.modal-overlay.entering` |
+| 모달 콘텐츠 | 200ms ease-out (fade+zoom+slide) | 150ms ease-out | `.modal-panel.entering` |
+| 챗봇 팝업 | 200ms ease-out | 150ms ease-out | `.modal-panel.entering` |
+
+`@starting-style` 규칙이 초기 마운트 시 트랜지션 시작점을 제공하여 flickering을 방지합니다.
+
+### 7.4 커스텀 keyframes (globals.css)
+
+| 유틸리티 | 용도 |
+|---------|------|
+| `animate-pulse-dot` | 알림 점 깜박임 (2s) |
+| `animate-breathing` | 카드 호흡 효과 (3s) |
+| `shimmer` keyframe | Skeleton 로딩 shimmer (1.8s) |
+
+### 7.5 Modal 컴포넌트
+
+모든 모달은 `@/components/Modal` 컴포넌트를 사용합니다.
+인라인 overlay div 직접 작성은 금지 — 반드시 이 컴포넌트를 사용하세요.
+
+```tsx
+import Modal from '@/components/Modal';
+
+<Modal
+  isOpen={show}                    // 필수: 열림 상태
+  onClose={() => setShow(false)}   // 필수: 닫기 콜백 (overlay 클릭, ESC, 닫기 버튼)
+  maxWidth="max-w-md"              // 선택: 기본 "max-w-sm"
+  showCloseButton={true}           // 선택: 기본 true
+  zIndex={50}                      // 선택: 기본 50, 중첩 모달은 60+
+  className=""                     // 선택: content div에 추가 클래스
+>
+  {children}
+</Modal>
+```
 
 ---
 

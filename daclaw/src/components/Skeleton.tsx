@@ -1,8 +1,12 @@
 'use client';
 
-// Base skeleton block
+// Base skeleton block with shimmer animation
 function SkeletonBlock({ className = '' }: { className?: string }) {
-  return <div className={`bg-border/50 animate-pulse rounded ${className}`} />;
+  return (
+    <div
+      className={`relative isolate overflow-hidden rounded bg-border/50 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.8s_ease-in-out_infinite] before:bg-gradient-to-r before:from-transparent before:via-primary/[0.06] before:to-transparent ${className}`}
+    />
+  );
 }
 
 // SkeletonCard - for hackathon cards, team cards

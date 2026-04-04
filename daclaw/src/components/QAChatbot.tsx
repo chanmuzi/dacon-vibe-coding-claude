@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, RotateCcw } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathon';
 
@@ -97,7 +97,9 @@ export default function QAChatbot() {
   const [input, setInput] = useState('');
   const [isComposing, setIsComposing] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const hackathons = useHackathonStore((s) => s.hackathons);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const closeChatbot = useCallback(() => setOpen(false), []);
 
   // M1: Manage visibility — React 19 prop-change pattern for open transition
   const [prevOpen, setPrevOpen] = useState(open);
@@ -107,10 +109,10 @@ export default function QAChatbot() {
   if (open !== prevOpen) {
     setPrevOpen(open);
   }
-  // Delay hide for close animation
+  // Delay hide for close animation (match modal-panel 150ms + buffer)
   useEffect(() => {
     if (!open) {
-      const timer = setTimeout(() => setVisible(false), 300);
+      const timer = setTimeout(() => setVisible(false), 170);
       return () => clearTimeout(timer);
     }
   }, [open]);
@@ -121,11 +123,33 @@ export default function QAChatbot() {
     }
   }, [messages, open]);
 
+  // ESC key to close
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeChatbot();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [open, closeChatbot]);
+
+  // Outside click to close
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        closeChatbot();
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open, closeChatbot]);
+
   const send = (text?: string) => {
     const msgText = (text ?? input).trim();
     if (!msgText) return;
     const userMsg: ChatMessage = { role: 'user', text: msgText };
-    const botText = getAnswer(msgText, hackathons);
+    const botText = getAnswer(msgText, useHackathonStore.getState().hackathons);
     const botMsg: ChatMessage = { role: 'bot', text: botText };
     setMessages((prev) => [...prev, userMsg, botMsg]);
     setInput('');
@@ -151,17 +175,12 @@ export default function QAChatbot() {
   const isWelcomeOnly = messages.length === 1;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+    <div ref={containerRef} className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
       {/* M1: Chat Popup with animation — always rendered when visible */}
       {visible && (
         <div
-          className="bg-surface rounded-2xl shadow-xl border border-border w-full max-w-sm flex flex-col"
-          style={{
-            maxHeight: '500px',
-            transition: 'transform 300ms ease, opacity 300ms ease',
-            transform: open ? 'translateY(0)' : 'translateY(100%)',
-            opacity: open ? 1 : 0,
-          }}
+          className={`bg-surface rounded-2xl shadow-xl border border-border w-full max-w-sm flex flex-col modal-panel ${open ? 'entering' : 'pointer-events-none'}`}
+          style={{ maxHeight: '500px' }}
         >
           {/* M3: Header with branding emoji + M4: Reset button */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border rounded-t-2xl bg-primary text-text-on-primary">
@@ -178,7 +197,7 @@ export default function QAChatbot() {
                 <RotateCcw size={16} />
               </button>
               <button
-                onClick={() => setOpen(false)}
+                onClick={closeChatbot}
                 className="p-1 rounded-lg hover:bg-white/20 transition-colors"
                 aria-label="닫기"
               >
@@ -241,7 +260,7 @@ export default function QAChatbot() {
             <button
               onClick={() => send()}
               disabled={!input.trim()}
-              className="p-2 rounded-lg bg-primary text-text-on-primary hover:bg-primary/90 transition-colors disabled:opacity-40"
+              className="p-2 rounded-lg bg-primary text-text-on-primary hover:bg-primary/90 transition-colors disabled:opacity-40 active:scale-95"
               aria-label="전송"
             >
               <Send size={16} />
@@ -254,7 +273,7 @@ export default function QAChatbot() {
       <button
         data-testid="chatbot-toggle"
         onClick={() => setOpen((v) => !v)}
-        className="w-14 h-14 rounded-full bg-primary text-text-on-primary shadow-lg hover:bg-primary/90 transition-all flex items-center justify-center"
+        className="w-14 h-14 rounded-full bg-primary text-text-on-primary shadow-lg hover:bg-primary/90 transition-all duration-200 active:scale-95 flex items-center justify-center"
         aria-label="챗봇 열기"
       >
         {open ? <X size={22} /> : <MessageCircle size={22} />}

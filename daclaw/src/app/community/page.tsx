@@ -6,8 +6,9 @@ import { useCommunityStore } from '@/store/community';
 import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
 import {
-  MessageSquare, Heart, Plus, X, ChevronDown, HelpCircle, Lightbulb, Users, MessageCircle, Search,
+  MessageSquare, Heart, Plus, ChevronDown, HelpCircle, Lightbulb, Users, MessageCircle, Search,
 } from 'lucide-react';
+import Modal from '@/components/Modal';
 import type { CommunityPost } from '@/types';
 
 const POST_TYPES = [
@@ -96,7 +97,7 @@ export default function CommunityPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">커뮤니티</h1>
@@ -243,70 +244,63 @@ export default function CommunityPage() {
       </div>
 
       {/* Write Modal */}
-      {showWrite && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">게시글 작성</h2>
-              <button onClick={() => setShowWrite(false)} className="p-1 rounded-lg hover:bg-background"><X size={20} /></button>
-            </div>
-            <form onSubmit={handleWritePost} className="space-y-4">
-              <div className="flex gap-2">
-                {(['question', 'tip', 'team-find', 'free'] as const).map((t) => {
-                  const b = TYPE_BADGE[t];
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setWriteForm({ ...writeForm, type: t })}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        writeForm.type === t ? 'bg-primary text-white' : `${b.cls}`
-                      }`}
-                    >
-                      {b.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <select
-                value={writeForm.hackathonTag}
-                onChange={(e) => setWriteForm({ ...writeForm, hackathonTag: e.target.value })}
-                className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light"
-              >
-                <option value="">해커톤 태그 (선택)</option>
-                {hackathons.map((h) => (
-                  <option key={h.slug} value={h.slug}>{h.title}</option>
-                ))}
-              </select>
-              <input
-                data-testid="post-title-input"
-                type="text"
-                value={writeForm.title}
-                onChange={(e) => setWriteForm({ ...writeForm, title: e.target.value })}
-                placeholder="제목을 입력하세요"
-                className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-                required
-              />
-              <textarea
-                data-testid="post-content-input"
-                value={writeForm.content}
-                onChange={(e) => setWriteForm({ ...writeForm, content: e.target.value })}
-                placeholder="내용을 입력하세요"
-                rows={6}
-                className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary resize-none"
-                required
-              />
-              <button
-                data-testid="post-submit-button"
-                type="submit"
-                className="w-full px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
-              >
-                게시하기
-              </button>
-            </form>
+      <Modal isOpen={showWrite} onClose={() => setShowWrite(false)} maxWidth="max-w-lg">
+        <h2 className="text-lg font-bold mb-4">게시글 작성</h2>
+        <form onSubmit={handleWritePost} className="space-y-4">
+          <div className="flex gap-2">
+            {(['question', 'tip', 'team-find', 'free'] as const).map((t) => {
+              const b = TYPE_BADGE[t];
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setWriteForm({ ...writeForm, type: t })}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    writeForm.type === t ? 'bg-primary text-white' : `${b.cls}`
+                  }`}
+                >
+                  {b.label}
+                </button>
+              );
+            })}
           </div>
-        </div>
-      )}
+          <select
+            value={writeForm.hackathonTag}
+            onChange={(e) => setWriteForm({ ...writeForm, hackathonTag: e.target.value })}
+            className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light"
+          >
+            <option value="">해커톤 태그 (선택)</option>
+            {hackathons.map((h) => (
+              <option key={h.slug} value={h.slug}>{h.title}</option>
+            ))}
+          </select>
+          <input
+            data-testid="post-title-input"
+            type="text"
+            value={writeForm.title}
+            onChange={(e) => setWriteForm({ ...writeForm, title: e.target.value })}
+            placeholder="제목을 입력하세요"
+            className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
+            required
+          />
+          <textarea
+            data-testid="post-content-input"
+            value={writeForm.content}
+            onChange={(e) => setWriteForm({ ...writeForm, content: e.target.value })}
+            placeholder="내용을 입력하세요"
+            rows={6}
+            className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary resize-none"
+            required
+          />
+          <button
+            data-testid="post-submit-button"
+            type="submit"
+            className="w-full px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
+          >
+            게시하기
+          </button>
+        </form>
+      </Modal>
     </div>
   );
 }
