@@ -146,8 +146,8 @@ export default function CommunityPostDetailPage() {
   function handleDelete() {
     if (!post) return;
     if (window.confirm('게시글을 삭제하시겠습니까?')) {
-      deletePost(post.id, user!.id);
       router.push('/community');
+      deletePost(post.id, user!.id);
     }
   }
 
