@@ -680,14 +680,14 @@ export const seedLeaderboards: Leaderboard[] = [
 ];
 
 export const seedRankings: RankingEntry[] = [
-  { userId: 'user-11', nickname: '윤스피드', role: 'developer', grade: 'master', badges: ['first-submit', 'team-leader', '3-wins'], totalScore: 2850, competitionScore: 2200, communityScore: 650 },
-  { userId: 'user-5', nickname: '최분석', role: 'data-scientist', grade: 'expert', badges: ['first-submit', '10-hackathons'], totalScore: 1420, competitionScore: 1100, communityScore: 320 },
-  { userId: 'user-8', nickname: '오기획', role: 'planner', grade: 'expert', badges: ['first-submit', 'team-leader', 'popular-author'], totalScore: 1180, competitionScore: 700, communityScore: 480 },
-  { userId: 'user-2', nickname: '김데이터', role: 'data-scientist', grade: 'expert', badges: ['first-submit', '7-day-streak'], totalScore: 980, competitionScore: 750, communityScore: 230 },
-  { userId: 'user-4', nickname: '박프론트', role: 'developer', grade: 'challenger', badges: ['first-submit'], totalScore: 450, competitionScore: 300, communityScore: 150 },
-  { userId: 'user-9', nickname: '유예술', role: 'designer', grade: 'challenger', badges: ['first-submit', 'creator'], totalScore: 380, competitionScore: 200, communityScore: 180 },
-  { userId: 'user-3', nickname: '이디자인', role: 'designer', grade: 'challenger', badges: ['first-submit'], totalScore: 310, competitionScore: 200, communityScore: 110 },
-  { userId: 'user-7', nickname: '한언어', role: 'data-scientist', grade: 'challenger', badges: ['first-submit'], totalScore: 250, competitionScore: 180, communityScore: 70 },
+  { userId: 'user-11', nickname: '윤스피드', role: 'developer', grade: 'legend', badges: ['first-submit', 'team-leader', '3-wins'], totalScore: 5200, competitionScore: 4100, communityScore: 1100 },
+  { userId: 'user-5', nickname: '최분석', role: 'data-scientist', grade: 'challenger', badges: ['first-submit', '10-hackathons'], totalScore: 1800, competitionScore: 1400, communityScore: 400 },
+  { userId: 'user-8', nickname: '오기획', role: 'planner', grade: 'master', badges: ['first-submit', 'team-leader', 'popular-author'], totalScore: 1180, competitionScore: 700, communityScore: 480 },
+  { userId: 'user-2', nickname: '김데이터', role: 'data-scientist', grade: 'master', badges: ['first-submit', '7-day-streak'], totalScore: 980, competitionScore: 750, communityScore: 230 },
+  { userId: 'user-4', nickname: '박프론트', role: 'developer', grade: 'expert', badges: ['first-submit'], totalScore: 450, competitionScore: 300, communityScore: 150 },
+  { userId: 'user-9', nickname: '유예술', role: 'designer', grade: 'expert', badges: ['first-submit', 'creator'], totalScore: 380, competitionScore: 200, communityScore: 180 },
+  { userId: 'user-3', nickname: '이디자인', role: 'designer', grade: 'expert', badges: ['first-submit'], totalScore: 310, competitionScore: 200, communityScore: 110 },
+  { userId: 'user-7', nickname: '한언어', role: 'data-scientist', grade: 'expert', badges: ['first-submit'], totalScore: 250, competitionScore: 180, communityScore: 70 },
   { userId: 'user-6', nickname: '정머신', role: 'data-scientist', grade: 'rookie', badges: ['first-submit'], totalScore: 95, competitionScore: 80, communityScore: 15 },
   { userId: 'user-10', nickname: '강개발', role: 'developer', grade: 'rookie', badges: [], totalScore: 60, competitionScore: 50, communityScore: 10 },
 ];
@@ -789,16 +789,17 @@ export const defaultUserProfile: UserProfile = {
 
 export function getGradeFromPoints(points: number): string {
   if (points >= 5000) return 'legend';
-  if (points >= 1500) return 'master';
-  if (points >= 500) return 'expert';
-  if (points >= 100) return 'challenger';
+  if (points >= 1500) return 'challenger';
+  if (points >= 500) return 'master';
+  if (points >= 100) return 'expert';
   return 'rookie';
 }
 
+// Grade hierarchy (highest → lowest): Legend > Challenger > Master > Expert > Rookie
 export const gradeConfig: Record<string, { label: string; icon: string; color: string; min: number; max: number }> = {
   rookie: { label: 'Rookie', icon: 'Sprout', color: 'var(--color-grade-rookie)', min: 0, max: 99 },
-  challenger: { label: 'Challenger', icon: 'Swords', color: 'var(--color-grade-challenger)', min: 100, max: 499 },
-  expert: { label: 'Expert', icon: 'Gem', color: 'var(--color-grade-expert)', min: 500, max: 1499 },
-  master: { label: 'Master', icon: 'Crown', color: 'var(--color-grade-master)', min: 1500, max: 4999 },
+  expert: { label: 'Expert', icon: 'Gem', color: 'var(--color-grade-expert)', min: 100, max: 499 },
+  master: { label: 'Master', icon: 'Crown', color: 'var(--color-grade-master)', min: 500, max: 1499 },
+  challenger: { label: 'Challenger', icon: 'Swords', color: 'var(--color-grade-challenger)', min: 1500, max: 4999 },
   legend: { label: 'Legend', icon: 'Trophy', color: 'var(--color-grade-legend)', min: 5000, max: Infinity },
 };

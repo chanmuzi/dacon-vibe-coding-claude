@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Trophy, Medal, Info } from 'lucide-react';
+import { Medal, Info, Award, BarChart3 } from 'lucide-react';
+import Link from 'next/link';
 import { useRankingStore } from '@/store/ranking';
 import { gradeConfig, seedBadges } from '@/data/seed';
 import type { RankingEntry } from '@/types';
 import IconMapper from '@/components/IconMapper';
+import GradeBadge from '@/components/GradeBadge';
 import UserAvatar from '@/components/UserAvatar';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -27,7 +29,7 @@ const PERIODS: { key: PeriodKey; label: string; testId: string }[] = [
   { key: 'weekly', label: '주간', testId: 'ranking-period-weekly' },
 ];
 
-const GRADE_ORDER: string[] = ['rookie', 'challenger', 'expert', 'master', 'legend'];
+const GRADE_ORDER: string[] = ['rookie', 'expert', 'master', 'challenger', 'legend'];
 
 // Stable pseudo-random multipliers derived from userId string (avoids hydration issues)
 function stableMultiplier(userId: string, min: number, max: number): number {
@@ -61,10 +63,24 @@ const BADGE_MAP = Object.fromEntries(seedBadges.map((b) => [b.id, b]));
 
 // ─── Rank Indicator ───────────────────────────────────────────────────────────
 
+const RANK_STYLES: Record<number, { bg: string; border: string; text: string }> = {
+  1: { bg: '#FEF3C7', border: '#D4A017', text: '#92400E' },
+  2: { bg: '#F1F5F9', border: '#94A3B8', text: '#475569' },
+  3: { bg: '#FED7AA', border: '#C2884A', text: '#7C2D12' },
+};
+
 function RankIndicator({ rank }: { rank: number }) {
-  if (rank === 1) return <Trophy size={20} style={{ color: '#D4A017' }} />;
-  if (rank === 2) return <Medal size={20} style={{ color: '#7C8A96' }} />;
-  if (rank === 3) return <Medal size={18} style={{ color: '#B87333' }} />;
+  const style = RANK_STYLES[rank];
+  if (style) {
+    return (
+      <span
+        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2"
+        style={{ backgroundColor: style.bg, borderColor: style.border, color: style.text }}
+      >
+        {rank}
+      </span>
+    );
+  }
   return (
     <span className="font-mono text-sm font-semibold text-text-secondary w-8 text-center inline-block">
       {rank}
@@ -81,17 +97,7 @@ interface RowProps {
 }
 
 function RankingRow({ rank, entry, tab }: RowProps) {
-  const grade = gradeConfig[entry.grade];
   const score = getScoreByTab(entry, tab);
-
-  const rowBg =
-    rank === 1
-      ? 'bg-warning-light border-warning/20'
-      : rank === 2
-      ? 'bg-info-light/50 border-info/10'
-      : rank === 3
-      ? 'bg-warning-light/30 border-warning/10'
-      : 'bg-surface border-border';
 
   const scoreColor =
     rank === 1
@@ -104,9 +110,19 @@ function RankingRow({ rank, entry, tab }: RowProps) {
 
   const scoreSizeClass = rank === 1 ? 'text-lg' : 'text-base';
 
+  // Rank 1: gold bg, Rank 2/3: left accent border, Rest: plain
+  const rowClasses =
+    rank === 1
+      ? 'bg-warning-light border border-warning/30'
+      : 'bg-surface border border-border';
+
+  const compRatio = entry.totalScore > 0
+    ? Math.round((entry.competitionScore / entry.totalScore) * 100)
+    : 0;
+
   return (
     <div
-      className={`flex items-center gap-3 sm:gap-4 px-4 py-3 border rounded-xl mb-2 transition-all hover:shadow-sm ${rowBg}`}
+      className={`flex items-center gap-3 sm:gap-4 px-4 py-3 rounded-xl mb-2 transition-shadow hover:shadow-sm ${rowClasses}`}
     >
       {/* Rank */}
       <div className="w-8 flex items-center justify-center shrink-0">
@@ -114,40 +130,39 @@ function RankingRow({ rank, entry, tab }: RowProps) {
       </div>
 
       {/* Avatar + Nickname + Grade */}
-      <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div className="flex items-center gap-2 shrink-0 min-w-0" style={{ width: '220px' }}>
         <UserAvatar role={entry.role} size="md" />
         <div className="min-w-0">
-          <div className="flex items-center gap-1">
-            <span
-              className={`font-semibold truncate ${
+          <div className="flex items-center gap-1.5">
+            <Link
+              href={`/users/${entry.userId}`}
+              className={`font-semibold truncate hover:underline cursor-pointer ${
                 rank === 1 ? 'text-base text-warning' : 'text-sm text-text-primary'
               }`}
             >
               {entry.nickname}
-            </span>
-            <span title={grade?.label ?? entry.grade} className="shrink-0">
-              <IconMapper name={grade?.icon ?? 'Sprout'} size={16} />
-            </span>
+            </Link>
+            <GradeBadge grade={entry.grade} />
           </div>
-          <span className="text-xs text-text-secondary hidden sm:block" style={{ color: grade?.color }}>
-            {grade?.label}
-          </span>
         </div>
       </div>
 
       {/* Badges */}
-      <div className="hidden md:flex items-center gap-1 shrink-0">
+      <div className="hidden md:flex items-center gap-1 shrink-0 w-24">
         {entry.badges.slice(0, 4).map((badgeId) => {
           const badge = BADGE_MAP[badgeId];
           if (!badge) return null;
           return (
             <span
               key={badgeId}
-              title={badge.name}
-              className="text-base cursor-default"
+              className="relative group cursor-default"
               aria-label={badge.name}
             >
               <IconMapper name={badge.icon} size={14} />
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center px-2.5 py-1.5 rounded-lg bg-text-primary text-white text-[10px] whitespace-nowrap z-20 shadow-lg pointer-events-none">
+                <span className="font-semibold">{badge.name}</span>
+                <span className="opacity-70">{badge.condition}</span>
+              </span>
             </span>
           );
         })}
@@ -159,8 +174,42 @@ function RankingRow({ rank, entry, tab }: RowProps) {
         )}
       </div>
 
-      {/* Score */}
-      <div className="shrink-0 text-right">
+      {/* Score composition bar — fills remaining space */}
+      <div className="hidden lg:flex flex-1 items-center px-4">
+        <div className="w-full h-2 rounded-full bg-border/30 overflow-hidden flex">
+          {entry.totalScore > 0 && (
+            <>
+              <div
+                className="h-full bg-primary rounded-l-full"
+                style={{ width: `${compRatio}%` }}
+                title={`대회 ${entry.competitionScore.toLocaleString()}pt (${compRatio}%)`}
+              />
+              <div
+                className="h-full bg-primary/20"
+                style={{ width: `${100 - compRatio}%` }}
+                title={`커뮤니티 ${entry.communityScore.toLocaleString()}pt (${100 - compRatio}%)`}
+              />
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Competition Score */}
+      <div className="hidden lg:block shrink-0 w-20 text-right">
+        <span className="font-mono text-sm text-text-secondary">
+          {entry.competitionScore.toLocaleString()}
+        </span>
+      </div>
+
+      {/* Community Score */}
+      <div className="hidden lg:block shrink-0 w-20 text-right">
+        <span className="font-mono text-sm text-text-secondary">
+          {entry.communityScore.toLocaleString()}
+        </span>
+      </div>
+
+      {/* Total Score */}
+      <div className="shrink-0 w-24 text-right">
         <span className={`font-mono font-bold ${scoreSizeClass} ${scoreColor}`}>
           {score.toLocaleString()}
         </span>
@@ -221,7 +270,7 @@ function GradeLegend() {
   return (
     <div className="bg-surface border border-border rounded-xl shadow-sm p-6">
       <div className="flex items-center gap-2 mb-4">
-        <Trophy className="w-4 h-4 text-primary" />
+        <Award className="w-4 h-4 text-primary" />
         <h2 className="font-semibold text-text-primary">등급 안내</h2>
       </div>
 
@@ -235,10 +284,7 @@ function GradeLegend() {
               key={gradeKey}
               className="flex items-center gap-3 px-3 py-2 rounded-lg bg-background"
             >
-              <span className="text-xl shrink-0"><IconMapper name={cfg.icon} className="w-5 h-5" /></span>
-              <span className="font-semibold text-sm" style={{ color: cfg.color, minWidth: 80 }}>
-                {cfg.label}
-              </span>
+              <GradeBadge grade={gradeKey} size="md" />
               <span className="text-xs text-text-secondary font-mono">
                 {cfg.min.toLocaleString()}
                 {isMax ? '+ pt' : ` ~ ${cfg.max.toLocaleString()} pt`}
@@ -329,16 +375,19 @@ export default function RankingsPage() {
           {/* Table header */}
           <div className="flex items-center gap-3 sm:gap-4 px-4 py-2 mb-1 text-xs font-medium text-text-secondary">
             <div className="w-8 text-center shrink-0">순위</div>
-            <div className="flex-1">참가자</div>
+            <div className="shrink-0" style={{ width: '220px' }}>참가자</div>
             <div className="hidden md:block w-24 shrink-0">배지</div>
-            <div className="shrink-0 text-right">
+            <div className="hidden lg:flex flex-1 px-4">점수 구성</div>
+            <div className="hidden lg:block w-20 shrink-0 text-right">대회</div>
+            <div className="hidden lg:block w-20 shrink-0 text-right">커뮤니티</div>
+            <div className="shrink-0 w-24 text-right">
               {tab === 'competition' ? '대회 점수' : tab === 'community' ? '커뮤니티 점수' : '종합 점수'}
             </div>
           </div>
 
           {sorted.length === 0 ? (
             <div className="bg-surface border border-border rounded-xl p-16 flex flex-col items-center gap-3 text-center">
-              <Trophy className="w-10 h-10 text-border" />
+              <BarChart3 className="w-10 h-10 text-border" />
               <p className="text-text-secondary">랭킹 데이터가 없습니다.</p>
             </div>
           ) : (
