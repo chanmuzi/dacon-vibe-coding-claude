@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { FileQuestion, Home } from 'lucide-react';
 
 export default function NotFound() {
@@ -12,13 +13,13 @@ export default function NotFound() {
         <p className="text-sm text-text-secondary mb-8 max-w-md">
           요청하신 페이지가 존재하지 않거나 이동되었을 수 있습니다.
         </p>
-        <a
+        <Link
           href="/"
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-text-on-primary font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98] cursor-pointer"
         >
           <Home size={18} />
           홈으로 돌아가기
-        </a>
+        </Link>
       </div>
     </div>
   );

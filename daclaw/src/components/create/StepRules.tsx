@@ -1,7 +1,7 @@
 'use client';
 
 import { Plus, Trash2 } from 'lucide-react';
-import { Label, Input, SectionCard } from './FormFields';
+import { Input, SectionCard } from './FormFields';
 
 export interface RulesData {
   rules: string[];

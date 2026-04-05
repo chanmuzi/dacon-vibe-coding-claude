@@ -162,7 +162,13 @@ function MiniCalendar({ startDate, endDate }: { startDate: string; endDate: stri
 export default function HackathonDetailContent() {
   const params = useParams();
   const router = useRouter();
-  const slug = decodeURIComponent(params.slug as string);
+  const slug = (() => {
+    try {
+      return decodeURIComponent(params.slug as string);
+    } catch {
+      return params.slug as string;
+    }
+  })();
 
   const { getBySlug, isBookmarked, toggleBookmark, deleteHackathon } = useHackathonStore();
   const { teams } = useTeamStore();

@@ -957,7 +957,7 @@ function HackathonsPageInner() {
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              내 대회
+              커스텀
             </button>
             <div className="w-px h-5 bg-border mx-1" />
             {(
