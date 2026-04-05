@@ -608,9 +608,9 @@ export default function HackathonDetailContent() {
               </button>
               <button
                 onClick={() => {
-                  deleteHackathon(hackathon.slug, user.id);
                   setShowDeleteModal(false);
                   router.push('/hackathons');
+                  setTimeout(() => deleteHackathon(hackathon.slug, user.id), 100);
                 }}
                 className="flex-1 py-2 bg-error text-white rounded-lg text-sm font-bold hover:bg-error/90 transition-all cursor-pointer active:scale-[0.98]"
               >
