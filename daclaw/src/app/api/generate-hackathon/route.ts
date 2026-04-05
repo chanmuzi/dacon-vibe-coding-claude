@@ -52,29 +52,34 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'INVALID_PROMPT' }, { status: 400 });
   }
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: prompt },
-      ],
-      max_tokens: 1500,
-      temperature: 0.8,
-    }),
-  });
+  let text = '';
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: prompt },
+        ],
+        max_tokens: 1500,
+        temperature: 0.8,
+      }),
+    });
 
-  if (!response.ok) {
-    return Response.json({ error: 'OPENAI_ERROR' }, { status: 502 });
+    if (!response.ok) {
+      return Response.json({ error: 'OPENAI_ERROR' }, { status: 502 });
+    }
+
+    const data = await response.json();
+    text = data.choices?.[0]?.message?.content || '';
+  } catch {
+    return Response.json({ error: 'OPENAI_REQUEST_FAILED' }, { status: 502 });
   }
-
-  const data = await response.json();
-  const text = data.choices?.[0]?.message?.content || '';
 
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/);

@@ -311,7 +311,12 @@ export default function CreatePage() {
       prizes: data.prizes && data.prizes.length > 0 ? data.prizes : prev.prizes,
       evaluationCriteria: data.evaluationCriteria && data.evaluationCriteria.length > 0 ? data.evaluationCriteria : prev.evaluationCriteria,
       metrics: data.metrics?.join(', ') || prev.metrics,
-      submissionType: (data.submissionType as 'csv' | 'json' | 'markdown') || prev.submissionType,
+      submissionType:
+        data.submissionType === 'csv' ||
+        data.submissionType === 'json' ||
+        data.submissionType === 'markdown'
+          ? data.submissionType
+          : prev.submissionType,
       submissionDescription: data.submissionDescription || prev.submissionDescription,
     }));
     setRulesData((prev) => ({

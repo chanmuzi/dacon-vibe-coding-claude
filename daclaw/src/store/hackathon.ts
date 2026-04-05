@@ -76,8 +76,10 @@ export const useHackathonStore = create<HackathonState>((set, get) => ({
     const target = get().hackathons.find((h) => h.slug === slug);
     if (!target || !target.isCustom || target.creatorId !== userId) return;
     const hackathons = get().hackathons.filter((h) => h.slug !== slug);
+    const bookmarks = get().bookmarks.filter((b) => b.hackathonSlug !== slug);
     setItem('hackathons', hackathons);
-    set({ hackathons });
+    setItem('bookmarks', bookmarks);
+    set({ hackathons, bookmarks });
   },
 
   getMyHackathons: (userId) => {

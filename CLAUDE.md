@@ -15,7 +15,7 @@ dacon-vibe-coding-claude/        ← git root
     │   └── api/                 ← API 라우트 (chat, analyze, recommend-teams, generate-hackathon)
     ├── src/components/          ← 공통 컴포넌트 (16개 + create/ 8개 + dashboard/ 1개)
     │   └── create/              ← 대회 생성 위자드 컴포넌트 (WizardProgress, StepBasicInfo 등)
-    ├── src/data/seed.ts         ← Mock 데이터 (SEED_VERSION 8)
+    ├── src/data/seed.ts         ← Mock 데이터 (SEED_VERSION 9)
     ├── src/store/               ← Zustand 상태관리 (8개 스토어)
     └── src/types/index.ts       ← TypeScript 타입 정의
 ```
