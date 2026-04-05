@@ -11,6 +11,10 @@ interface HackathonState {
   initialized: boolean;
   init: () => void;
   addHackathon: (h: Hackathon) => void;
+  updateHackathon: (slug: string, updates: Partial<Hackathon>, userId: string) => void;
+  deleteHackathon: (slug: string, userId: string) => void;
+  getMyHackathons: (userId: string) => Hackathon[];
+  canCreateThisMonth: (userId: string) => boolean;
   toggleBookmark: (slug: string) => void;
   isBookmarked: (slug: string) => boolean;
   getBySlug: (slug: string) => Hackathon | undefined;
@@ -56,6 +60,42 @@ export const useHackathonStore = create<HackathonState>((set, get) => ({
     const updated = [...get().hackathons, h];
     setItem('hackathons', updated);
     set({ hackathons: updated });
+  },
+
+  updateHackathon: (slug, updates, userId) => {
+    const target = get().hackathons.find((h) => h.slug === slug);
+    if (!target || !target.isCustom || target.creatorId !== userId) return;
+    const hackathons = get().hackathons.map((h) =>
+      h.slug === slug ? { ...h, ...updates, slug: h.slug, isCustom: true, creatorId: h.creatorId } : h
+    );
+    setItem('hackathons', hackathons);
+    set({ hackathons });
+  },
+
+  deleteHackathon: (slug, userId) => {
+    const target = get().hackathons.find((h) => h.slug === slug);
+    if (!target || !target.isCustom || target.creatorId !== userId) return;
+    const hackathons = get().hackathons.filter((h) => h.slug !== slug);
+    setItem('hackathons', hackathons);
+    set({ hackathons });
+  },
+
+  getMyHackathons: (userId) => {
+    return get().hackathons.filter((h) => h.isCustom && h.creatorId === userId);
+  },
+
+  canCreateThisMonth: (userId) => {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const myHackathons = get().hackathons.filter(
+      (h) => h.isCustom && h.creatorId === userId && h.slug.includes('-')
+    );
+    const createdThisMonth = myHackathons.filter((h) => {
+      const ts = parseInt(h.slug.split('-').pop() || '0', 10);
+      if (!ts || ts < 1000000000000) return false;
+      return new Date(ts).toISOString() >= monthStart;
+    });
+    return createdThisMonth.length < 2;
   },
 
   toggleBookmark: (slug) => {

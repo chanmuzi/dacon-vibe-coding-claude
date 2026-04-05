@@ -3,7 +3,7 @@ import type {
   CommunityPost, Badge, DailyMission, Message, UserProfile,
 } from '@/types';
 
-export const SEED_VERSION = 6;
+export const SEED_VERSION = 8;
 
 export const seedHackathons: Hackathon[] = [
   {
@@ -17,8 +17,8 @@ export const seedHackathons: Hackathon[] = [
     tags: ['AI', '이미지 생성', 'Diffusion', 'Computer Vision'],
     thumbnailUrl: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=400&fit=crop',
     startDate: '2026-03-20',
-    endDate: '2026-04-12',
-    resultDate: '2026-04-20',
+    endDate: '2026-04-30',
+    resultDate: '2026-05-10',
     prizes: [
       { rank: 1, label: '1등', amount: '500만원' },
       { rank: 2, label: '2등', amount: '300만원' },
@@ -80,7 +80,7 @@ export const seedHackathons: Hackathon[] = [
     tags: ['웹개발', 'AI', '바이브코딩', 'UI/UX'],
     thumbnailUrl: 'https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=600&h=400&fit=crop',
     startDate: '2026-03-10',
-    endDate: '2026-04-06',
+    endDate: '2026-04-24',
     resultDate: '2026-04-25',
     prizes: [
       { rank: 1, label: '대상', amount: '1000만원' },
@@ -162,7 +162,7 @@ export const seedHackathons: Hackathon[] = [
     milestones: [
       { label: '대회 시작', date: '2026-03-10', done: true },
       { label: '중간 발표', date: '2026-03-25', done: true },
-      { label: '웹링크 제출', date: '2026-04-06', done: false },
+      { label: '웹링크 제출', date: '2026-04-24', done: false },
       { label: 'PDF 제출', date: '2026-04-13', done: false },
       { label: '결과 발표', date: '2026-04-25', done: false },
     ],
