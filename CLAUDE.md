@@ -35,6 +35,7 @@ Next.js 16 App Router, TypeScript, Tailwind CSS v4, tw-animate-css, Zustand, Rec
 
 - localStorage 기반 mock 인증 (서버 없음)
 - 클라이언트 사이드 시드 데이터 (`src/data/seed.ts`)
+- `.map(h => h.field)` 사용 시 `.filter(Boolean)`으로 undefined/null 방어 (localStorage 데이터는 스키마 미보장)
 
 ## Design System
 
