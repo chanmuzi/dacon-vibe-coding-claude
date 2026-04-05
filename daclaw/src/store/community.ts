@@ -3,7 +3,9 @@
 import { create } from 'zustand';
 import type { CommunityPost, Comment } from '@/types';
 import { getItem, setItem } from '@/lib/localStorage';
-import { seedCommunityPosts } from '@/data/seed';
+import { seedCommunityPosts, SEED_VERSION } from '@/data/seed';
+
+const COMMUNITY_VERSION_KEY = 'community_version';
 
 interface CommunityState {
   posts: CommunityPost[];
@@ -14,6 +16,8 @@ interface CommunityState {
   toggleLike: (postId: string, userId: string) => void;
   updatePost: (id: string, updates: Partial<CommunityPost>, userId: string) => void;
   deletePost: (id: string, userId: string) => void;
+  updateComment: (postId: string, commentId: string, content: string, userId: string) => void;
+  deleteComment: (postId: string, commentId: string, userId: string) => void;
 }
 
 export const useCommunityStore = create<CommunityState>((set, get) => ({
@@ -22,11 +26,13 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
 
   init: () => {
     if (get().initialized) return;
+    const storedVersion = getItem<number>(COMMUNITY_VERSION_KEY);
     const stored = getItem<CommunityPost[]>('community');
-    if (stored && stored.length > 0) {
+    if (stored && stored.length > 0 && storedVersion === SEED_VERSION) {
       set({ posts: stored, initialized: true });
     } else {
       setItem('community', seedCommunityPosts);
+      setItem(COMMUNITY_VERSION_KEY, SEED_VERSION);
       set({ posts: seedCommunityPosts, initialized: true });
     }
   },
@@ -71,6 +77,31 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
     const target = get().posts.find((p) => p.id === id);
     if (!target || target.authorId !== userId) return;
     const posts = get().posts.filter((p) => p.id !== id);
+    setItem('community', posts);
+    set({ posts });
+  },
+
+  updateComment: (postId, commentId, content, userId) => {
+    const posts = get().posts.map((p) => {
+      if (p.id !== postId) return p;
+      return {
+        ...p,
+        comments: p.comments.map((c) =>
+          c.id === commentId && c.authorId === userId ? { ...c, content } : c
+        ),
+      };
+    });
+    setItem('community', posts);
+    set({ posts });
+  },
+
+  deleteComment: (postId, commentId, userId) => {
+    const posts = get().posts.map((p) => {
+      if (p.id !== postId) return p;
+      const target = p.comments.find((c) => c.id === commentId);
+      if (!target || target.authorId !== userId) return p;
+      return { ...p, comments: p.comments.filter((c) => c.id !== commentId) };
+    });
     setItem('community', posts);
     set({ posts });
   },
