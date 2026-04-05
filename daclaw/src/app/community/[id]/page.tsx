@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, notFound } from 'next/navigation';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -151,22 +151,7 @@ export default function CommunityPostDetailPage() {
     }
   }
 
-  if (!post) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-surface border border-border rounded-xl shadow-sm p-12 text-center">
-          <p className="text-text-secondary text-lg mb-4">포스트를 찾을 수 없습니다.</p>
-          <Link
-            href="/community"
-            className="inline-flex items-center gap-2 text-primary hover:underline"
-          >
-            <ArrowLeft size={16} />
-            커뮤니티로 돌아가기
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  if (!post) notFound();
 
   const badge = TYPE_BADGE[post.type];
 

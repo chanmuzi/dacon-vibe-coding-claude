@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, Bookmark, BookmarkCheck, Users, Calendar, Clock,
   Trophy, Medal, Award, FileText, MessageSquare, Send, Download, Copy, ExternalLink,
-  Pin, Check, CheckCircle2, Circle, AlertCircle, BarChart3, Star,
+  Pin, Check, CheckCircle2, Circle, BarChart3, Star,
   Building2, Terminal, Code, ChevronDown, Bell,
 } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathon';
@@ -177,15 +177,7 @@ export default function HackathonDetailPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  if (!hackathon) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <AlertCircle size={48} className="mx-auto text-text-secondary mb-4" />
-        <h1 className="text-xl font-bold text-text-primary mb-2">해커톤을 찾을 수 없습니다</h1>
-        <button onClick={() => router.push('/hackathons')} className="text-primary hover:underline">목록으로 돌아가기</button>
-      </div>
-    );
-  }
+  if (!hackathon) notFound();
 
   const badge = TYPE_BADGE[hackathon.type];
   const daysToEnd = daysUntil(hackathon.endDate);
