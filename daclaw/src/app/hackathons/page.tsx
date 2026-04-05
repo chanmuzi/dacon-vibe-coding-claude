@@ -842,7 +842,7 @@ function HackathonsPageInner() {
                 onChange={(e) => setOrganizerFilter(e.target.value)}
                 className="appearance-none border border-border rounded-lg bg-surface px-3 py-2 pr-8 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary cursor-pointer"
               >
-                <option value="all">전체 주최</option>
+                <option key="all" value="all">전체 주최</option>
                 {organizers.map((org) => (
                   <option key={org} value={org}>
                     {org}

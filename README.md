@@ -21,7 +21,7 @@ Vercel 배포 시 Root Directory를 `daclaw`로 설정하세요.
 - Next.js 16 / React 19
 - Tailwind CSS 4
 - Zustand (상태관리)
-- Framer Motion (애니메이션)
+- tw-animate-css + CSS Transitions (애니메이션)
 - Recharts (차트)
 - Lucide React (아이콘)
 

@@ -25,6 +25,8 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
 
   const hackathons = useHackathonStore((s) => s.hackathons);
   const teams = useTeamStore((s) => s.teams);
@@ -89,12 +91,32 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    setFocusedIndex(-1);
+  }, [query]);
+
+  useEffect(() => {
+    if (focusedIndex >= 0 && resultsRef.current) {
+      const el = resultsRef.current.querySelector<HTMLElement>(`[data-result-index="${focusedIndex}"]`);
+      el?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [focusedIndex]);
 
   const grouped = results.reduce<Record<string, SearchResult[]>>((acc, r) => {
     if (!acc[r.category]) acc[r.category] = [];
     acc[r.category].push(r);
     return acc;
   }, {});
+
+  const flatResults: SearchResult[] = [];
+  const categoryOffsets = new Map<string, number>();
+  for (const cat of ['해커톤', '팀', '커뮤니티'] as const) {
+    const items = grouped[cat];
+    if (items?.length) {
+      categoryOffsets.set(cat, flatResults.length);
+      flatResults.push(...items);
+    }
+  }
 
   const categoryIcon = (cat: string) => {
     if (cat === '해커톤') return <Trophy size={14} />;
@@ -107,6 +129,21 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     onClose();
   };
 
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.nativeEvent.isComposing) return;
+    if (flatResults.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFocusedIndex((prev) => (prev + 1) % flatResults.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocusedIndex((prev) => (prev <= 0 ? flatResults.length - 1 : prev - 1));
+    } else if (e.key === 'Enter' && focusedIndex >= 0 && flatResults[focusedIndex]) {
+      e.preventDefault();
+      handleResultClick(flatResults[focusedIndex].href);
+    }
+  }
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-xl" zIndex={70} showCloseButton={false} className="p-0">
         {/* Search Input */}
@@ -118,6 +155,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="해커톤, 팀, 커뮤니티 검색..."
             className="flex-1 bg-transparent text-text-primary placeholder:text-text-secondary focus:outline-none text-sm"
           />
@@ -133,7 +171,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
         </div>
 
         {/* Results */}
-        <div className="max-h-[400px] overflow-y-auto">
+        <div ref={resultsRef} className="max-h-[400px] overflow-y-auto">
           {query.trim() === '' ? (
             <div className="px-4 py-6 text-center text-text-secondary text-sm">
               검색어를 입력하세요
@@ -153,11 +191,17 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                       {categoryIcon(cat)}
                       {cat}
                     </div>
-                    {items.map((item, i) => (
+                    {items.map((item, i) => {
+                      const globalIndex = (categoryOffsets.get(cat) ?? 0) + i;
+                      return (
                       <button
                         key={i}
+                        data-result-index={globalIndex}
                         onClick={() => handleResultClick(item.href)}
-                        className="w-full text-left px-4 py-2.5 hover:bg-primary-light transition-colors"
+                        onMouseEnter={() => setFocusedIndex(globalIndex)}
+                        className={`w-full text-left px-4 py-2.5 hover:bg-primary-light transition-colors ${
+                          globalIndex === focusedIndex ? 'bg-primary-light' : ''
+                        }`}
                       >
                         <div className="text-sm font-medium text-text-primary">{item.title}</div>
                         {item.description && (
@@ -166,7 +210,8 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                           </div>
                         )}
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })}
@@ -176,6 +221,8 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
 
         {/* Footer hint */}
         <div className="px-4 py-2 border-t border-border text-xs text-text-secondary flex gap-3">
+          <span>↑↓ 탐색</span>
+          <span>Enter 이동</span>
           <span>ESC 닫기</span>
         </div>
     </Modal>
