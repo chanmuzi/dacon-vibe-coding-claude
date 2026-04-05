@@ -93,7 +93,7 @@ export default function TeamPublicPage() {
       {/* Back button */}
       <button
         onClick={() => router.push('/camp')}
-        className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors mb-6"
+        className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors cursor-pointer mb-6"
       >
         <ArrowLeft size={16} /> 팀원 모집으로 돌아가기
       </button>
@@ -209,7 +209,7 @@ export default function TeamPublicPage() {
               <button
                 key={hack.slug}
                 onClick={() => router.push(`/hackathons/${hack.slug}`)}
-                className="flex items-start gap-3 p-4 bg-background rounded-lg border border-border hover:border-primary-light hover:shadow-sm transition-all text-left"
+                className="flex items-start gap-3 p-4 bg-background rounded-lg border border-border hover:border-primary-light hover:shadow-sm transition-all cursor-pointer active:scale-[0.98] text-left"
               >
                 <div
                   className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center"
@@ -268,7 +268,7 @@ export default function TeamPublicPage() {
         {team.recruitStatus === 'open' ? (
           <button
             onClick={handleApplyClick}
-            className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
           >
             <Send size={16} /> 참가 신청
           </button>

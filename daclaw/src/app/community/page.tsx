@@ -109,7 +109,7 @@ export default function CommunityPage() {
             if (!isLoggedIn || !user) { openAuthModal(); return; }
             setShowWrite(true);
           }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
         >
           <Plus size={16} /> 글쓰기
         </button>
@@ -137,7 +137,7 @@ export default function CommunityPage() {
               <button
                 key={t.value}
                 onClick={() => setTypeFilter(t.value)}
-                className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer active:scale-[0.98] ${
                   typeFilter === t.value ? 'bg-primary text-white' : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
                 }`}
               >
@@ -215,7 +215,7 @@ export default function CommunityPage() {
                   <span>{post.createdAt}</span>
                   <button
                     onClick={(e) => handleLike(e, post.id)}
-                    className="flex items-center gap-1 hover:text-primary transition-colors"
+                    className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer active:scale-95"
                   >
                     <Heart
                       size={14}
@@ -255,7 +255,7 @@ export default function CommunityPage() {
                   key={t}
                   type="button"
                   onClick={() => setWriteForm({ ...writeForm, type: t })}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer active:scale-[0.98] ${
                     writeForm.type === t ? 'bg-primary text-white' : `${b.cls}`
                   }`}
                 >

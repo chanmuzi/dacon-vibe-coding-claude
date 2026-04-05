@@ -162,7 +162,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="text-text-secondary hover:text-text-primary transition-colors"
+              className="text-text-secondary hover:text-text-primary transition-colors cursor-pointer active:scale-95"
               aria-label="검색어 지우기"
             >
               <X size={16} />
@@ -199,7 +199,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                         data-result-index={globalIndex}
                         onClick={() => handleResultClick(item.href)}
                         onMouseEnter={() => setFocusedIndex(globalIndex)}
-                        className={`w-full text-left px-4 py-2.5 hover:bg-primary-light transition-colors ${
+                        className={`w-full text-left px-4 py-2.5 hover:bg-primary-light transition-colors cursor-pointer ${
                           globalIndex === focusedIndex ? 'bg-primary-light' : ''
                         }`}
                       >

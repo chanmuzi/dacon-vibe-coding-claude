@@ -311,7 +311,7 @@ function CompareInner() {
                   {slugs[i] && (
                     <button
                       onClick={() => clearSlug(i)}
-                      className="ml-auto p-1 rounded-full hover:bg-border transition-colors"
+                      className="ml-auto p-1 rounded-full hover:bg-border transition-colors cursor-pointer active:scale-95"
                       aria-label="선택 해제"
                     >
                       <X className="w-3.5 h-3.5 text-text-secondary" />

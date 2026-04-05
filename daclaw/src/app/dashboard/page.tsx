@@ -100,7 +100,7 @@ function NotLoggedIn() {
         </p>
         <button
           onClick={openAuthModal}
-          className="mt-2 px-6 py-2.5 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+          className="mt-2 px-6 py-2.5 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
         >
           로그인
         </button>
@@ -269,7 +269,7 @@ function ProfileForm() {
 
         <button
           type="submit"
-          className={`self-end px-5 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`self-end px-5 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer active:scale-[0.98] ${
             saved
               ? 'bg-success text-text-on-primary'
               : 'bg-primary text-text-on-primary hover:bg-primary/90'
@@ -337,7 +337,7 @@ function BadgePanel() {
               </span>
               <button
                 onClick={() => setShowGradeModal(true)}
-                className="text-text-secondary hover:text-primary transition-colors"
+                className="text-text-secondary hover:text-primary transition-colors cursor-pointer active:scale-95"
                 title="등급 기준 보기"
               >
                 <HelpCircle className="w-4 h-4" />
@@ -385,7 +385,7 @@ function BadgePanel() {
                     key={badgeId}
                     title={badge.condition}
                     onClick={() => handleBadgeToggle(badgeId)}
-                    className={`relative flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                    className={`relative flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer active:scale-95 ${
                       isSelected
                         ? 'bg-primary-light text-primary border-2 border-primary'
                         : 'bg-primary-light text-primary border-2 border-transparent hover:border-primary/40'
@@ -511,7 +511,7 @@ function DailyMissions() {
             key={mission.id}
             data-testid="daily-mission-item"
             onClick={() => handleToggle(mission.id, mission.points, mission.completed)}
-            className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all w-full ${
+            className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer active:scale-[0.98] w-full ${
               mission.completed
                 ? 'completed bg-primary-light border-primary/20'
                 : 'bg-surface border-border hover:border-primary/40 hover:bg-primary-light/30'
@@ -843,7 +843,7 @@ function Messages() {
                 {isUnread && msg.id.startsWith('msg-extra-') ? null : isUnread && (
                   <button
                     onClick={() => markRead(msg.id)}
-                    className="text-xs text-primary hover:underline shrink-0"
+                    className="text-xs text-primary hover:underline shrink-0 cursor-pointer"
                   >
                     읽음
                   </button>

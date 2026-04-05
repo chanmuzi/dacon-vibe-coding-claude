@@ -63,7 +63,7 @@ function AuthorPopover({ authorId, nickname }: AuthorPopoverProps) {
     <div ref={ref} className="relative inline-block">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="font-medium text-text-primary hover:text-primary transition-colors underline-offset-2 hover:underline"
+        className="font-medium text-text-primary hover:text-primary transition-colors underline-offset-2 hover:underline cursor-pointer"
       >
         {nickname}
       </button>
@@ -71,13 +71,13 @@ function AuthorPopover({ authorId, nickname }: AuthorPopoverProps) {
         <div className="absolute left-0 top-full mt-1 z-50 bg-surface border border-border rounded-xl shadow-sm py-1 min-w-[140px]">
           <Link
             href={`/users/${authorId}`}
-            className="flex items-center gap-2 px-4 py-2 text-sm text-text-primary hover:bg-background transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm text-text-primary hover:bg-background transition-colors cursor-pointer"
             onClick={() => setOpen(false)}
           >
             프로필 보기
           </Link>
           <button
-            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-text-primary hover:bg-background transition-colors"
+            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-text-primary hover:bg-background transition-colors cursor-pointer"
             onClick={() => {
               alert(`${nickname}님에게 DM 기능은 준비 중입니다.`);
               setOpen(false);
@@ -200,14 +200,14 @@ export default function CommunityPostDetailPage() {
               <button
                 onClick={handleStartEdit}
                 title="수정"
-                className="p-2 rounded-lg text-text-secondary hover:bg-background hover:text-primary transition-colors"
+                className="p-2 rounded-lg text-text-secondary hover:bg-background hover:text-primary transition-colors cursor-pointer active:scale-95"
               >
                 <Pencil size={16} />
               </button>
               <button
                 onClick={handleDelete}
                 title="삭제"
-                className="p-2 rounded-lg text-text-secondary hover:bg-error-light hover:text-error transition-colors"
+                className="p-2 rounded-lg text-text-secondary hover:bg-error-light hover:text-error transition-colors cursor-pointer active:scale-95"
               >
                 <Trash2 size={16} />
               </button>
@@ -228,13 +228,13 @@ export default function CommunityPostDetailPage() {
               <div className="flex gap-2 justify-end">
                 <button
                   onClick={handleCancelEdit}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-text-secondary hover:bg-background text-sm transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-text-secondary hover:bg-background text-sm transition-colors cursor-pointer active:scale-[0.98]"
                 >
                   <X size={14} /> 취소
                 </button>
                 <button
                   onClick={handleSaveEdit}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 text-sm transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 text-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
                 >
                   <Check size={14} /> 저장
                 </button>
@@ -328,7 +328,7 @@ export default function CommunityPostDetailPage() {
           <div className="flex items-center gap-4 mt-5 pt-5 border-t border-border">
             <button
               onClick={handleToggleLike}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer active:scale-95 ${
                 liked
                   ? 'bg-primary text-white'
                   : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
@@ -392,7 +392,7 @@ export default function CommunityPostDetailPage() {
           <button
             onClick={handleAddComment}
             disabled={!isLoggedIn || !commentText.trim()}
-            className="px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed self-end"
+            className="px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed self-end"
           >
             <Send size={16} />
           </button>

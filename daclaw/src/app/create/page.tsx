@@ -160,7 +160,7 @@ function PrizeEditor({ prizes, onChange }: PrizeEditorProps) {
           <button
             type="button"
             onClick={() => remove(i)}
-            className="p-2 rounded-lg hover:bg-error-light text-text-secondary hover:text-error transition-colors"
+            className="p-2 rounded-lg hover:bg-error-light text-text-secondary hover:text-error transition-colors cursor-pointer active:scale-95"
             aria-label="삭제"
           >
             <Trash2 className="w-4 h-4" />
@@ -170,7 +170,7 @@ function PrizeEditor({ prizes, onChange }: PrizeEditorProps) {
       <button
         type="button"
         onClick={add}
-        className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors w-fit"
+        className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors cursor-pointer active:scale-95 w-fit"
       >
         <Plus className="w-4 h-4" />
         상금 추가
@@ -245,7 +245,7 @@ function CriterionEditor({ criteria, onChange }: CriterionEditorProps) {
         <button
           type="button"
           onClick={add}
-          className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors cursor-pointer active:scale-95"
         >
           <Plus className="w-4 h-4" />
           기준 추가
@@ -380,7 +380,7 @@ export default function CreatePage() {
                   setSelectedType(opt.type);
                   setStep('form');
                 }}
-                className="bg-surface border-2 border-border rounded-xl p-6 flex flex-col items-center gap-4 text-center hover:border-primary hover:shadow-md transition-all duration-200 group"
+                className="bg-surface border-2 border-border rounded-xl p-6 flex flex-col items-center gap-4 text-center hover:border-primary hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.98] group"
               >
                 <div className="w-16 h-16 rounded-2xl bg-primary-light text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
                   {opt.icon}
@@ -411,7 +411,7 @@ export default function CreatePage() {
           <button
             type="button"
             onClick={() => setStep('type')}
-            className="p-2 rounded-lg hover:bg-surface border border-transparent hover:border-border transition-colors"
+            className="p-2 rounded-lg hover:bg-surface border border-transparent hover:border-border transition-colors cursor-pointer active:scale-95"
             aria-label="뒤로"
           >
             <ArrowLeft className="w-5 h-5 text-text-secondary" />
@@ -578,14 +578,14 @@ export default function CreatePage() {
             <button
               type="button"
               onClick={() => router.push('/hackathons')}
-              className="flex-1 py-3 border border-border rounded-xl text-sm font-semibold text-text-secondary hover:bg-surface transition-colors"
+              className="flex-1 py-3 border border-border rounded-xl text-sm font-semibold text-text-secondary hover:bg-surface transition-colors cursor-pointer active:scale-[0.98]"
             >
               취소
             </button>
             <button
               data-testid="create-submit-button"
               type="submit"
-              className="flex-1 py-3 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm"
+              className="flex-1 py-3 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98] shadow-sm"
             >
               대회 만들기
             </button>

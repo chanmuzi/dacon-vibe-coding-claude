@@ -18,7 +18,7 @@ export default function FilterChipGroup({ items, activeKey, onChange }: FilterCh
           key={item.key}
           data-testid={item.testId}
           onClick={() => onChange(item.key)}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer active:scale-[0.98] ${
             activeKey === item.key
               ? 'bg-primary text-text-on-primary'
               : 'bg-background text-text-secondary hover:text-text-primary hover:bg-primary-light'

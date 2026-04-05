@@ -195,7 +195,7 @@ export default function CampPage() {
             <button
               data-testid="create-team-button"
               onClick={() => setShowCreateForm(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
             >
               <Plus size={16} /> 팀 만들기
             </button>
@@ -222,7 +222,7 @@ export default function CampPage() {
                 <button
                   key={r}
                   onClick={() => setRoleFilter(r)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer active:scale-[0.98] ${
                     roleFilter === r ? 'bg-primary text-text-on-primary' : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
                   }`}
                 >
@@ -284,7 +284,7 @@ export default function CampPage() {
                       <button
                         data-testid="team-apply-button"
                         onClick={(e) => { e.preventDefault(); setApplyTeam(team); }}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-primary text-text-on-primary text-sm rounded-lg hover:bg-primary/90 transition-colors shrink-0"
+                        className="flex items-center gap-1.5 px-4 py-2 bg-primary text-text-on-primary text-sm rounded-lg hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98] shrink-0"
                       >
                         <UserPlus size={14} /> 참가 신청
                       </button>
@@ -319,7 +319,7 @@ export default function CampPage() {
                 <p className="text-xs text-text-secondary mb-3">맞춤 팀 추천을 받아보세요</p>
                 <button
                   onClick={openAuthModal}
-                  className="px-4 py-2 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                  className="px-4 py-2 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
                 >
                   로그인
                 </button>
@@ -410,7 +410,7 @@ export default function CampPage() {
                   key={r}
                   type="button"
                   onClick={() => toggleRole(r)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer active:scale-[0.98] ${
                     createForm.roles.includes(r) ? 'bg-primary text-text-on-primary' : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
                   }`}
                 >
@@ -469,7 +469,7 @@ export default function CampPage() {
                   key={r}
                   type="button"
                   onClick={() => toggleApplyPosition(r)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer active:scale-[0.98] ${
                     applyForm.positions.includes(r)
                       ? 'bg-primary text-text-on-primary'
                       : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
