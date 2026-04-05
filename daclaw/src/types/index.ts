@@ -24,6 +24,19 @@ export interface Hackathon {
   organizer: string;
   organizerLogo?: string;
   color: string;
+  rules?: string[];
+  faq?: { question: string; answer: string }[];
+  prizeNote?: string;
+  submissionFormat?: {
+    type: 'csv' | 'json' | 'markdown';
+    columns?: string[];
+    maxRows?: number;
+    maxFileSize?: number;
+    minChars?: number;
+    maxChars?: number;
+    sampleContent?: string;
+    description?: string;
+  };
 }
 
 export interface Prize {
@@ -36,7 +49,10 @@ export interface EvaluationCriterion {
   name: string;
   weight: number;
   description: string;
+  examples?: string[];
 }
+
+export type NoticeCategory = 'announcement' | 'rule' | 'update';
 
 export interface Notice {
   id: string;
@@ -44,6 +60,7 @@ export interface Notice {
   content: string;
   pinned: boolean;
   createdAt: string;
+  category?: NoticeCategory;
 }
 
 export interface Milestone {

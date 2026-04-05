@@ -44,6 +44,7 @@ function TeamCreateForm() {
   const [maxMembers, setMaxMembers] = useState(4);
   const [requirements, setRequirements] = useState('');
   const [techStackInput, setTechStackInput] = useState('');
+  const [myRole, setMyRole] = useState<Role>(user?.role || 'developer');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -100,7 +101,7 @@ function TeamCreateForm() {
       name: name.trim(),
       description: description.trim(),
       hackathonSlugs: selectedHackathons,
-      members: [{ userId: user.id, nickname: user.nickname, role: user.role }],
+      members: [{ userId: user.id, nickname: user.nickname, role: myRole }],
       maxMembers,
       recruitRoles: selectedRoles,
       recruitStatus: 'open',
@@ -122,7 +123,7 @@ function TeamCreateForm() {
           <p className="text-text-secondary text-sm mb-6">팀을 만들려면 먼저 로그인해 주세요.</p>
           <button
             onClick={openAuthModal}
-            className="px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            className="px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
           >
             로그인
           </button>
@@ -136,20 +137,15 @@ function TeamCreateForm() {
       {/* Back button */}
       <button
         onClick={() => router.push('/camp')}
-        className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors mb-6"
+        className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors mb-6 cursor-pointer active:scale-[0.98]"
       >
         <ArrowLeft size={16} /> 팀원 모집으로 돌아가기
       </button>
 
       {/* Page header */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-          <Plus className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">팀 만들기</h1>
-          <p className="text-sm text-text-secondary mt-0.5">새로운 팀을 구성하고 팀원을 모집하세요</p>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-text-primary">팀 만들기</h1>
+        <p className="text-sm text-text-secondary mt-1">새로운 팀을 구성하고 팀원을 모집하세요</p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -187,6 +183,27 @@ function TeamCreateForm() {
               className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary placeholder:text-text-secondary resize-none"
             />
             {errors.description && <p className="text-xs text-error mt-1">{errors.description}</p>}
+          </div>
+
+          {/* My role */}
+          <div>
+            <Label required>내 포지션</Label>
+            <div className="flex flex-wrap gap-2">
+              {ALL_ROLES.map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => setMyRole(role)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer active:scale-[0.98] ${
+                    myRole === role
+                      ? 'bg-primary text-white'
+                      : 'bg-surface border border-border text-text-secondary hover:bg-primary-light hover:border-primary-light'
+                  }`}
+                >
+                  {ROLE_LABELS[role]}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -244,7 +261,7 @@ function TeamCreateForm() {
                 key={role}
                 type="button"
                 onClick={() => toggleRole(role)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer active:scale-[0.98] ${
                   selectedRoles.includes(role)
                     ? 'bg-primary text-white'
                     : 'bg-surface border border-border text-text-secondary hover:bg-primary-light hover:border-primary-light'
@@ -312,17 +329,17 @@ function TeamCreateForm() {
         </div>
 
         {/* Submit */}
-        <div className="flex items-center gap-3 pt-2">
+        <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={() => router.push('/camp')}
-            className="flex-1 py-3 border border-border rounded-xl text-sm font-semibold text-text-secondary hover:bg-surface transition-colors"
+            className="px-6 py-2.5 border border-border rounded-xl text-sm font-semibold text-text-secondary hover:border-text-secondary hover:text-text-primary transition-colors cursor-pointer active:scale-[0.98]"
           >
             취소
           </button>
           <button
             type="submit"
-            className="flex-1 py-3 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm flex items-center justify-center gap-2"
+            className="px-8 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
           >
             <Users size={16} /> 팀 생성
           </button>
