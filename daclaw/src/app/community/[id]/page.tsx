@@ -596,7 +596,7 @@ export default function CommunityPostDetailPage() {
           <button
             onClick={handleAddComment}
             disabled={!isLoggedIn || !commentText.trim()}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Send size={14} />
             전송
@@ -676,7 +676,7 @@ export default function CommunityPostDetailPage() {
               <button
                 onClick={() => handleSendApply(applyTeam.id)}
                 disabled={!applyForm.intro.trim()}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
               >
                 <Send size={16} /> 신청 보내기
               </button>

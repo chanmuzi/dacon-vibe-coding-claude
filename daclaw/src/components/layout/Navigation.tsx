@@ -297,7 +297,7 @@ export default function Navigation() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       active
                         ? 'bg-primary text-text-on-primary'
                         : 'text-text-secondary hover:bg-primary-light'
@@ -311,7 +311,7 @@ export default function Navigation() {
               {isLoggedIn ? (
                 <button
                   onClick={() => { handleLogout(); setMobileOpen(false); }}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-error hover:bg-error-light"
+                  className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium text-error hover:bg-error-light"
                 >
                   <LogOut size={18} />
                   로그아웃 ({user?.nickname})
@@ -319,7 +319,7 @@ export default function Navigation() {
               ) : (
                 <button
                   onClick={() => { openAuthModal(); setMobileOpen(false); }}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium bg-primary text-text-on-primary transition-all duration-200 active:scale-[0.98]"
+                  className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium bg-primary text-text-on-primary transition-all duration-200 active:scale-[0.98]"
                 >
                   <LogIn size={18} />
                   로그인
@@ -398,13 +398,13 @@ export default function Navigation() {
                   <button
                     type="button"
                     onClick={handleModalClose}
-                    className="flex-1 px-4 py-2.5 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
+                    className="flex-1 px-4 py-2 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
                   >
                     취소
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2.5 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
+                    className="flex-1 px-4 py-2 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
                   >
                     로그인
                   </button>
@@ -480,13 +480,13 @@ export default function Navigation() {
                   <button
                     type="button"
                     onClick={handleModalClose}
-                    className="flex-1 px-4 py-2.5 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
+                    className="flex-1 px-4 py-2 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
                   >
                     취소
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2.5 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
+                    className="flex-1 px-4 py-2 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
                   >
                     가입하기
                   </button>
@@ -504,13 +504,13 @@ export default function Navigation() {
           <div className="flex gap-2">
             <button
               onClick={() => setShowLogoutConfirm(false)}
-              className="flex-1 px-4 py-2.5 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
+              className="flex-1 px-4 py-2 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
             >
               취소
             </button>
             <button
               onClick={confirmLogout}
-              className="flex-1 px-4 py-2.5 rounded-lg bg-error text-white text-sm font-medium hover:bg-error/90 transition-colors"
+              className="flex-1 px-4 py-2 rounded-lg bg-error text-white text-sm font-medium hover:bg-error/90 transition-colors"
             >
               로그아웃
             </button>

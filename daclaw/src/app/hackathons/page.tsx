@@ -1131,7 +1131,7 @@ function HackathonsPageInner() {
             </div>
             <button
               onClick={resetFilters}
-              className="mt-2 px-5 py-2.5 bg-primary text-text-on-primary rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer active:scale-[0.98]"
+              className="mt-2 px-5 py-2 bg-primary text-text-on-primary rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer active:scale-[0.98]"
             >
               필터 초기화
             </button>
@@ -1168,7 +1168,7 @@ function HackathonsPageInner() {
           <Link
             data-testid="compare-button"
             href={`/compare?slugs=${compareArray.join(',')}`}
-            className="pointer-events-auto flex items-center gap-2 bg-primary text-text-on-primary px-6 py-3 rounded-full shadow-xl font-semibold text-sm hover:bg-primary/90 transition-all hover:shadow-2xl hover:scale-105"
+            className="pointer-events-auto flex items-center gap-2 bg-primary text-text-on-primary px-6 py-2.5 rounded-full shadow-xl font-semibold text-sm hover:bg-primary/90 transition-all hover:shadow-2xl hover:scale-105"
           >
             <GitCompare className="w-4 h-4" />
             {compareArray.length}개 해커톤 비교하기

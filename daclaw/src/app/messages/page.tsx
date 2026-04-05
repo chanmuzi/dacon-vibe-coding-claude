@@ -178,7 +178,7 @@ function MessagesContent() {
         <p className="text-text-secondary mb-6">로그인 후 메시지를 확인할 수 있습니다.</p>
         <button
           onClick={openAuthModal}
-          className="px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all cursor-pointer active:scale-[0.98]"
+          className="px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all cursor-pointer active:scale-[0.98]"
         >
           로그인
         </button>

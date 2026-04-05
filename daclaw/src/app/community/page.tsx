@@ -358,7 +358,7 @@ export default function CommunityPage() {
           <button
             data-testid="post-submit-button"
             type="submit"
-            className="w-full px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
+            className="w-full px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
           >
             게시하기
           </button>

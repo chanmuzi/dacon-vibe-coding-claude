@@ -123,7 +123,7 @@ function TeamCreateForm() {
           <p className="text-text-secondary text-sm mb-6">팀을 만들려면 먼저 로그인해 주세요.</p>
           <button
             onClick={openAuthModal}
-            className="px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+            className="px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
           >
             로그인
           </button>
@@ -333,13 +333,13 @@ function TeamCreateForm() {
           <button
             type="button"
             onClick={() => router.push('/camp')}
-            className="px-6 py-2.5 border border-border rounded-xl text-sm font-semibold text-text-secondary hover:border-text-secondary hover:text-text-primary transition-colors cursor-pointer active:scale-[0.98]"
+            className="px-6 py-2 border border-border rounded-xl text-sm font-semibold text-text-secondary hover:border-text-secondary hover:text-text-primary transition-colors cursor-pointer active:scale-[0.98]"
           >
             취소
           </button>
           <button
             type="submit"
-            className="px-8 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+            className="px-8 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
           >
             <Users size={16} /> 팀 생성
           </button>
