@@ -81,7 +81,9 @@ export default function HomePage() {
     teamInitFn();
   }, [init, communityInitFn, teamInitFn]);
 
-  const activeHackathons = hackathons.filter((h) => h.status === 'active');
+  const activeHackathons = hackathons
+    .filter((h) => h.status === 'active')
+    .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
   const [now, setNow] = useState(0);
 
   // Hydration-safe: read Date.now() only on client
@@ -170,10 +172,11 @@ export default function HomePage() {
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
 
-  // L1: Top 3 hackathons by participantCount
+  // L1: Top active/upcoming hackathons sorted by deadline
   const popularHackathons = [...hackathons]
-    .sort((a, b) => b.participantCount - a.participantCount)
-    .slice(0, 3);
+    .filter((h) => h.status === 'active' || h.status === 'upcoming')
+    .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
+    .slice(0, 4);
 
   // L1: Latest 3 community posts
   const recentPosts = [...posts]
@@ -183,13 +186,22 @@ export default function HomePage() {
   // L1: 3 open teams
   const openTeams = teams.filter((t) => t.recruitStatus === 'open').slice(0, 3);
 
+  const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!bookmarkToast) return;
+    const t = setTimeout(() => setBookmarkToast(null), 2000);
+    return () => clearTimeout(t);
+  }, [bookmarkToast]);
+
   // Bookmark handler with auth gate (F2/B6)
   function handleBookmark(slug: string) {
     if (!isLoggedIn) {
       openAuthModal();
       return;
     }
+    const wasBookmarked = isBookmarked(slug);
     toggleBookmark(slug);
+    setBookmarkToast(wasBookmarked ? '북마크가 해제되었습니다' : '북마크에 등록되었습니다');
   }
 
   if (!initialized) {
@@ -273,20 +285,19 @@ export default function HomePage() {
             >
               <Trophy size={18} />
               지금 참가하기
-              <ArrowRight size={16} />
             </Link>
           )}
           <Link
             href="/hackathons"
             data-testid="explore-hackathons"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-surface border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-all duration-200 cursor-pointer active:scale-[0.98] shadow-sm"
           >
             <Compass size={18} />
             해커톤 탐색하기
           </Link>
           <Link
             href="/camp"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-surface border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-all duration-200 cursor-pointer active:scale-[0.98] shadow-sm"
           >
             <Users size={18} />
             팀 찾기
@@ -371,13 +382,9 @@ export default function HomePage() {
                 onClick={() => handleBookmark(h.slug)}
                 title={isBookmarked(h.slug) ? '북마크 해제' : '북마크에 추가'}
                 aria-label={isBookmarked(h.slug) ? '북마크 해제' : '북마크에 추가'}
-                className="absolute top-3 right-3 p-1.5 rounded-lg bg-black/30 text-white hover:bg-black/50 transition-colors"
+                className="absolute top-3 right-3 p-1.5 rounded-lg bg-black/30 text-white hover:bg-black/50 transition-colors cursor-pointer active:scale-95"
               >
-                {isBookmarked(h.slug) ? (
-                  <BookmarkCheck size={16} className="fill-current text-primary" />
-                ) : (
-                  <Bookmark size={16} />
-                )}
+                <Bookmark size={16} fill={isBookmarked(h.slug) ? 'currentColor' : 'none'} className={isBookmarked(h.slug) ? 'text-primary' : ''} />
               </button>
             </div>
           ))}
@@ -687,6 +694,15 @@ export default function HomePage() {
           </div>
         </section>
       </div>
+
+      {/* Bookmark toast */}
+      {bookmarkToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+          <div className="bg-text-primary text-text-on-primary px-5 py-2.5 rounded-lg shadow-xl text-sm font-medium animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+            {bookmarkToast}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

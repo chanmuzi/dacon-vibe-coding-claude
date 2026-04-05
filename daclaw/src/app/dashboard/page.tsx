@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   User, Star, CheckCircle2, BookmarkCheck, Users,
   Bell, ChevronRight, Zap, Target, TrendingUp, Mail,
-  MailOpen, Shield, HelpCircle, Lock, Sparkles,
+  MailOpen, Shield, HelpCircle, Lock, Sparkles, Trophy, Plus, Trash2,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -615,6 +615,123 @@ function SubmissionChart() {
 
 // ─── Bookmarked Hackathons ────────────────────────────────────────────────────
 
+function MyHackathons() {
+  const { user } = useUserStore();
+  const { getMyHackathons, deleteHackathon } = useHackathonStore();
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
+  const myHackathons = useMemo(() => {
+    if (!user) return [];
+    return getMyHackathons(user.id);
+  }, [user, getMyHackathons]);
+
+  const statusLabel: Record<string, string> = {
+    active: '진행중',
+    upcoming: '예정',
+    ended: '종료',
+  };
+
+  const statusColor: Record<string, string> = {
+    active: 'text-success bg-success-light',
+    upcoming: 'text-warning bg-warning-light',
+    ended: 'text-text-secondary bg-background',
+  };
+
+  const targetHackathon = deleteTarget ? myHackathons.find((h) => h.slug === deleteTarget) : null;
+
+  return (
+    <SectionCard
+      title="내 대회"
+      icon={<Trophy className="w-4 h-4" />}
+      id="section-my-hackathons"
+    >
+      {/* Delete confirmation modal */}
+      <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="max-w-xs">
+        <div className="flex flex-col gap-4 text-center">
+          <div className="w-12 h-12 rounded-full bg-error-light flex items-center justify-center mx-auto">
+            <Trash2 className="w-5 h-5 text-error" />
+          </div>
+          <div>
+            <h3 className="font-bold text-text-primary">대회 삭제</h3>
+            <p className="text-sm text-text-secondary mt-1">
+              <span className="font-medium text-text-primary">{targetHackathon?.title}</span>을(를) 삭제하시겠습니까?
+            </p>
+            <p className="text-xs text-error mt-1">이 작업은 되돌릴 수 없습니다.</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setDeleteTarget(null)}
+              className="flex-1 py-2 border border-border rounded-lg text-sm font-semibold text-text-secondary bg-surface hover:bg-interactive-hover transition-colors cursor-pointer active:scale-[0.98]"
+            >
+              취소
+            </button>
+            <button
+              onClick={() => {
+                if (user && deleteTarget) {
+                  deleteHackathon(deleteTarget, user.id);
+                  setDeleteTarget(null);
+                }
+              }}
+              className="flex-1 py-2 bg-error text-white rounded-lg text-sm font-bold hover:bg-error/90 transition-all cursor-pointer active:scale-[0.98]"
+            >
+              삭제
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {myHackathons.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-8 text-center">
+          <Trophy className="w-8 h-8 text-border" />
+          <p className="text-sm text-text-secondary">아직 만든 대회가 없습니다.</p>
+          <a
+            href="/create"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-text-on-primary text-sm font-semibold hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98] shadow-sm"
+          >
+            <Plus className="w-4 h-4" /> 대회 만들기
+          </a>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {myHackathons.map((h) => (
+            <div
+              key={h.slug}
+              className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/40 hover:bg-primary-light/20 transition-all group"
+            >
+              <a href={`/hackathons/${h.slug}`} className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-text-primary truncate group-hover:text-primary transition-colors">
+                  {h.title}
+                </div>
+                <div className="text-xs text-text-secondary mt-0.5 font-mono">
+                  마감: {h.endDate}
+                </div>
+              </a>
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${statusColor[h.status] ?? ''}`}
+              >
+                {statusLabel[h.status] ?? h.status}
+              </span>
+              <button
+                onClick={() => setDeleteTarget(h.slug)}
+                className="p-1.5 rounded-lg hover:bg-error-light text-text-secondary hover:text-error transition-colors cursor-pointer active:scale-95"
+                aria-label="삭제"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+          <a
+            href="/create"
+            className="flex items-center justify-center gap-1.5 mt-2 py-2 rounded-lg border border-border text-sm font-medium text-primary hover:bg-primary-light transition-colors cursor-pointer active:scale-[0.98]"
+          >
+            <Plus className="w-4 h-4" /> 새 대회 만들기
+          </a>
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
 function BookmarkedHackathons() {
   const { hackathons, bookmarks } = useHackathonStore();
 
@@ -1060,6 +1177,7 @@ export default function DashboardPage() {
 
           {/* Right column */}
           <div className="flex flex-col gap-6">
+            <MyHackathons />
             <PointHistory />
             <SubmissionChart />
             <BookmarkedHackathons />
