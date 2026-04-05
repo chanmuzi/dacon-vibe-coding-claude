@@ -109,9 +109,13 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   }, {});
 
   const flatResults: SearchResult[] = [];
+  const categoryOffsets = new Map<string, number>();
   for (const cat of ['해커톤', '팀', '커뮤니티'] as const) {
     const items = grouped[cat];
-    if (items?.length) flatResults.push(...items);
+    if (items?.length) {
+      categoryOffsets.set(cat, flatResults.length);
+      flatResults.push(...items);
+    }
   }
 
   const categoryIcon = (cat: string) => {
@@ -126,6 +130,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   };
 
   function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.nativeEvent.isComposing) return;
     if (flatResults.length === 0) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -133,7 +138,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setFocusedIndex((prev) => (prev <= 0 ? flatResults.length - 1 : prev - 1));
-    } else if (e.key === 'Enter' && focusedIndex >= 0) {
+    } else if (e.key === 'Enter' && focusedIndex >= 0 && flatResults[focusedIndex]) {
       e.preventDefault();
       handleResultClick(flatResults[focusedIndex].href);
     }
@@ -187,7 +192,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                       {cat}
                     </div>
                     {items.map((item, i) => {
-                      const globalIndex = flatResults.indexOf(item);
+                      const globalIndex = (categoryOffsets.get(cat) ?? 0) + i;
                       return (
                       <button
                         key={i}
