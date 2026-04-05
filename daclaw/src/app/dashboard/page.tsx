@@ -88,7 +88,7 @@ function NotLoggedIn() {
         </p>
         <button
           onClick={openAuthModal}
-          className="mt-2 px-6 py-2.5 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+          className="mt-2 px-6 py-2 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
         >
           로그인
         </button>
@@ -983,6 +983,8 @@ function StatsBar() {
 // ─── AI Profile Analysis Modal ───────────────────────────────────────────────
 
 const ANALYSIS_KEY = 'ai_analysis_last_date';
+const ANALYSIS_RESULT_KEY = 'daclaw-ai-analysis-result';
+const ANALYSIS_HACKATHONS_KEY = 'daclaw-ai-analysis-hackathons';
 
 function AIAnalysisModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { user } = useUserStore();
@@ -999,9 +1001,22 @@ function AIAnalysisModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
 
   useEffect(() => {
     if (isOpen) {
-      setPhase(isUsedToday() ? 'limit' : 'confirm');
-      setResult(null);
-      setMatchedHackathons([]);
+      // 저장된 결과가 있으면 바로 result phase로
+      const savedResult = localStorage.getItem(ANALYSIS_RESULT_KEY);
+      if (savedResult) {
+        setResult(savedResult);
+        try {
+          const savedHackathons = JSON.parse(localStorage.getItem(ANALYSIS_HACKATHONS_KEY) || '[]');
+          setMatchedHackathons(savedHackathons);
+        } catch {
+          setMatchedHackathons([]);
+        }
+        setPhase('result');
+      } else {
+        setPhase(isUsedToday() ? 'limit' : 'confirm');
+        setResult(null);
+        setMatchedHackathons([]);
+      }
     }
   }, [isOpen, isUsedToday]);
 
@@ -1037,9 +1052,15 @@ function AIAnalysisModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           if (data.error === 'NO_API_KEY') {
-            setResult(getFallbackAnalysis(user, hackathons));
+            const fallback = getFallbackAnalysis(user, hackathons);
+            setResult(fallback);
             // 추천 대회 slug 매칭
-            matchHackathonLinks(getFallbackAnalysis(user, hackathons));
+            const matched = hackathons
+              .filter((h) => fallback.includes(h.title))
+              .map((h) => ({ slug: h.slug, title: h.title }));
+            setMatchedHackathons(matched);
+            localStorage.setItem(ANALYSIS_RESULT_KEY, fallback);
+            localStorage.setItem(ANALYSIS_HACKATHONS_KEY, JSON.stringify(matched));
             setPhase('result');
             localStorage.setItem(ANALYSIS_KEY, new Date().toISOString().split('T')[0]);
             return;
@@ -1048,18 +1069,26 @@ function AIAnalysisModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
         }
         const data = await res.json();
         setResult(data.result);
-        matchHackathonLinks(data.result);
+        const matched = hackathons
+          .filter((h) => (data.result as string).includes(h.title))
+          .map((h) => ({ slug: h.slug, title: h.title }));
+        setMatchedHackathons(matched);
+        localStorage.setItem(ANALYSIS_RESULT_KEY, data.result);
+        localStorage.setItem(ANALYSIS_HACKATHONS_KEY, JSON.stringify(matched));
         setPhase('result');
         localStorage.setItem(ANALYSIS_KEY, new Date().toISOString().split('T')[0]);
       })
       .catch(() => setPhase('error'));
   }
 
-  function matchHackathonLinks(text: string) {
-    const matched = hackathons
-      .filter((h) => text.includes(h.title))
-      .map((h) => ({ slug: h.slug, title: h.title }));
-    setMatchedHackathons(matched);
+  // "다시 분석하기" handler
+  function handleReAnalyze() {
+    if (isUsedToday()) {
+      // 오늘 이미 분석했으면 하루 제한이므로 confirm 대신 limit
+      setPhase('limit');
+    } else {
+      setPhase('confirm');
+    }
   }
 
   return (
@@ -1082,7 +1111,7 @@ function AIAnalysisModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
           </div>
           <button
             onClick={runAnalysis}
-            className="px-6 py-2.5 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+            className="px-6 py-2 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
           >
             분석 시작하기
           </button>
@@ -1122,7 +1151,7 @@ function AIAnalysisModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
       {/* 결과 */}
       {phase === 'result' && result && (
         <div>
-          <div className="prose-content text-sm text-text-primary leading-relaxed max-h-72 overflow-y-auto mb-4">
+          <div className="prose-content text-sm text-text-primary leading-relaxed max-h-96 overflow-y-auto mb-4 bg-background rounded-xl p-4">
             <ReactMarkdown>{result}</ReactMarkdown>
           </div>
 
@@ -1144,6 +1173,16 @@ function AIAnalysisModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
               </div>
             </div>
           )}
+
+          {/* 다시 분석하기 */}
+          <div className="border-t border-border pt-3 mt-3 text-center">
+            <button
+              onClick={handleReAnalyze}
+              className="text-xs text-text-secondary hover:text-primary cursor-pointer active:scale-95 transition-colors"
+            >
+              다시 분석하기
+            </button>
+          </div>
         </div>
       )}
     </Modal>
@@ -1176,6 +1215,82 @@ function getFallbackAnalysis(user: NonNullable<ReturnType<typeof useUserStore.ge
   return text;
 }
 
+// ─── AI Analysis Card (persistent summary on dashboard) ─────────────────────
+
+function AIAnalysisCard({ onOpenModal }: { onOpenModal: () => void }) {
+  const [savedResult, setSavedResult] = useState<string | null>(null);
+  const [savedHackathons, setSavedHackathons] = useState<{ slug: string; title: string }[]>([]);
+  const [analysisDate, setAnalysisDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    const result = localStorage.getItem(ANALYSIS_RESULT_KEY);
+    const date = localStorage.getItem(ANALYSIS_KEY);
+    if (result) {
+      setSavedResult(result);
+      setAnalysisDate(date);
+      try {
+        const hackathons = JSON.parse(localStorage.getItem(ANALYSIS_HACKATHONS_KEY) || '[]');
+        setSavedHackathons(hackathons);
+      } catch {
+        setSavedHackathons([]);
+      }
+    }
+  }, []);
+
+  if (!savedResult) return null;
+
+  // 결과 텍스트에서 첫 2-3줄 요약 추출 (마크다운 헤더 제거)
+  const summaryLines = savedResult
+    .split('\n')
+    .filter((line) => line.trim() && !line.startsWith('###') && !line.startsWith('---'))
+    .slice(0, 3)
+    .join(' ')
+    .replace(/\*\*/g, '')
+    .replace(/^[-•]\s*/gm, '');
+  const summaryText = summaryLines.length > 200 ? summaryLines.slice(0, 200) + '...' : summaryLines;
+
+  return (
+    <div className="bg-surface border border-primary/20 rounded-xl shadow-sm p-5 mb-8">
+      {/* Header row */}
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles className="w-4 h-4 text-primary shrink-0" />
+        <h3 className="font-semibold text-text-primary text-sm">AI 프로필 분석 결과</h3>
+        {analysisDate && (
+          <span className="text-xs text-text-secondary font-mono ml-1">{analysisDate}</span>
+        )}
+        <button
+          onClick={onOpenModal}
+          className="ml-auto text-xs text-primary hover:text-primary/80 font-medium cursor-pointer active:scale-95 transition-colors flex items-center gap-1 shrink-0"
+        >
+          자세히 보기
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Summary text */}
+      <p className="text-sm text-text-secondary leading-relaxed line-clamp-3 mb-3">
+        {summaryText}
+      </p>
+
+      {/* Recommended hackathon links */}
+      {savedHackathons.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {savedHackathons.map((h) => (
+            <a
+              key={h.slug}
+              href={`/hackathons/${h.slug}`}
+              className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-primary-light text-primary font-medium hover:bg-primary hover:text-text-on-primary transition-colors cursor-pointer active:scale-95"
+            >
+              {h.title}
+              <ChevronRight className="w-3 h-3" />
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -1190,6 +1305,15 @@ export default function DashboardPage() {
     initTeam();
     initSubmission();
   }, [initUser, initHackathon, initTeam, initSubmission]);
+
+  // 로그아웃 시 AI 분석 결과 클리어
+  useEffect(() => {
+    if (initialized && !isLoggedIn) {
+      localStorage.removeItem(ANALYSIS_RESULT_KEY);
+      localStorage.removeItem(ANALYSIS_HACKATHONS_KEY);
+      localStorage.removeItem(ANALYSIS_KEY);
+    }
+  }, [initialized, isLoggedIn]);
 
   const [showAnalysis, setShowAnalysis] = useState(false);
 
@@ -1227,7 +1351,7 @@ export default function DashboardPage() {
             </div>
             <button
               onClick={() => setShowAnalysis(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98] shadow-sm shrink-0"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98] shadow-sm shrink-0"
             >
               <Sparkles className="w-4 h-4" />
               <span className="hidden sm:inline">AI 프로필 분석</span>
@@ -1238,6 +1362,9 @@ export default function DashboardPage() {
 
         {/* Stats bar */}
         <StatsBar />
+
+        {/* AI Analysis Card (persistent) */}
+        <AIAnalysisCard onOpenModal={() => setShowAnalysis(true)} />
 
         {/* Main grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

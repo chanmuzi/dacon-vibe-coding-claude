@@ -7,9 +7,8 @@ import { useTeamStore } from '@/store/team';
 import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
 import { useMessageStore } from '@/store/message';
-import ReactMarkdown from 'react-markdown';
 import {
-  Users, Plus, Sparkles, Send, Filter, ChevronDown, UserPlus, CheckCircle2, Check, Loader2, ChevronRight,
+  Users, Plus, Sparkles, Send, Filter, ChevronDown, UserPlus, CheckCircle2, Check, Loader2,
 } from 'lucide-react';
 import Modal from '@/components/Modal';
 import UserAvatar from '@/components/UserAvatar';
@@ -73,6 +72,10 @@ export default function CampPage() {
   const [recLoading, setRecLoading] = useState(false);
   const [aiRecs, setAiRecs] = useState<{ teamId: string; teamName: string; matchScore: number; reason: string }[] | null>(null);
   const [aiError, setAiError] = useState(false);
+  const [recStep, setRecStep] = useState(0);
+  const [showRecModal, setShowRecModal] = useState(false);
+  const [cooldownEnd, setCooldownEnd] = useState(0);
+  const [, setCooldownTick] = useState(0);
 
   // G11: Auto-filter from URL param ?hackathon=slug (React 19 prop-change pattern)
   const [prevSearchParams, setPrevSearchParams] = useState(searchParams);
@@ -84,20 +87,82 @@ export default function CampPage() {
     }
   }
 
-  // G7: Brief loading animation when user logs in (React 19 prop-change pattern)
+  // Cleanup on logout (React 19 prop-change pattern)
   const [prevLoggedIn, setPrevLoggedIn] = useState(isLoggedIn);
   if (isLoggedIn !== prevLoggedIn) {
     setPrevLoggedIn(isLoggedIn);
-    if (isLoggedIn) {
-      setRecLoading(true);
-    } else {
+    if (!isLoggedIn) {
       setRecLoading(false);
+      setAiRecs(null);
+      setShowRecModal(false);
     }
   }
+
+  // localStorage persistence: load on mount
   useEffect(() => {
-    if (!recLoading) return;
-    const t = setTimeout(() => setRecLoading(false), 500);
-    return () => clearTimeout(t);
+    try {
+      const saved = localStorage.getItem('daclaw-ai-recs');
+      if (saved) setAiRecs(JSON.parse(saved));
+    } catch { /* ignore parse errors */ }
+  }, []);
+
+  // localStorage persistence: save when aiRecs changes
+  useEffect(() => {
+    if (aiRecs) {
+      localStorage.setItem('daclaw-ai-recs', JSON.stringify(aiRecs));
+    } else {
+      localStorage.removeItem('daclaw-ai-recs');
+    }
+  }, [aiRecs]);
+
+  // localStorage cleanup on logout
+  useEffect(() => {
+    if (!isLoggedIn) {
+      localStorage.removeItem('daclaw-ai-recs');
+      localStorage.removeItem('daclaw-ai-rec-cooldown');
+      setCooldownEnd(0);
+    }
+  }, [isLoggedIn]);
+
+  // Cooldown: load from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('daclaw-ai-rec-cooldown');
+      if (saved) {
+        const end = Number(saved);
+        if (end > Date.now()) {
+          setCooldownEnd(end);
+        } else {
+          localStorage.removeItem('daclaw-ai-rec-cooldown');
+        }
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  // Cooldown: tick every minute to update remaining time display
+  useEffect(() => {
+    if (cooldownEnd <= Date.now()) return;
+    const interval = setInterval(() => {
+      if (cooldownEnd <= Date.now()) {
+        setCooldownEnd(0);
+        localStorage.removeItem('daclaw-ai-rec-cooldown');
+      } else {
+        // Force re-render so remaining minutes recalculates
+        setCooldownTick((t) => t + 1);
+      }
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, [cooldownEnd]);
+
+  // Step-based loading progress messages
+  useEffect(() => {
+    if (!recLoading) {
+      setRecStep(0);
+      return;
+    }
+    const t1 = setTimeout(() => setRecStep(1), 1500);
+    const t2 = setTimeout(() => setRecStep(2), 3000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [recLoading]);
 
   const filtered = useMemo(() => {
@@ -169,6 +234,70 @@ export default function CampPage() {
     }));
   }
 
+  const REC_STEP_MESSAGES = ['프로필 분석 중...', '팀 매칭 중...', '결과 정리 중...'];
+
+  function handleAiRecommend() {
+    setRecLoading(true);
+    setAiError(false);
+    const startTime = Date.now();
+    const openTeams = teams.filter((t) => t.recruitStatus === 'open');
+    const teamsPayload = openTeams.map((t) => {
+      const hack = hackathons.find((h) => t.hackathonSlugs?.includes(h.slug));
+      return {
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        recruitRoles: t.recruitRoles.map((r) => ROLE_LABELS[r]),
+        hackathonTitle: hack?.title ?? '미정',
+        techStack: t.techStack ?? [],
+        members: t.members.length,
+        maxMembers: t.maxMembers,
+      };
+    });
+
+    let resultRecs: typeof aiRecs = null;
+    let hasError = false;
+
+    fetch('/api/recommend-teams', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profile: { role: user?.role, techStack: user?.techStack, interests: user?.interests, grade: user?.grade },
+        teams: teamsPayload,
+      }),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          resultRecs = recommendations.slice(0, 3).map(({ team, rate }) => ({
+            teamId: team.id,
+            teamName: team.name,
+            matchScore: rate,
+            reason: getMatchReason(rate).label,
+          }));
+          return;
+        }
+        const data = await res.json();
+        resultRecs = data.recommendations?.slice(0, 3) ?? [];
+      })
+      .catch(() => { hasError = true; })
+      .finally(() => {
+        // Ensure progress UI shows for at least 3.5s
+        const elapsed = Date.now() - startTime;
+        const minDelay = 3500;
+        setTimeout(() => {
+          if (hasError) {
+            setAiError(true);
+          } else {
+            setAiRecs(resultRecs);
+          }
+          setRecLoading(false);
+          const cooldownTime = Date.now() + 10 * 60 * 1000;
+          setCooldownEnd(cooldownTime);
+          localStorage.setItem('daclaw-ai-rec-cooldown', String(cooldownTime));
+        }, Math.max(0, minDelay - elapsed));
+      });
+  }
+
   function toggleApplyPosition(role: Role) {
     setApplyForm((prev) => ({
       ...prev,
@@ -198,9 +327,9 @@ export default function CampPage() {
             <button
               data-testid="create-team-button"
               onClick={() => setShowCreateForm(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
             >
-              <Plus size={16} /> 팀 만들기
+              <Plus size={14} /> 팀 만들기
             </button>
           </div>
 
@@ -327,28 +456,33 @@ export default function CampPage() {
                   로그인
                 </button>
               </div>
-            ) : recLoading ? (
-              <div className="flex flex-col items-center py-6 gap-2 text-text-secondary">
-                <Loader2 size={22} className="animate-spin text-primary" />
-                <p className="text-sm">AI 매칭 분석 중...</p>
-              </div>
             ) : aiRecs ? (
-              /* AI recommendations result */
+              /* AI recommendations result — shown in sidebar */
               <div className="space-y-3">
                 {aiRecs.length === 0 ? (
                   <p className="text-sm text-text-secondary text-center py-4">매칭되는 팀이 없습니다.</p>
                 ) : (
                   aiRecs.map((rec) => {
                     const team = teams.find((t) => t.id === rec.teamId);
+                    const cardStyle = rec.matchScore >= 80
+                      ? 'border-primary bg-primary-light/10'
+                      : rec.matchScore >= 60
+                        ? 'border-info/40 bg-info-light/5'
+                        : 'border-border';
+                    const badgeClass = rec.matchScore >= 80
+                      ? 'bg-primary text-white'
+                      : rec.matchScore >= 60
+                        ? 'bg-info text-white'
+                        : 'bg-primary-light text-primary';
                     return (
                       <a
                         key={rec.teamId}
                         href={team ? `/teams/${team.id}` : '#'}
-                        className="block border border-border rounded-lg p-3 hover:border-primary/40 hover:bg-primary-light/10 transition-all group cursor-pointer"
+                        className={`block border rounded-lg p-3 hover:shadow-md transition-all group cursor-pointer ${cardStyle}`}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-semibold text-sm text-text-primary group-hover:text-primary transition-colors">{rec.teamName}</span>
-                          <span className="font-mono text-sm font-bold text-primary bg-primary-light px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <span className={`font-mono text-sm font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${badgeClass}`}>
                             <Sparkles size={10} /> {rec.matchScore}%
                           </span>
                         </div>
@@ -366,71 +500,35 @@ export default function CampPage() {
                     );
                   })
                 )}
-                <button
-                  onClick={() => { setAiRecs(null); setAiError(false); }}
-                  className="w-full text-xs text-text-secondary hover:text-primary transition-colors cursor-pointer mt-1 text-center"
-                >
-                  다시 추천받기
-                </button>
-              </div>
-            ) : aiError ? (
-              <div className="text-center py-4">
-                <p className="text-sm text-text-secondary mb-2">추천 분석에 실패했습니다.</p>
-                <button
-                  onClick={() => { setAiError(false); }}
-                  className="text-xs text-primary hover:underline cursor-pointer"
-                >
-                  다시 시도
-                </button>
+                {(() => {
+                  const isCooldown = cooldownEnd > Date.now();
+                  const remainMin = isCooldown ? Math.ceil((cooldownEnd - Date.now()) / 60_000) : 0;
+                  return (
+                    <button
+                      onClick={() => { if (!isCooldown) { setAiRecs(null); setAiError(false); } }}
+                      disabled={isCooldown}
+                      className={`w-full text-xs mt-1 text-center transition-colors ${
+                        isCooldown
+                          ? 'text-text-secondary/50 cursor-not-allowed'
+                          : 'text-text-secondary hover:text-primary cursor-pointer'
+                      }`}
+                    >
+                      {isCooldown ? `다시 추천받기 (${remainMin}분 남음)` : '다시 추천받기'}
+                    </button>
+                  );
+                })()}
               </div>
             ) : (
-              /* AI 추천 시작 버튼 */
-              <div className="text-center py-4">
-                <p className="text-xs text-text-secondary mb-3">프로필 기반으로 최적의 팀을 추천합니다</p>
+              /* Default: AI CTA — opens modal */
+              <div className="text-center py-6">
+                <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Sparkles size={24} className="text-primary" />
+                </div>
+                <p className="font-semibold text-text-primary mb-1">AI 팀 추천</p>
+                <p className="text-xs text-text-secondary mb-4">프로필 기반으로 최적의 팀을 추천합니다</p>
                 <button
-                  onClick={() => {
-                    setRecLoading(true);
-                    const openTeams = teams.filter((t) => t.recruitStatus === 'open');
-                    const teamsPayload = openTeams.map((t) => {
-                      const hack = hackathons.find((h) => t.hackathonSlugs?.includes(h.slug));
-                      return {
-                        id: t.id,
-                        name: t.name,
-                        description: t.description,
-                        recruitRoles: t.recruitRoles.map((r) => ROLE_LABELS[r]),
-                        hackathonTitle: hack?.title ?? '미정',
-                        techStack: t.techStack ?? [],
-                        members: t.members.length,
-                        maxMembers: t.maxMembers,
-                      };
-                    });
-                    fetch('/api/recommend-teams', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        profile: { role: user?.role, techStack: user?.techStack, interests: user?.interests, grade: user?.grade },
-                        teams: teamsPayload,
-                      }),
-                    })
-                      .then(async (res) => {
-                        if (!res.ok) {
-                          // Fallback to local recommendations
-                          const fallback = recommendations.slice(0, 3).map(({ team, rate }) => ({
-                            teamId: team.id,
-                            teamName: team.name,
-                            matchScore: rate,
-                            reason: getMatchReason(rate).label,
-                          }));
-                          setAiRecs(fallback);
-                          return;
-                        }
-                        const data = await res.json();
-                        setAiRecs(data.recommendations?.slice(0, 3) ?? []);
-                      })
-                      .catch(() => setAiError(true))
-                      .finally(() => setRecLoading(false));
-                  }}
-                  className="px-5 py-2.5 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98] flex items-center gap-2 mx-auto"
+                  onClick={() => setShowRecModal(true)}
+                  className="px-5 py-2 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98] flex items-center gap-2 mx-auto"
                 >
                   <Sparkles size={16} />
                   AI 추천받기
@@ -440,6 +538,113 @@ export default function CampPage() {
           </div>
         </div>
       </div>
+
+      {/* AI Recommendation Modal — dashboard-style flow */}
+      <Modal isOpen={showRecModal} onClose={() => { if (!recLoading) setShowRecModal(false); }} maxWidth="max-w-md">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-text-primary">AI 팀 추천</h3>
+        </div>
+
+        {recLoading ? (
+          /* Loading with step progress */
+          <div className="flex flex-col items-center gap-3 py-8">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <p className="text-sm text-text-secondary">{REC_STEP_MESSAGES[recStep]}</p>
+            <div className="flex gap-1.5 mt-1">
+              {[0, 1, 2].map((s) => (
+                <div
+                  key={s}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    s <= recStep ? 'w-6 bg-primary' : 'w-4 bg-border'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        ) : aiRecs ? (
+          /* Results */
+          <div>
+            <div className="space-y-3 max-h-80 overflow-y-auto mb-4">
+              {aiRecs.length === 0 ? (
+                <p className="text-sm text-text-secondary text-center py-4">매칭되는 팀이 없습니다.</p>
+              ) : (
+                aiRecs.map((rec) => {
+                  const team = teams.find((t) => t.id === rec.teamId);
+                  const cardStyle = rec.matchScore >= 80
+                    ? 'border-primary bg-primary-light/10'
+                    : rec.matchScore >= 60
+                      ? 'border-info/40 bg-info-light/5'
+                      : 'border-border';
+                  const badgeClass = rec.matchScore >= 80
+                    ? 'bg-primary text-white'
+                    : rec.matchScore >= 60
+                      ? 'bg-info text-white'
+                      : 'bg-primary-light text-primary';
+                  return (
+                    <a
+                      key={rec.teamId}
+                      href={team ? `/teams/${team.id}` : '#'}
+                      className={`block border rounded-lg p-3 hover:shadow-md transition-all group cursor-pointer ${cardStyle}`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-sm text-text-primary group-hover:text-primary transition-colors">{rec.teamName}</span>
+                        <span className={`font-mono text-sm font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${badgeClass}`}>
+                          <Sparkles size={10} /> {rec.matchScore}%
+                        </span>
+                      </div>
+                      <p className="text-xs text-text-secondary leading-relaxed">{rec.reason}</p>
+                      {team && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {team.recruitRoles.map((r) => (
+                            <span key={r} className="text-xs bg-primary-light/60 text-primary px-1.5 py-0.5 rounded">
+                              {user?.role === r && <Check size={12} className="inline" />} {ROLE_LABELS[r]}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </a>
+                  );
+                })
+              )}
+            </div>
+            <button
+              onClick={() => setShowRecModal(false)}
+              className="w-full px-4 py-2 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+            >
+              확인
+            </button>
+          </div>
+        ) : aiError ? (
+          /* Error */
+          <div className="flex flex-col items-center gap-3 py-6">
+            <p className="text-sm text-error">추천 분석 중 오류가 발생했습니다.</p>
+            <button
+              onClick={() => { setAiError(false); handleAiRecommend(); }}
+              className="text-xs text-primary hover:underline cursor-pointer"
+            >
+              다시 시도
+            </button>
+          </div>
+        ) : (
+          /* Confirm — same style as dashboard */
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="w-14 h-14 rounded-full bg-primary-light flex items-center justify-center">
+              <Sparkles className="w-7 h-7 text-primary" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-text-primary font-medium mb-1">프로필을 분석하여 최적의 팀을 추천합니다</p>
+              <p className="text-xs text-text-secondary">기술 스택, 관심 분야를 기반으로 AI가 분석합니다</p>
+            </div>
+            <button
+              onClick={handleAiRecommend}
+              className="px-6 py-2 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+            >
+              추천 시작하기
+            </button>
+          </div>
+        )}
+      </Modal>
 
       {/* Create Team Modal */}
       <Modal isOpen={showCreateForm} onClose={() => setShowCreateForm(false)} maxWidth="max-w-md">
@@ -513,7 +718,7 @@ export default function CampPage() {
           <button
             data-testid="team-submit-button"
             type="submit"
-            className="w-full px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
+            className="w-full px-4 py-2 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
           >
             팀 생성
           </button>
@@ -591,7 +796,7 @@ export default function CampPage() {
             data-testid="dm-send-button"
             onClick={handleSendDM}
             disabled={!applyForm.intro.trim()}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
           >
             <Send size={16} /> 신청 보내기
           </button>

@@ -50,6 +50,7 @@ Next.js 16 App Router, TypeScript, Tailwind CSS v4, tw-animate-css, Zustand, Rec
 - 컴포넌트 패턴(Card, Badge, Button 등)은 디자인 시스템 문서의 규격을 따름
 - **native `<select>` 사용 금지** → `@/components/CustomSelect` 사용 (디자인 일관성)
 - **모든 클릭 가능 요소에 `cursor-pointer` 필수** + `active:scale` 촉감 효과
+- **`border-l-*` 왼쪽 줄 카드 스타일 사용 절대 금지** — 카드 강조는 `border` 색상 또는 `bg` 배경색으로만 표현
 
 ### 애니메이션 규칙
 - **JS 애니메이션 라이브러리 사용 금지** (framer-motion 등) — CSS 순수 애니메이션만 사용
