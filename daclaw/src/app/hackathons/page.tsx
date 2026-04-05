@@ -20,6 +20,8 @@ import {
   X,
   Trophy,
   Building2,
+  Plus,
+  Sparkles,
 } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
@@ -272,6 +274,11 @@ function HackathonCard({
           <span className={`text-xs font-medium ${TYPE_COLORS[hackathon.type].split(' ')[1]}`}>
             {TYPE_LABELS[hackathon.type]}
           </span>
+          {hackathon.isCustom && (
+            <span className="text-xs bg-info-light text-info px-2 py-0.5 rounded-full font-medium">
+              커스텀
+            </span>
+          )}
         </div>
 
         {/* Tags */}
@@ -601,6 +608,7 @@ function HackathonsPageInner() {
   );
   const [typeFilters, setTypeFilters] = useState<Set<string>>(new Set());
   const [bookmarkOnly, setBookmarkOnly] = useState(false);
+  const [customOnly, setCustomOnly] = useState(false);
 
   // Toast notification for bookmark
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -704,6 +712,7 @@ function HackathonsPageInner() {
     setPeriodFilter('all');
     setOrganizerFilter('all');
     setBookmarkOnly(false);
+    setCustomOnly(false);
     setTagSearch('');
     setSortKey('deadline');
   }
@@ -749,6 +758,11 @@ function HackathonsPageInner() {
       list = list.filter((h) => isBookmarked(h.slug));
     }
 
+    // Custom hackathon filter
+    if (customOnly) {
+      list = list.filter((h) => h.isCustom);
+    }
+
     if (tagSearch.trim()) {
       const q = tagSearch.trim().toLowerCase();
       list = list.filter(
@@ -769,7 +783,7 @@ function HackathonsPageInner() {
     });
 
     return list;
-  }, [hackathons, statusFilters, typeFilters, periodFilter, organizerFilter, tagSearch, sortKey, bookmarkOnly, isBookmarked]);
+  }, [hackathons, statusFilters, typeFilters, periodFilter, organizerFilter, tagSearch, sortKey, bookmarkOnly, customOnly, isBookmarked]);
 
   const hasActiveFilters =
     statusFilters.size !== 2 ||
@@ -779,7 +793,8 @@ function HackathonsPageInner() {
     periodFilter !== 'all' ||
     organizerFilter !== 'all' ||
     tagSearch.trim() !== '' ||
-    bookmarkOnly;
+    bookmarkOnly ||
+    customOnly;
 
   const compareArray = Array.from(compareSet);
 
@@ -905,6 +920,14 @@ function HackathonsPageInner() {
                   참가자순
                 </button>
               </div>
+              <Link
+                href="/create"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-type-qualitative text-text-on-primary text-sm font-semibold hover:bg-type-qualitative/90 transition-all duration-200 cursor-pointer active:scale-[0.98] shadow-sm ring-1 ring-type-qualitative/30"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">나만의 대회 만들기</span>
+                <Plus className="w-3.5 h-3.5 sm:hidden" />
+              </Link>
             </div>
           </div>
 
@@ -924,6 +947,17 @@ function HackathonsPageInner() {
             >
               {bookmarkOnly ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
               북마크
+            </button>
+            <button
+              onClick={() => setCustomOnly((v) => !v)}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer active:scale-[0.98] ${
+                customOnly
+                  ? 'bg-type-qualitative text-text-on-primary shadow-sm'
+                  : 'bg-background text-text-secondary hover:bg-interactive-hover hover:text-text-primary'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              커스텀
             </button>
             <div className="w-px h-5 bg-border mx-1" />
             {(

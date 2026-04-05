@@ -7,7 +7,7 @@ import {
   ArrowLeft, Bookmark, BookmarkCheck, Users, Calendar, Clock,
   Trophy, Medal, Award, FileText, MessageSquare, Send, Download, Copy, ExternalLink,
   Pin, Check, CheckCircle2, Circle, BarChart3, Star, Info, Upload, AlertCircle, FileDown, Eye, EyeOff,
-  Building2, Terminal, Code, ChevronDown, ChevronLeft, ChevronRight, Bell,
+  Building2, Terminal, Code, ChevronDown, ChevronLeft, ChevronRight, Bell, Trash2,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useHackathonStore } from '@/store/hackathon';
@@ -15,6 +15,7 @@ import { useTeamStore } from '@/store/team';
 import { useSubmissionStore } from '@/store/submission';
 import { useUserStore } from '@/store/user';
 import type { Hackathon } from '@/types';
+import Modal from '@/components/Modal';
 
 const TABS = [
   { id: 'overview', label: '개요', icon: FileText },
@@ -161,9 +162,15 @@ function MiniCalendar({ startDate, endDate }: { startDate: string; endDate: stri
 export default function HackathonDetailContent() {
   const params = useParams();
   const router = useRouter();
-  const slug = params.slug as string;
+  const slug = (() => {
+    try {
+      return decodeURIComponent(params.slug as string);
+    } catch {
+      return params.slug as string;
+    }
+  })();
 
-  const { getBySlug, isBookmarked, toggleBookmark } = useHackathonStore();
+  const { getBySlug, isBookmarked, toggleBookmark, deleteHackathon } = useHackathonStore();
   const { teams } = useTeamStore();
   const { submissions, addSubmission, getLeaderboard, updateLeaderboard } = useSubmissionStore();
   const { user, isLoggedIn, openAuthModal } = useUserStore();
@@ -179,6 +186,7 @@ export default function HackathonDetailContent() {
   const [showMarkdownPreview, setShowMarkdownPreview] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [noticeFilter, setNoticeFilter] = useState<'all' | 'announcement' | 'rule' | 'update'>('all');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [expandedNotice, setExpandedNotice] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const ideDropdownRef = useRef<HTMLDivElement>(null);
@@ -583,9 +591,45 @@ export default function HackathonDetailContent() {
         </div>
       )}
 
+      {/* Delete confirmation modal for custom hackathons */}
+      {hackathon.isCustom && user && hackathon.creatorId === user.id && (
+        <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} maxWidth="max-w-xs">
+          <div className="flex flex-col gap-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-error-light flex items-center justify-center mx-auto">
+              <Trash2 className="w-5 h-5 text-error" />
+            </div>
+            <div>
+              <h3 className="font-bold text-text-primary">대회 삭제</h3>
+              <p className="text-sm text-text-secondary mt-1">
+                <span className="font-medium text-text-primary">{hackathon.title}</span>을(를) 삭제하시겠습니까?
+              </p>
+              <p className="text-xs text-error mt-1">이 작업은 되돌릴 수 없습니다.</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 py-2 border border-border rounded-lg text-sm font-semibold text-text-secondary bg-surface hover:bg-interactive-hover transition-colors cursor-pointer active:scale-[0.98]"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  router.push('/hackathons');
+                  setTimeout(() => deleteHackathon(hackathon.slug, user.id), 100);
+                }}
+                className="flex-1 py-2 bg-error text-white rounded-lg text-sm font-bold hover:bg-error/90 transition-all cursor-pointer active:scale-[0.98]"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {/* Back */}
-      <button onClick={() => router.push('/hackathons')} className="flex items-center gap-1 text-text-secondary hover:text-primary mb-4 text-sm cursor-pointer active:scale-[0.98] transition-transform">
-        <ArrowLeft size={16} /> 목록으로
+      <button onClick={() => router.back()} className="flex items-center gap-1 text-text-secondary hover:text-primary mb-4 text-sm cursor-pointer active:scale-[0.98] transition-transform">
+        <ArrowLeft size={16} /> 뒤로가기
       </button>
 
       {/* Hero banner */}
@@ -595,6 +639,14 @@ export default function HackathonDetailContent() {
           style={hackathon.thumbnailUrl ? { backgroundImage: `url(${hackathon.thumbnailUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+        {hackathon.isCustom && user && hackathon.creatorId === user.id && (
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="absolute bottom-4 right-5 flex items-center gap-1 text-xs bg-error/80 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-error transition-colors cursor-pointer active:scale-95 z-10"
+          >
+            <Trash2 size={12} /> 삭제
+          </button>
+        )}
         <div className="absolute bottom-4 left-5 right-5">
           {/* Organizer above title */}
           <p className="text-xs text-white/70 mb-1 flex items-center gap-1">
@@ -602,6 +654,9 @@ export default function HackathonDetailContent() {
           </p>
           <div className="flex items-center gap-2 mb-2">
             <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${badge.cls}`}>{badge.label}</span>
+            {hackathon.isCustom && (
+              <span className="text-xs bg-info-light text-info px-2.5 py-1 rounded-md font-semibold">커스텀</span>
+            )}
             {/* J5: Status badges */}
             {hackathon.status === 'active' && (
               <span className="bg-success text-text-on-primary px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
@@ -885,7 +940,7 @@ export default function HackathonDetailContent() {
                         onClick={() => setIdeDropdownOpen((v) => !v)}
                         className="flex items-center gap-2 px-4 py-2 bg-primary text-text-on-primary font-mono text-sm rounded-lg hover:bg-primary/90 transition-colors cursor-pointer active:scale-[0.98]"
                       >
-                        <Terminal size={16} /> IDE에서 열기 <ChevronDown size={14} className={`transition-transform ${ideDropdownOpen ? 'rotate-180' : ''}`} />
+                        <Terminal size={16} /> IDE 열기 <ChevronDown size={14} className={`transition-transform ${ideDropdownOpen ? 'rotate-180' : ''}`} />
                       </button>
                       {ideDropdownOpen && (
                         <div className="absolute left-0 top-full mt-1 w-48 bg-surface border border-border rounded-xl shadow-lg z-20 overflow-hidden">
