@@ -3,7 +3,7 @@ import type {
   CommunityPost, Badge, DailyMission, Message, UserProfile,
 } from '@/types';
 
-export const SEED_VERSION = 6;
+export const SEED_VERSION = 9;
 
 export const seedHackathons: Hackathon[] = [
   {
@@ -17,8 +17,8 @@ export const seedHackathons: Hackathon[] = [
     tags: ['AI', '이미지 생성', 'Diffusion', 'Computer Vision'],
     thumbnailUrl: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=400&fit=crop',
     startDate: '2026-03-20',
-    endDate: '2026-04-12',
-    resultDate: '2026-04-20',
+    endDate: '2026-04-30',
+    resultDate: '2026-05-10',
     prizes: [
       { rank: 1, label: '1등', amount: '500만원' },
       { rank: 2, label: '2등', amount: '300만원' },
@@ -80,8 +80,8 @@ export const seedHackathons: Hackathon[] = [
     tags: ['웹개발', 'AI', '바이브코딩', 'UI/UX'],
     thumbnailUrl: 'https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=600&h=400&fit=crop',
     startDate: '2026-03-10',
-    endDate: '2026-04-06',
-    resultDate: '2026-04-25',
+    endDate: '2026-04-24',
+    resultDate: '2026-05-10',
     prizes: [
       { rank: 1, label: '대상', amount: '1000만원' },
       { rank: 2, label: '최우수상', amount: '500만원' },
@@ -155,16 +155,16 @@ export const seedHackathons: Hackathon[] = [
     },
     notices: [
       { id: 'n3', title: '심사 기준 상세 안내', content: '기본 구현(30점) + 확장/아이디어(30점) + 완성도(25점) + 문서(15점) = 100점 만점입니다.', pinned: true, createdAt: '2026-03-12', category: 'announcement' },
-      { id: 'n2-1', title: '심사 자료 제출 안내', content: '웹링크 제출(4/6) 후 추가로 PDF(4/13)를 제출해야 합니다. 모든 심사위원이 접근 가능하도록 링크는 공개 상태여야 합니다.', pinned: false, createdAt: '2026-03-18', category: 'rule' },
+      { id: 'n2-1', title: '심사 자료 제출 안내', content: '웹링크 제출(4/24) 후 추가로 PDF(5/1)를 제출해야 합니다. 모든 심사위원이 접근 가능하도록 링크는 공개 상태여야 합니다.', pinned: false, createdAt: '2026-03-18', category: 'rule' },
       { id: 'n2-2', title: 'AI 도구 활용 사항 공개 요청', content: 'README에 사용한 AI 도구, 활용 범위, 최종 코드 기여도를 명시해주세요. 투명성은 평가의 중요 요소입니다.', pinned: false, createdAt: '2026-03-20', category: 'rule' },
       { id: 'n2-3', title: '모바일 반응형 디자인 평가 기준', content: '완성도(25점) 평가에서 모바일·태블릿·데스크톱 반응형 지원이 포함됩니다.', pinned: false, createdAt: '2026-03-28', category: 'update' },
     ],
     milestones: [
       { label: '대회 시작', date: '2026-03-10', done: true },
       { label: '중간 발표', date: '2026-03-25', done: true },
-      { label: '웹링크 제출', date: '2026-04-06', done: false },
-      { label: 'PDF 제출', date: '2026-04-13', done: false },
-      { label: '결과 발표', date: '2026-04-25', done: false },
+      { label: '웹링크 제출', date: '2026-04-24', done: false },
+      { label: 'PDF 제출', date: '2026-05-01', done: false },
+      { label: '결과 발표', date: '2026-05-10', done: false },
     ],
   },
   {
