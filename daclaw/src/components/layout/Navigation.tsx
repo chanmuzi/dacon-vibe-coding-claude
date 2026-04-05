@@ -6,8 +6,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user';
 import {
   Trophy, Users, BarChart3, MessageSquare, LayoutDashboard,
-  Menu, X, Search, LogIn, LogOut, User, Eye, EyeOff, ChevronDown,
+  Menu, X, Search, LogIn, LogOut, User, Eye, EyeOff, ChevronDown, Mail,
 } from 'lucide-react';
+import { useMessageStore } from '@/store/message';
 import GlobalSearch from '@/components/GlobalSearch';
 import Modal from '@/components/Modal';
 import type { Role } from '@/types';
@@ -46,6 +47,7 @@ export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoggedIn, login, register, logout, showAuthModal, openAuthModal, closeAuthModal } = useUserStore();
+  const unreadCount = useMessageStore((s) => user ? s.getUnreadCount(user.id) : 0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -165,7 +167,7 @@ export default function Navigation() {
             </div>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <button
                 data-testid="search-input"
                 onClick={() => setShowSearch(!showSearch)}
@@ -175,8 +177,23 @@ export default function Navigation() {
                 <Search size={20} />
               </button>
 
+              {isLoggedIn && (
+                <Link
+                  href="/messages"
+                  className="relative p-2 rounded-lg text-text-secondary hover:bg-primary-light hover:text-primary transition-colors"
+                  title="메시지"
+                >
+                  <Mail size={20} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-error text-white text-[9px] font-bold">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              )}
+
               {isLoggedIn ? (
-                <div className="hidden md:flex items-center gap-2 relative">
+                <div className="hidden md:flex items-center gap-1 relative">
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-light text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
@@ -216,6 +233,19 @@ export default function Navigation() {
                           >
                             <User size={16} className="text-text-secondary" />
                             내 프로필
+                          </Link>
+                          <Link
+                            href="/messages"
+                            onClick={() => setShowUserMenu(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-primary hover:bg-primary-light transition-colors"
+                          >
+                            <Mail size={16} className="text-text-secondary" />
+                            메시지
+                            {unreadCount > 0 && (
+                              <span className="ml-auto inline-flex items-center justify-center w-5 h-5 rounded-full bg-error text-white text-[10px] font-bold">
+                                {unreadCount}
+                              </span>
+                            )}
                           </Link>
                         </div>
                         <div className="p-1.5 border-t border-border">
@@ -267,7 +297,7 @@ export default function Navigation() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       active
                         ? 'bg-primary text-text-on-primary'
                         : 'text-text-secondary hover:bg-primary-light'
@@ -281,7 +311,7 @@ export default function Navigation() {
               {isLoggedIn ? (
                 <button
                   onClick={() => { handleLogout(); setMobileOpen(false); }}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-error hover:bg-error-light"
+                  className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium text-error hover:bg-error-light"
                 >
                   <LogOut size={18} />
                   로그아웃 ({user?.nickname})
@@ -289,7 +319,7 @@ export default function Navigation() {
               ) : (
                 <button
                   onClick={() => { openAuthModal(); setMobileOpen(false); }}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium bg-primary text-text-on-primary transition-all duration-200 active:scale-[0.98]"
+                  className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium bg-primary text-text-on-primary transition-all duration-200 active:scale-[0.98]"
                 >
                   <LogIn size={18} />
                   로그인
@@ -368,13 +398,13 @@ export default function Navigation() {
                   <button
                     type="button"
                     onClick={handleModalClose}
-                    className="flex-1 px-4 py-2.5 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
+                    className="flex-1 px-4 py-2 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
                   >
                     취소
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2.5 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
+                    className="flex-1 px-4 py-2 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
                   >
                     로그인
                   </button>
@@ -450,13 +480,13 @@ export default function Navigation() {
                   <button
                     type="button"
                     onClick={handleModalClose}
-                    className="flex-1 px-4 py-2.5 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
+                    className="flex-1 px-4 py-2 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
                   >
                     취소
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2.5 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
+                    className="flex-1 px-4 py-2 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
                   >
                     가입하기
                   </button>
@@ -474,13 +504,13 @@ export default function Navigation() {
           <div className="flex gap-2">
             <button
               onClick={() => setShowLogoutConfirm(false)}
-              className="flex-1 px-4 py-2.5 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
+              className="flex-1 px-4 py-2 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
             >
               취소
             </button>
             <button
               onClick={confirmLogout}
-              className="flex-1 px-4 py-2.5 rounded-lg bg-error text-white text-sm font-medium hover:bg-error/90 transition-colors"
+              className="flex-1 px-4 py-2 rounded-lg bg-error text-white text-sm font-medium hover:bg-error/90 transition-colors"
             >
               로그아웃
             </button>

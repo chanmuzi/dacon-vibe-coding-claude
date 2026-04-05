@@ -148,6 +148,21 @@ px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-text-on-primary shado
 - 아이콘 버튼: `active:scale-95`
 - 비활성 상태: `bg-background` + `hover:bg-interactive-hover` + `hover:text-text-primary` (hover 시 변화 명확)
 
+### 5.1.1 Heart Animation
+
+좋아요 버튼에 `heart-pop` CSS 애니메이션 적용:
+- Lucide Heart의 `fill` prop으로 채우기 제어: `fill={liked ? 'currentColor' : 'none'}`
+- CSS class `fill-*`는 SVG attribute와 충돌 가능하므로 사용 금지
+- 애니메이션: `globals.css`의 `@keyframes heart-pop` (0.4s ease-out bounce)
+
+### 5.1.2 Team-find Highlight Badge
+
+팀 구하기 게시물은 강조 뱃지 사용:
+```
+bg-type-qualitative text-white ring-1 ring-type-qualitative/30
+```
+일반 뱃지(`bg-type-qualitative-light text-type-qualitative`)와 차별화.
+
 ### 5.2 Card
 
 ```

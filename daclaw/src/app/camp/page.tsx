@@ -8,18 +8,14 @@ import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
 import { useMessageStore } from '@/store/message';
 import {
-  Users, Plus, Sparkles, Send, Filter, ChevronDown, UserPlus, CheckCircle2, Check, Loader2,
+  Users, Plus, Sparkles, Check, Loader2, UserPlus, CheckCircle2,
 } from 'lucide-react';
 import Modal from '@/components/Modal';
 import UserAvatar from '@/components/UserAvatar';
+import CustomSelect from '@/components/CustomSelect';
+import ApplyFormModal from '@/components/ApplyFormModal';
+import { ROLE_LABELS } from '@/lib/constants';
 import type { Team, Role } from '@/types';
-
-const ROLE_LABELS: Record<Role, string> = {
-  developer: '개발자',
-  designer: '디자이너',
-  planner: '기획자',
-  'data-scientist': '데이터 사이언티스트',
-};
 
 function calcMatchRate(team: Team, userRole: Role | undefined, userStack: string[], hackathonTags: string[]): number {
   const roleMatch = userRole && team.recruitRoles.includes(userRole) ? 40 : 0;
@@ -35,24 +31,41 @@ function getMatchReason(rate: number): { label: string; className: string } {
   return { label: '탐색 추천', className: 'text-text-secondary' };
 }
 
-const APPLY_ROLES: Role[] = ['developer', 'designer', 'planner', 'data-scientist'];
-
-interface ApplyForm {
-  intro: string;
-  positions: Role[];
-  techStack: string;
-  portfolio: string;
-}
-
-function buildDmContent(form: ApplyForm): string {
-  const positions = form.positions.map((r) => ROLE_LABELS[r]).join(', ') || '미정';
-  const parts = [
-    `[자기소개]\n${form.intro}`,
-    `[가능 포지션] ${positions}`,
-  ];
-  if (form.techStack.trim()) parts.push(`[기술스택] ${form.techStack}`);
-  if (form.portfolio.trim()) parts.push(`[포트폴리오] ${form.portfolio}`);
-  return parts.join('\n\n');
+function AiRecCard({ rec, teams: allTeams, userRole }: { rec: { teamId: string; teamName: string; matchScore: number; reason: string }; teams: Team[]; userRole?: string }) {
+  const team = allTeams.find((t) => t.id === rec.teamId);
+  const cardStyle = rec.matchScore >= 80
+    ? 'border-primary bg-primary-light/10'
+    : rec.matchScore >= 60
+      ? 'border-info/40 bg-info-light/5'
+      : 'border-border';
+  const badgeClass = rec.matchScore >= 80
+    ? 'bg-primary text-white'
+    : rec.matchScore >= 60
+      ? 'bg-info text-white'
+      : 'bg-primary-light text-primary';
+  return (
+    <a
+      href={team ? `/teams/${team.id}` : '#'}
+      className={`block border rounded-lg p-3 hover:shadow-md transition-all group cursor-pointer ${cardStyle}`}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className="font-semibold text-sm text-text-primary group-hover:text-primary transition-colors">{rec.teamName}</span>
+        <span className={`font-mono text-sm font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${badgeClass}`}>
+          <Sparkles size={10} /> {rec.matchScore}%
+        </span>
+      </div>
+      <p className="text-xs text-text-secondary leading-relaxed">{rec.reason}</p>
+      {team && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {team.recruitRoles.map((r) => (
+            <span key={r} className="text-xs bg-primary-light/60 text-primary px-1.5 py-0.5 rounded">
+              {userRole === r && <Check size={12} className="inline" />} {ROLE_LABELS[r]}
+            </span>
+          ))}
+        </div>
+      )}
+    </a>
+  );
 }
 
 export default function CampPage() {
@@ -66,10 +79,15 @@ export default function CampPage() {
   const [roleFilter, setRoleFilter] = useState<Role | 'all'>('all');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [applyTeam, setApplyTeam] = useState<Team | null>(null);
-  const [applyForm, setApplyForm] = useState<ApplyForm>({ intro: '', positions: [], techStack: '', portfolio: '' });
   const [toast, setToast] = useState('');
   const [createForm, setCreateForm] = useState({ name: '', description: '', hackathonSlug: '', roles: [] as Role[], maxMembers: 4 });
   const [recLoading, setRecLoading] = useState(false);
+  const [aiRecs, setAiRecs] = useState<{ teamId: string; teamName: string; matchScore: number; reason: string }[] | null>(null);
+  const [aiError, setAiError] = useState(false);
+  const [recStep, setRecStep] = useState(0);
+  const [showRecModal, setShowRecModal] = useState(false);
+  const [cooldownEnd, setCooldownEnd] = useState(0);
+  const [, setCooldownTick] = useState(0);
 
   // G11: Auto-filter from URL param ?hackathon=slug (React 19 prop-change pattern)
   const [prevSearchParams, setPrevSearchParams] = useState(searchParams);
@@ -81,20 +99,82 @@ export default function CampPage() {
     }
   }
 
-  // G7: Brief loading animation when user logs in (React 19 prop-change pattern)
+  // Cleanup on logout (React 19 prop-change pattern)
   const [prevLoggedIn, setPrevLoggedIn] = useState(isLoggedIn);
   if (isLoggedIn !== prevLoggedIn) {
     setPrevLoggedIn(isLoggedIn);
-    if (isLoggedIn) {
-      setRecLoading(true);
-    } else {
+    if (!isLoggedIn) {
       setRecLoading(false);
+      setAiRecs(null);
+      setShowRecModal(false);
     }
   }
+
+  // localStorage persistence: load on mount
   useEffect(() => {
-    if (!recLoading) return;
-    const t = setTimeout(() => setRecLoading(false), 500);
-    return () => clearTimeout(t);
+    try {
+      const saved = localStorage.getItem('daclaw-ai-recs');
+      if (saved) setAiRecs(JSON.parse(saved));
+    } catch { /* ignore parse errors */ }
+  }, []);
+
+  // localStorage persistence: save when aiRecs changes
+  useEffect(() => {
+    if (aiRecs) {
+      localStorage.setItem('daclaw-ai-recs', JSON.stringify(aiRecs));
+    } else {
+      localStorage.removeItem('daclaw-ai-recs');
+    }
+  }, [aiRecs]);
+
+  // localStorage cleanup on logout
+  useEffect(() => {
+    if (!isLoggedIn) {
+      localStorage.removeItem('daclaw-ai-recs');
+      localStorage.removeItem('daclaw-ai-rec-cooldown');
+      setCooldownEnd(0);
+    }
+  }, [isLoggedIn]);
+
+  // Cooldown: load from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('daclaw-ai-rec-cooldown');
+      if (saved) {
+        const end = Number(saved);
+        if (end > Date.now()) {
+          setCooldownEnd(end);
+        } else {
+          localStorage.removeItem('daclaw-ai-rec-cooldown');
+        }
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  // Cooldown: tick every minute to update remaining time display
+  useEffect(() => {
+    if (cooldownEnd <= Date.now()) return;
+    const interval = setInterval(() => {
+      if (cooldownEnd <= Date.now()) {
+        setCooldownEnd(0);
+        localStorage.removeItem('daclaw-ai-rec-cooldown');
+      } else {
+        // Force re-render so remaining minutes recalculates
+        setCooldownTick((t) => t + 1);
+      }
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, [cooldownEnd]);
+
+  // Step-based loading progress messages
+  useEffect(() => {
+    if (!recLoading) {
+      setRecStep(0);
+      return;
+    }
+    const t1 = setTimeout(() => setRecStep(1), 1500);
+    const t2 = setTimeout(() => setRecStep(2), 3000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [recLoading]);
 
   const filtered = useMemo(() => {
@@ -135,25 +215,6 @@ export default function CampPage() {
     showToast('팀이 생성되었습니다!');
   }
 
-  function handleSendDM() {
-    if (!applyForm.intro.trim() || !applyTeam || !isLoggedIn || !user) return;
-    const leader = applyTeam.members[0];
-    if (!leader) return;
-    addMessage({
-      id: `msg-${crypto.randomUUID()}`,
-      from: user?.id ?? 'anonymous',
-      to: leader?.userId ?? '',
-      content: buildDmContent(applyForm),
-      type: 'team-request',
-      teamId: applyTeam.id,
-      read: false,
-      createdAt: new Date().toISOString(),
-    });
-    setApplyForm({ intro: '', positions: [], techStack: '', portfolio: '' });
-    setApplyTeam(null);
-    showToast('참가 신청이 전송되었습니다!');
-  }
-
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
@@ -166,13 +227,69 @@ export default function CampPage() {
     }));
   }
 
-  function toggleApplyPosition(role: Role) {
-    setApplyForm((prev) => ({
-      ...prev,
-      positions: prev.positions.includes(role)
-        ? prev.positions.filter((r) => r !== role)
-        : [...prev.positions, role],
-    }));
+  const REC_STEP_MESSAGES = ['프로필 분석 중...', '팀 매칭 중...', '결과 정리 중...'];
+
+  function handleAiRecommend() {
+    if (cooldownEnd > Date.now()) return;
+    setRecLoading(true);
+    setAiError(false);
+    const startTime = Date.now();
+    const openTeams = teams.filter((t) => t.recruitStatus === 'open');
+    const teamsPayload = openTeams.map((t) => {
+      const hack = hackathons.find((h) => t.hackathonSlugs?.includes(h.slug));
+      return {
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        recruitRoles: t.recruitRoles.map((r) => ROLE_LABELS[r]),
+        hackathonTitle: hack?.title ?? '미정',
+        techStack: t.techStack ?? [],
+        members: t.members.length,
+        maxMembers: t.maxMembers,
+      };
+    });
+
+    let resultRecs: typeof aiRecs = null;
+    let hasError = false;
+
+    fetch('/api/recommend-teams', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profile: { role: user?.role, techStack: user?.techStack, interests: user?.interests, grade: user?.grade },
+        teams: teamsPayload,
+      }),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          resultRecs = recommendations.slice(0, 3).map(({ team, rate }) => ({
+            teamId: team.id,
+            teamName: team.name,
+            matchScore: rate,
+            reason: getMatchReason(rate).label,
+          }));
+          return;
+        }
+        const data = await res.json();
+        resultRecs = data.recommendations?.slice(0, 3) ?? [];
+      })
+      .catch(() => { hasError = true; })
+      .finally(() => {
+        // Ensure progress UI shows for at least 3.5s
+        const elapsed = Date.now() - startTime;
+        const minDelay = 3500;
+        setTimeout(() => {
+          if (hasError) {
+            setAiError(true);
+          } else {
+            setAiRecs(resultRecs);
+          }
+          setRecLoading(false);
+          const cooldownTime = Date.now() + 10 * 60 * 1000;
+          setCooldownEnd(cooldownTime);
+          localStorage.setItem('daclaw-ai-rec-cooldown', String(cooldownTime));
+        }, Math.max(0, minDelay - elapsed));
+      });
   }
 
   return (
@@ -195,28 +312,22 @@ export default function CampPage() {
             <button
               data-testid="create-team-button"
               onClick={() => setShowCreateForm(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
             >
-              <Plus size={16} /> 팀 만들기
+              <Plus size={14} /> 팀 만들기
             </button>
           </div>
 
           {/* Filters */}
           <div className="flex flex-wrap gap-3 mb-6">
-            <div className="relative">
-              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
-              <select
-                value={hackFilter}
-                onChange={(e) => setHackFilter(e.target.value)}
-                className="pl-8 pr-8 py-2 bg-surface border border-border rounded-lg text-sm text-text-primary focus:ring-2 focus:ring-primary-light focus:border-primary appearance-none"
-              >
-                <option value="all">모든 해커톤</option>
-                {hackathons.map((h) => (
-                  <option key={h.slug} value={h.slug}>{h.title}</option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
-            </div>
+            <CustomSelect
+              value={hackFilter}
+              onChange={setHackFilter}
+              options={[
+                { value: 'all', label: '모든 해커톤' },
+                ...hackathons.map((h) => ({ value: h.slug, label: h.title })),
+              ]}
+            />
             <div className="flex gap-1">
               {(['all', 'developer', 'designer', 'planner', 'data-scientist'] as const).map((r) => (
                 <button
@@ -311,7 +422,7 @@ export default function CampPage() {
               <h2 className="font-bold text-text-primary">AI 추천 팀</h2>
             </div>
 
-            {/* G6: Not logged in → CTA card */}
+            {/* Not logged in → CTA */}
             {!isLoggedIn ? (
               <div className="text-center py-6">
                 <Sparkles className="mx-auto mb-2 text-primary" size={28} />
@@ -324,42 +435,127 @@ export default function CampPage() {
                   로그인
                 </button>
               </div>
-            ) : recLoading ? (
-              /* G7: Loading animation */
-              <div className="flex flex-col items-center py-6 gap-2 text-text-secondary">
-                <Loader2 size={22} className="animate-spin text-primary" />
-                <p className="text-sm">매칭 분석 중...</p>
+            ) : aiRecs ? (
+              /* AI recommendations result — shown in sidebar */
+              <div className="space-y-3">
+                {aiRecs.length === 0 ? (
+                  <p className="text-sm text-text-secondary text-center py-4">매칭되는 팀이 없습니다.</p>
+                ) : (
+                  aiRecs.map((rec) => (
+                    <AiRecCard key={rec.teamId} rec={rec} teams={teams} userRole={user?.role} />
+                  ))
+                )}
+                {(() => {
+                  const isCooldown = cooldownEnd > Date.now();
+                  const remainMin = isCooldown ? Math.ceil((cooldownEnd - Date.now()) / 60_000) : 0;
+                  return (
+                    <button
+                      onClick={() => { if (!isCooldown) { setAiRecs(null); setAiError(false); } }}
+                      disabled={isCooldown}
+                      className={`w-full text-xs mt-1 text-center transition-colors ${
+                        isCooldown
+                          ? 'text-text-secondary/50 cursor-not-allowed'
+                          : 'text-text-secondary hover:text-primary cursor-pointer'
+                      }`}
+                    >
+                      {isCooldown ? `다시 추천받기 (${remainMin}분 남음)` : '다시 추천받기'}
+                    </button>
+                  );
+                })()}
               </div>
             ) : (
-              /* G7: Recommendations with match reason */
-              <div className="space-y-3">
-                {recommendations.map(({ team, rate, hackTitle }) => {
-                  const reason = getMatchReason(rate);
-                  return (
-                    <div key={team.id} className="border border-border rounded-lg p-3 hover:border-primary-light transition-colors">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-sm text-text-primary">{team.name}</span>
-                        <span data-testid="match-rate" className="font-mono text-sm font-bold text-primary bg-primary-light px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <Sparkles size={10} /> {rate}%
-                        </span>
-                      </div>
-                      <p className="text-xs text-text-secondary mb-1">{hackTitle}</p>
-                      <p className={`text-xs mb-2 ${reason.className}`}>{reason.label}</p>
-                      <div className="flex flex-wrap gap-1">
-                        {team.recruitRoles.map((r) => (
-                          <span key={r} className="text-xs bg-primary-light/60 text-primary px-1.5 py-0.5 rounded">
-                            {user?.role === r && <Check size={12} className="inline" />} {ROLE_LABELS[r]}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+              /* Default: AI CTA — opens modal */
+              <div className="text-center py-6">
+                <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Sparkles size={24} className="text-primary" />
+                </div>
+                <p className="font-semibold text-text-primary mb-1">AI 팀 추천</p>
+                <p className="text-xs text-text-secondary mb-4">프로필 기반으로 최적의 팀을 추천합니다</p>
+                <button
+                  onClick={() => setShowRecModal(true)}
+                  className="px-5 py-2 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98] flex items-center gap-2 mx-auto"
+                >
+                  <Sparkles size={16} />
+                  AI 추천받기
+                </button>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* AI Recommendation Modal — dashboard-style flow */}
+      <Modal isOpen={showRecModal} onClose={() => { if (!recLoading) setShowRecModal(false); }} maxWidth="max-w-md">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-text-primary">AI 팀 추천</h3>
+        </div>
+
+        {recLoading ? (
+          /* Loading with step progress */
+          <div className="flex flex-col items-center gap-3 py-8">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <p className="text-sm text-text-secondary">{REC_STEP_MESSAGES[recStep]}</p>
+            <div className="flex gap-1.5 mt-1">
+              {[0, 1, 2].map((s) => (
+                <div
+                  key={s}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    s <= recStep ? 'w-6 bg-primary' : 'w-4 bg-border'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        ) : aiRecs ? (
+          /* Results */
+          <div>
+            <div className="space-y-3 max-h-80 overflow-y-auto mb-4">
+              {aiRecs.length === 0 ? (
+                <p className="text-sm text-text-secondary text-center py-4">매칭되는 팀이 없습니다.</p>
+              ) : (
+                aiRecs.map((rec) => (
+                  <AiRecCard key={rec.teamId} rec={rec} teams={teams} userRole={user?.role} />
+                ))
+              )}
+            </div>
+            <button
+              onClick={() => setShowRecModal(false)}
+              className="w-full px-4 py-2 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+            >
+              확인
+            </button>
+          </div>
+        ) : aiError ? (
+          /* Error */
+          <div className="flex flex-col items-center gap-3 py-6">
+            <p className="text-sm text-error">추천 분석 중 오류가 발생했습니다.</p>
+            <button
+              onClick={() => { setAiError(false); handleAiRecommend(); }}
+              className="text-xs text-primary hover:underline cursor-pointer"
+            >
+              다시 시도
+            </button>
+          </div>
+        ) : (
+          /* Confirm — same style as dashboard */
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="w-14 h-14 rounded-full bg-primary-light flex items-center justify-center">
+              <Sparkles className="w-7 h-7 text-primary" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-text-primary font-medium mb-1">프로필을 분석하여 최적의 팀을 추천합니다</p>
+              <p className="text-xs text-text-secondary">기술 스택, 관심 분야를 기반으로 AI가 분석합니다</p>
+            </div>
+            <button
+              onClick={handleAiRecommend}
+              className="px-6 py-2 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+            >
+              추천 시작하기
+            </button>
+          </div>
+        )}
+      </Modal>
 
       {/* Create Team Modal */}
       <Modal isOpen={showCreateForm} onClose={() => setShowCreateForm(false)} maxWidth="max-w-md">
@@ -390,17 +586,15 @@ export default function CampPage() {
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">해커톤</label>
-            <select
+            <CustomSelect
               value={createForm.hackathonSlug}
-              onChange={(e) => setCreateForm({ ...createForm, hackathonSlug: e.target.value })}
-              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-              required
-            >
-              <option value="">선택하세요</option>
-              {hackathons.filter((h) => h.status !== 'ended').map((h) => (
-                <option key={h.slug} value={h.slug}>{h.title}</option>
-              ))}
-            </select>
+              onChange={(v) => setCreateForm({ ...createForm, hackathonSlug: v })}
+              options={[
+                { value: '', label: '선택하세요' },
+                ...hackathons.filter((h) => h.status !== 'ended').map((h) => ({ value: h.slug, label: h.title })),
+              ]}
+              className="w-full"
+            />
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">모집 역할</label>
@@ -433,90 +627,36 @@ export default function CampPage() {
           <button
             data-testid="team-submit-button"
             type="submit"
-            className="w-full px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
+            className="w-full px-4 py-2 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
           >
             팀 생성
           </button>
         </form>
       </Modal>
 
-      {/* Apply Modal — G8-1: Rich form */}
-      <Modal isOpen={!!applyTeam} onClose={() => setApplyTeam(null)} maxWidth="max-w-md">
-        <h2 className="text-lg font-bold mb-4">참가 신청 — {applyTeam?.name}</h2>
-
-        <div className="space-y-4">
-          {/* 자기소개 */}
-          <div>
-            <label className="text-sm font-medium block mb-1">
-              자기소개 <span className="text-error text-xs">*</span>
-            </label>
-            <textarea
-              data-testid="dm-message-input"
-              value={applyForm.intro}
-              onChange={(e) => setApplyForm({ ...applyForm, intro: e.target.value })}
-              placeholder="자기소개와 참가 동기를 작성해주세요..."
-              rows={3}
-              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary resize-none"
-            />
-          </div>
-
-          {/* 가능 포지션 */}
-          <div>
-            <label className="text-sm font-medium block mb-1">가능 포지션</label>
-            <div className="flex flex-wrap gap-2">
-              {APPLY_ROLES.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => toggleApplyPosition(r)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer active:scale-[0.98] ${
-                    applyForm.positions.includes(r)
-                      ? 'bg-primary text-text-on-primary'
-                      : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
-                  }`}
-                >
-                  {ROLE_LABELS[r]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 기술스택 */}
-          <div>
-            <label className="text-sm font-medium block mb-1">기술스택</label>
-            <input
-              type="text"
-              value={applyForm.techStack}
-              onChange={(e) => setApplyForm({ ...applyForm, techStack: e.target.value })}
-              placeholder="React, Python, Figma ... (쉼표로 구분)"
-              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-            />
-          </div>
-
-          {/* 포트폴리오 */}
-          <div>
-            <label className="text-sm font-medium block mb-1">
-              포트폴리오 링크 <span className="text-text-secondary text-xs">(선택)</span>
-            </label>
-            <input
-              type="url"
-              value={applyForm.portfolio}
-              onChange={(e) => setApplyForm({ ...applyForm, portfolio: e.target.value })}
-              placeholder="https://..."
-              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-            />
-          </div>
-
-          <button
-            data-testid="dm-send-button"
-            onClick={handleSendDM}
-            disabled={!applyForm.intro.trim()}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
-          >
-            <Send size={16} /> 신청 보내기
-          </button>
-        </div>
-      </Modal>
+      {/* Apply Modal — replaced with shared ApplyFormModal component */}
+      <ApplyFormModal
+        isOpen={!!applyTeam}
+        onClose={() => setApplyTeam(null)}
+        teamName={applyTeam?.name || ''}
+        onSend={(content) => {
+          if (!applyTeam || !user) return;
+          const leader = applyTeam.members[0];
+          if (!leader) return;
+          addMessage({
+            id: `msg-${Date.now()}`,
+            from: user.id,
+            to: leader.userId,
+            content,
+            type: 'team-request',
+            teamId: applyTeam.id,
+            read: false,
+            createdAt: new Date().toISOString(),
+          });
+          setToast('참가 신청이 전송되었습니다!');
+          setTimeout(() => setToast(''), 3000);
+        }}
+      />
     </div>
   );
 }

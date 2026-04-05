@@ -269,7 +269,7 @@ export default function HomePage() {
           {imminentHackathon && (
             <Link
               href={`/hackathons/${imminentHackathon.slug}`}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-text-on-primary font-medium hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-text-on-primary font-medium hover:bg-primary/90 transition-colors"
             >
               <Trophy size={18} />
               지금 참가하기
@@ -279,14 +279,14 @@ export default function HomePage() {
           <Link
             href="/hackathons"
             data-testid="explore-hackathons"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-colors"
           >
             <Compass size={18} />
             해커톤 탐색하기
           </Link>
           <Link
             href="/camp"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-colors"
           >
             <Users size={18} />
             팀 찾기

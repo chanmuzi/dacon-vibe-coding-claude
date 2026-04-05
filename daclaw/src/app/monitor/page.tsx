@@ -393,7 +393,7 @@ export default function MonitorPage() {
             </div>
             <Link
               href="/hackathons"
-              className="mt-2 px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+              className="mt-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
             >
               해커톤 목록 보기
             </Link>

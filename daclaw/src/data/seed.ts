@@ -3,7 +3,7 @@ import type {
   CommunityPost, Badge, DailyMission, Message, UserProfile,
 } from '@/types';
 
-export const SEED_VERSION = 5;
+export const SEED_VERSION = 6;
 
 export const seedHackathons: Hackathon[] = [
   {
@@ -680,14 +680,14 @@ export const seedLeaderboards: Leaderboard[] = [
 ];
 
 export const seedRankings: RankingEntry[] = [
-  { userId: 'user-11', nickname: '윤스피드', role: 'developer', grade: 'master', badges: ['first-submit', 'team-leader', '3-wins'], totalScore: 2850, competitionScore: 2200, communityScore: 650 },
-  { userId: 'user-5', nickname: '최분석', role: 'data-scientist', grade: 'expert', badges: ['first-submit', '10-hackathons'], totalScore: 1420, competitionScore: 1100, communityScore: 320 },
-  { userId: 'user-8', nickname: '오기획', role: 'planner', grade: 'expert', badges: ['first-submit', 'team-leader', 'popular-author'], totalScore: 1180, competitionScore: 700, communityScore: 480 },
-  { userId: 'user-2', nickname: '김데이터', role: 'data-scientist', grade: 'expert', badges: ['first-submit', '7-day-streak'], totalScore: 980, competitionScore: 750, communityScore: 230 },
-  { userId: 'user-4', nickname: '박프론트', role: 'developer', grade: 'challenger', badges: ['first-submit'], totalScore: 450, competitionScore: 300, communityScore: 150 },
-  { userId: 'user-9', nickname: '유예술', role: 'designer', grade: 'challenger', badges: ['first-submit', 'creator'], totalScore: 380, competitionScore: 200, communityScore: 180 },
-  { userId: 'user-3', nickname: '이디자인', role: 'designer', grade: 'challenger', badges: ['first-submit'], totalScore: 310, competitionScore: 200, communityScore: 110 },
-  { userId: 'user-7', nickname: '한언어', role: 'data-scientist', grade: 'challenger', badges: ['first-submit'], totalScore: 250, competitionScore: 180, communityScore: 70 },
+  { userId: 'user-11', nickname: '윤스피드', role: 'developer', grade: 'legend', badges: ['first-submit', 'team-leader', '3-wins'], totalScore: 5200, competitionScore: 4100, communityScore: 1100 },
+  { userId: 'user-5', nickname: '최분석', role: 'data-scientist', grade: 'challenger', badges: ['first-submit', '10-hackathons'], totalScore: 1800, competitionScore: 1400, communityScore: 400 },
+  { userId: 'user-8', nickname: '오기획', role: 'planner', grade: 'master', badges: ['first-submit', 'team-leader', 'popular-author'], totalScore: 1180, competitionScore: 700, communityScore: 480 },
+  { userId: 'user-2', nickname: '김데이터', role: 'data-scientist', grade: 'master', badges: ['first-submit', '7-day-streak'], totalScore: 980, competitionScore: 750, communityScore: 230 },
+  { userId: 'user-4', nickname: '박프론트', role: 'developer', grade: 'expert', badges: ['first-submit'], totalScore: 450, competitionScore: 300, communityScore: 150 },
+  { userId: 'user-9', nickname: '유예술', role: 'designer', grade: 'expert', badges: ['first-submit', 'creator'], totalScore: 380, competitionScore: 200, communityScore: 180 },
+  { userId: 'user-3', nickname: '이디자인', role: 'designer', grade: 'expert', badges: ['first-submit'], totalScore: 310, competitionScore: 200, communityScore: 110 },
+  { userId: 'user-7', nickname: '한언어', role: 'data-scientist', grade: 'expert', badges: ['first-submit'], totalScore: 250, competitionScore: 180, communityScore: 70 },
   { userId: 'user-6', nickname: '정머신', role: 'data-scientist', grade: 'rookie', badges: ['first-submit'], totalScore: 95, competitionScore: 80, communityScore: 15 },
   { userId: 'user-10', nickname: '강개발', role: 'developer', grade: 'rookie', badges: [], totalScore: 60, competitionScore: 50, communityScore: 10 },
 ];
@@ -707,7 +707,7 @@ export const seedCommunityPosts: CommunityPost[] = [
   },
   {
     id: 'post-3', type: 'team-find', title: '[바이브 코딩] 프론트엔드 개발자 구합니다', summary: '바이브 코딩 대회에서 React/Next.js 경험 있는 프론트엔드 개발자 2명을 구하는 팀원 모집 글입니다.', content: 'React/Next.js 경험 있는 개발자를 찾습니다.\n- 현재 인원: 기획 1, 디자인 1\n- 필요 역할: 프론트엔드 개발 2명\n- 사용 기술: Next.js, Tailwind CSS, tw-animate-css',
-    authorId: 'user-8', authorNickname: '오기획', hackathonTag: 'vibe-coding-challenge', likes: 12, likedBy: [], comments: [
+    authorId: 'user-8', authorNickname: '오기획', hackathonTag: 'vibe-coding-challenge', teamId: 'team-5', likes: 12, likedBy: [], comments: [
       { id: 'c3', authorId: 'user-4', authorNickname: '박프론트', content: '관심 있습니다! DM 드려도 될까요?', createdAt: '2026-03-13' },
     ], createdAt: '2026-03-12',
   },
@@ -738,7 +738,7 @@ export const seedCommunityPosts: CommunityPost[] = [
   },
   {
     id: 'post-9', type: 'team-find', title: '[데이터 사이언스] 분석가 1명 급구!', summary: '데이터 사이언스 해커톤 참가 중 팀원이 빠져 데이터 분석 및 시각화 가능한 분석가 1명을 급히 구하는 글입니다.', content: '데이터 사이언스 해커톤 참가 중인데, 팀원 1명이 급하게 빠져서 분석가를 구합니다.\n- 현재: 데이터 사이언티스트 2명\n- 필요: 데이터 분석 + 시각화 가능하신 분',
-    authorId: 'user-5', authorNickname: '최분석', hackathonTag: 'data-science-hackathon', likes: 6, likedBy: [], comments: [], createdAt: '2026-03-23',
+    authorId: 'user-5', authorNickname: '최분석', hackathonTag: 'data-science-hackathon', teamId: 'team-3', likes: 6, likedBy: [], comments: [], createdAt: '2026-03-23',
   },
   {
     id: 'post-10', type: 'tip', title: '해커톤 시간 관리 노하우', summary: '여러 해커톤 경험을 바탕으로 첫 날 기획 집중, MVP 우선, 매일 제출, 팀 소통 등 실전 시간 관리 노하우를 공유하는 글입니다.', content: '여러 해커톤을 경험하면서 배운 시간 관리 팁입니다.\n\n1. **첫 날은 기획에 집중** — 바로 코딩하지 말고 전체 계획을 세우세요\n2. **MVP 우선** — 핵심 기능 먼저, 부가 기능은 나중에\n3. **매일 제출** — 미완성이어도 중간 제출로 안전망 확보\n4. **팀 소통** — 매일 10분 스탠드업 미팅',
@@ -769,8 +769,18 @@ export const seedDailyMissions: DailyMission[] = [
 ];
 
 export const seedMessages: Message[] = [
-  { id: 'msg-1', from: 'user-4', to: 'user-8', content: '안녕하세요! 프론트엔드 개발자 구하신다고 해서 연락드려요. Next.js 2년 경험 있습니다.', type: 'team-request', teamId: 'team-5', read: true, createdAt: '2026-03-13' },
-  { id: 'msg-2', from: 'user-10', to: 'user-2', content: '팀에 합류하고 싶습니다! 아직 경험은 적지만 열심히 하겠습니다.', type: 'team-request', teamId: 'team-1', read: false, createdAt: '2026-03-20' },
+  { id: 'msg-1', from: 'user-4', to: 'user-8', content: '안녕하세요! 프론트엔드 개발자 구하신다고 해서 연락드려요. Next.js 2년 경험 있습니다.', type: 'team-request', teamId: 'team-5', read: true, createdAt: '2026-03-13T09:30' },
+  { id: 'msg-2', from: 'user-10', to: 'user-2', content: '팀에 합류하고 싶습니다! 아직 경험은 적지만 열심히 하겠습니다.', type: 'team-request', teamId: 'team-1', read: false, createdAt: '2026-03-20T14:20' },
+  // DM conversations
+  { id: 'msg-3', from: 'user-11', to: 'user-5', content: '최분석님, 이번 NLP 챌린지 데이터 전처리 어떻게 하셨어요?', type: 'dm', read: true, createdAt: '2026-03-25T10:15' },
+  { id: 'msg-4', from: 'user-5', to: 'user-11', content: 'KoNLPy로 형태소 분석 후 TF-IDF 벡터화했어요. 코드 공유해드릴까요?', type: 'dm', read: true, createdAt: '2026-03-25T10:22' },
+  { id: 'msg-5', from: 'user-11', to: 'user-5', content: '네! 감사합니다. 저도 EDA 노트북 공유 가능해요.', type: 'dm', read: true, createdAt: '2026-03-25T10:30' },
+  { id: 'msg-6', from: 'user-5', to: 'user-11', content: '좋아요! 그럼 내일 오후에 화상으로 코드 리뷰 할까요?', type: 'dm', read: false, createdAt: '2026-03-25T11:05' },
+  { id: 'msg-7', from: 'user-8', to: 'user-2', content: '김데이터님, 이번 대회 같이 나가실 생각 있으신가요?', type: 'dm', read: true, createdAt: '2026-03-26T09:00' },
+  { id: 'msg-8', from: 'user-2', to: 'user-8', content: '관심 있어요! 어떤 대회인가요?', type: 'dm', read: true, createdAt: '2026-03-26T09:15' },
+  { id: 'msg-9', from: 'user-8', to: 'user-2', content: 'AI 이미지 생성 챌린지요. 기획은 제가 하고 모델링 부분 도움 주시면 좋겠어요.', type: 'dm', read: false, createdAt: '2026-03-26T09:20' },
+  { id: 'msg-10', from: 'user-7', to: 'user-11', content: '윤스피드님 랭킹 1위 축하드려요! 비결이 뭔가요?', type: 'dm', read: true, createdAt: '2026-03-27T15:00' },
+  { id: 'msg-11', from: 'user-11', to: 'user-7', content: '감사합니다! 꾸준히 대회 참가하면서 커뮤니티 활동도 열심히 했어요 ㅎㅎ', type: 'dm', read: false, createdAt: '2026-03-27T15:10' },
 ];
 
 export const defaultUserProfile: UserProfile = {
@@ -789,16 +799,19 @@ export const defaultUserProfile: UserProfile = {
 
 export function getGradeFromPoints(points: number): string {
   if (points >= 5000) return 'legend';
-  if (points >= 1500) return 'master';
-  if (points >= 500) return 'expert';
-  if (points >= 100) return 'challenger';
+  if (points >= 1500) return 'challenger';
+  if (points >= 500) return 'master';
+  if (points >= 100) return 'expert';
   return 'rookie';
 }
 
+// Grade hierarchy (highest → lowest): Legend > Challenger > Master > Expert > Rookie
 export const gradeConfig: Record<string, { label: string; icon: string; color: string; min: number; max: number }> = {
   rookie: { label: 'Rookie', icon: 'Sprout', color: 'var(--color-grade-rookie)', min: 0, max: 99 },
-  challenger: { label: 'Challenger', icon: 'Swords', color: 'var(--color-grade-challenger)', min: 100, max: 499 },
-  expert: { label: 'Expert', icon: 'Gem', color: 'var(--color-grade-expert)', min: 500, max: 1499 },
-  master: { label: 'Master', icon: 'Crown', color: 'var(--color-grade-master)', min: 1500, max: 4999 },
+  expert: { label: 'Expert', icon: 'Gem', color: 'var(--color-grade-expert)', min: 100, max: 499 },
+  master: { label: 'Master', icon: 'Crown', color: 'var(--color-grade-master)', min: 500, max: 1499 },
+  challenger: { label: 'Challenger', icon: 'Swords', color: 'var(--color-grade-challenger)', min: 1500, max: 4999 },
   legend: { label: 'Legend', icon: 'Trophy', color: 'var(--color-grade-legend)', min: 5000, max: Infinity },
 };
+
+export const GRADE_ORDER = Object.keys(gradeConfig);

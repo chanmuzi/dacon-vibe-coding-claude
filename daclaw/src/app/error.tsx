@@ -26,14 +26,14 @@ export default function ErrorPage({
         <div className="flex gap-3">
           <button
             onClick={reset}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-text-on-primary font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-text-on-primary font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
           >
             <RefreshCw size={18} />
             다시 시도
           </button>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-all duration-200 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-all duration-200 active:scale-[0.98]"
           >
             <Home size={18} />
             홈으로

@@ -2,17 +2,19 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCommunityStore } from '@/store/community';
 import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
+import { useTeamStore } from '@/store/team';
 import {
-  MessageSquare, Heart, Plus, ChevronDown, HelpCircle, Lightbulb, Users, MessageCircle, Search,
+  MessageSquare, Heart, Plus, HelpCircle, Lightbulb, Users, MessageCircle, Search, ExternalLink,
 } from 'lucide-react';
 import Modal from '@/components/Modal';
+import CustomSelect from '@/components/CustomSelect';
 import type { CommunityPost } from '@/types';
 
 const POST_TYPES = [
-  { value: 'all', label: '전체', icon: MessageSquare },
   { value: 'question', label: '질문', icon: HelpCircle },
   { value: 'tip', label: '팁', icon: Lightbulb },
   { value: 'team-find', label: '팀 구하기', icon: Users },
@@ -22,33 +24,46 @@ const POST_TYPES = [
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
   question: { label: '질문', cls: 'bg-info-light text-info' },
   tip: { label: '팁', cls: 'bg-success-light text-success' },
-  'team-find': { label: '팀 구하기', cls: 'bg-type-qualitative-light text-type-qualitative' },
+  'team-find': { label: '팀 구하기', cls: 'bg-type-qualitative text-white ring-1 ring-type-qualitative/30' },
   free: { label: '자유', cls: 'bg-background text-text-secondary' },
 };
 
 type SortKey = 'latest' | 'popular' | 'comments';
 
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: 'latest', label: '최신순' },
-  { value: 'popular', label: '인기순' },
-  { value: 'comments', label: '댓글순' },
-];
-
 export default function CommunityPage() {
   const { posts, addPost, toggleLike } = useCommunityStore();
   const { hackathons } = useHackathonStore();
   const { user, isLoggedIn, openAuthModal } = useUserStore();
+  const teams = useTeamStore((s) => s.teams);
+  const router = useRouter();
+  const [heartAnimIds, setHeartAnimIds] = useState<Set<string>>(new Set());
 
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [typeFilters, setTypeFilters] = useState<Set<string>>(new Set());
   const [hackFilter, setHackFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('latest');
   const [showWrite, setShowWrite] = useState(false);
   const [writeForm, setWriteForm] = useState({ title: '', content: '', type: 'free' as CommunityPost['type'], hackathonTag: '' });
 
+  const hackSelectOptions = useMemo(() => [
+    { value: 'all', label: '모든 해커톤' },
+    ...hackathons.map((h) => ({ value: h.slug, label: h.title })),
+  ], [hackathons]);
+
+  const sortOptions = [
+    { value: 'latest', label: '최신순' },
+    { value: 'popular', label: '인기순' },
+    { value: 'comments', label: '댓글순' },
+  ];
+
+  const writeHackOptions = useMemo(() => [
+    { value: '', label: '해커톤 태그 (선택)' },
+    ...hackathons.map((h) => ({ value: h.slug, label: h.title })),
+  ], [hackathons]);
+
   const filtered = useMemo(() => {
     let result = posts;
-    if (typeFilter !== 'all') result = result.filter((p) => p.type === typeFilter);
+    if (typeFilters.size > 0) result = result.filter((p) => typeFilters.has(p.type));
     if (hackFilter !== 'all') result = result.filter((p) => p.hackathonTag === hackFilter);
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
@@ -58,7 +73,16 @@ export default function CommunityPage() {
     if (sortKey === 'popular') result = [...result].sort((a, b) => b.likes - a.likes);
     if (sortKey === 'comments') result = [...result].sort((a, b) => b.comments.length - a.comments.length);
     return result;
-  }, [posts, typeFilter, hackFilter, searchQuery, sortKey]);
+  }, [posts, typeFilters, hackFilter, searchQuery, sortKey]);
+
+  function toggleTypeFilter(value: string) {
+    setTypeFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      return next;
+    });
+  }
 
   function handleWritePost(e: React.FormEvent) {
     e.preventDefault();
@@ -79,7 +103,7 @@ export default function CommunityPage() {
       likes: 0,
       likedBy: [],
       comments: [],
-      createdAt: new Date().toISOString().slice(0, 10),
+      createdAt: new Date().toISOString().slice(0, 16),
     };
     addPost(post);
     setWriteForm({ title: '', content: '', type: 'free', hackathonTag: '' });
@@ -93,7 +117,17 @@ export default function CommunityPage() {
       openAuthModal();
       return;
     }
+    const post = posts.find((p) => p.id === postId);
+    const wasLiked = post ? post.likedBy.includes(user.id) : false;
     toggleLike(postId, user.id);
+    if (!wasLiked) {
+      setHeartAnimIds((prev) => new Set(prev).add(postId));
+      setTimeout(() => setHeartAnimIds((prev) => {
+        const next = new Set(prev);
+        next.delete(postId);
+        return next;
+      }), 500);
+    }
   }
 
   return (
@@ -109,9 +143,9 @@ export default function CommunityPage() {
             if (!isLoggedIn || !user) { openAuthModal(); return; }
             setShowWrite(true);
           }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+          className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
         >
-          <Plus size={16} /> 글쓰기
+          <Plus size={14} /> 글쓰기
         </button>
       </div>
 
@@ -129,51 +163,47 @@ export default function CommunityPage() {
           />
         </div>
 
-        {/* Type filter chips */}
+        {/* Type filter chips — multi-select */}
         <div className="flex gap-1">
           {POST_TYPES.map((t) => {
             const Icon = t.icon;
+            const active = typeFilters.has(t.value);
             return (
               <button
                 key={t.value}
-                onClick={() => setTypeFilter(t.value)}
+                onClick={() => toggleTypeFilter(t.value)}
                 className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer active:scale-[0.98] ${
-                  typeFilter === t.value ? 'bg-primary text-white' : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
+                  active ? 'bg-primary text-white' : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
                 }`}
               >
                 <Icon size={14} /> {t.label}
               </button>
             );
           })}
+          {typeFilters.size > 0 && (
+            <button
+              onClick={() => setTypeFilters(new Set())}
+              className="px-2 py-2 rounded-lg text-xs text-text-secondary hover:text-primary transition-colors cursor-pointer"
+            >
+              초기화
+            </button>
+          )}
         </div>
 
-        {/* Hackathon filter */}
-        <div className="relative">
-          <select
-            value={hackFilter}
-            onChange={(e) => setHackFilter(e.target.value)}
-            className="pl-3 pr-8 py-2 bg-surface border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary-light appearance-none"
-          >
-            <option value="all">모든 해커톤</option>
-            {hackathons.map((h) => (
-              <option key={h.slug} value={h.slug}>{h.title}</option>
-            ))}
-          </select>
-          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
-        </div>
+        {/* Hackathon filter — CustomSelect */}
+        <CustomSelect
+          value={hackFilter}
+          onChange={setHackFilter}
+          options={hackSelectOptions}
+        />
 
-        {/* Sort dropdown */}
-        <div className="relative ml-auto">
-          <select
+        {/* Sort — CustomSelect */}
+        <div className="ml-auto">
+          <CustomSelect
             value={sortKey}
-            onChange={(e) => setSortKey(e.target.value as SortKey)}
-            className="pl-3 pr-8 py-2 bg-surface border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary-light appearance-none"
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+            onChange={(v) => setSortKey(v as SortKey)}
+            options={sortOptions}
+          />
         </div>
       </div>
 
@@ -187,7 +217,8 @@ export default function CommunityPage() {
           const badge = TYPE_BADGE[post.type];
           const hackathon = hackathons.find((h) => h.slug === post.hackathonTag);
           const liked = user ? post.likedBy.includes(user.id) : false;
-          const summary = post.summary ?? post.content.slice(0, 100);
+          const rawSummary = post.summary ?? post.content.slice(0, 100);
+          const summary = post.content.length > 100 ? rawSummary.replace(/\.{3}$/, '') + '…' : rawSummary;
 
           return (
             <Link
@@ -197,11 +228,39 @@ export default function CommunityPage() {
             >
               {/* Main content */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.cls}`}>{badge.label}</span>
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${badge.cls}`}>
+                      {post.type === 'team-find' && <Users size={10} className="inline mr-0.5 -mt-px" />}
+                      {badge.label}
+                    </span>
+                    {post.type === 'team-find' && (() => {
+                      const authorTeam = post.teamId
+                        ? teams.find((t) => t.id === post.teamId)
+                        : teams.find((t) =>
+                            t.members.some((m) => m.userId === post.authorId) &&
+                            (!post.hackathonTag || t.hackathonSlugs?.includes(post.hackathonTag))
+                          );
+                      return authorTeam ? (
+                        <span
+                          role="link"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.nativeEvent.stopImmediatePropagation();
+                            router.push(`/teams/${authorTeam.id}`);
+                          }}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-type-qualitative-light text-type-qualitative hover:underline cursor-pointer active:scale-95 transition-all"
+                        >
+                          <Users size={10} /> 참가 신청하기
+                        </span>
+                      ) : null;
+                    })()}
+                  </div>
                   {hackathon && (
                     <span
-                      className="text-xs px-2 py-0.5 rounded-full font-medium"
+                      className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ml-auto"
                       style={{ backgroundColor: hackathon.color + '20', color: hackathon.color }}
                     >
                       {hackathon.title}
@@ -211,15 +270,23 @@ export default function CommunityPage() {
                 <h3 className="font-semibold text-text-primary mb-1 leading-snug">{post.title}</h3>
                 <p className="text-sm text-text-secondary line-clamp-2 mb-2">{summary}</p>
                 <div className="flex items-center gap-3 text-xs text-text-secondary">
-                  <span>{post.authorNickname}</span>
-                  <span>{post.createdAt}</span>
+                  <span
+                    role="link"
+                    tabIndex={0}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/users/${post.authorId}`); }}
+                    className="font-medium hover:text-primary transition-colors underline-offset-2 hover:underline cursor-pointer"
+                  >
+                    {post.authorNickname}
+                  </span>
+                  <span>{post.createdAt.slice(0, 10)}</span>
                   <button
                     onClick={(e) => handleLike(e, post.id)}
                     className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer active:scale-95"
                   >
                     <Heart
                       size={14}
-                      className={liked ? 'fill-current text-primary' : ''}
+                      fill={liked ? 'currentColor' : 'none'}
+                      className={`transition-all duration-200 ${liked ? 'text-primary scale-110' : ''} ${heartAnimIds.has(post.id) ? 'heart-pop' : ''}`}
                     />
                     {post.likes}
                   </button>
@@ -264,16 +331,12 @@ export default function CommunityPage() {
               );
             })}
           </div>
-          <select
+          <CustomSelect
             value={writeForm.hackathonTag}
-            onChange={(e) => setWriteForm({ ...writeForm, hackathonTag: e.target.value })}
-            className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light"
-          >
-            <option value="">해커톤 태그 (선택)</option>
-            {hackathons.map((h) => (
-              <option key={h.slug} value={h.slug}>{h.title}</option>
-            ))}
-          </select>
+            onChange={(v) => setWriteForm({ ...writeForm, hackathonTag: v })}
+            options={writeHackOptions}
+            className="w-full"
+          />
           <input
             data-testid="post-title-input"
             type="text"
@@ -295,7 +358,7 @@ export default function CommunityPage() {
           <button
             data-testid="post-submit-button"
             type="submit"
-            className="w-full px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
+            className="w-full px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
           >
             게시하기
           </button>

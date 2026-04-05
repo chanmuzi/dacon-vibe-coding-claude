@@ -189,6 +189,7 @@ export interface CommunityPost {
   authorId: string;
   authorNickname: string;
   hackathonTag?: string;
+  teamId?: string;
   likes: number;
   likedBy: string[];
   comments: Comment[];

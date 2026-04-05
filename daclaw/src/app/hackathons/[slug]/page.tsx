@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useParams, useRouter, notFound } from 'next/navigation';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useParams, useRouter, useSearchParams, notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, Bookmark, BookmarkCheck, Users, Calendar, Clock,
@@ -158,7 +158,7 @@ function MiniCalendar({ startDate, endDate }: { startDate: string; endDate: stri
   );
 }
 
-export default function HackathonDetailPage() {
+export default function HackathonDetailContent() {
   const params = useParams();
   const router = useRouter();
   const slug = params.slug as string;
@@ -168,7 +168,9 @@ export default function HackathonDetailPage() {
   const { submissions, addSubmission, getLeaderboard, updateLeaderboard } = useSubmissionStore();
   const { user, isLoggedIn, openAuthModal } = useUserStore();
 
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get('tab') as TabId) || 'overview';
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [toast, setToast] = useState('');
   const [submitForm, setSubmitForm] = useState({ content: '', memo: '', report: '', fileName: '', fileSize: '' });
   const [ideDropdownOpen, setIdeDropdownOpen] = useState(false);
@@ -352,6 +354,7 @@ export default function HackathonDetailPage() {
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (fmt.type === 'csv' && ext !== 'csv') errors.push('CSV 파일만 업로드 가능합니다.');
     if (fmt.type === 'json' && ext !== 'json') errors.push('JSON 파일만 업로드 가능합니다.');
+    if (fmt.type === 'markdown' && !['md', 'txt'].includes(ext || '')) errors.push('MD 또는 TXT 파일만 업로드 가능합니다.');
 
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -405,6 +408,11 @@ export default function HackathonDetailPage() {
           errors.push('유효하지 않은 JSON 형식입니다.');
         }
         setParsedPreview([]);
+      } else {
+        // markdown / other text types
+        if (fmt.minChars && text.length < fmt.minChars) errors.push(`최소 ${fmt.minChars}자 이상이어야 합니다. (현재 ${text.length}자)`);
+        if (fmt.maxChars && text.length > fmt.maxChars) errors.push(`최대 ${fmt.maxChars}자를 초과했습니다. (현재 ${text.length}자)`);
+        setParsedPreview([]);
       }
       setFileErrors(errors);
       setSubmitForm((f) => ({ ...f, content: text, fileName: file.name, fileSize: String(Math.round(file.size / 1024)) }));
@@ -440,7 +448,7 @@ export default function HackathonDetailPage() {
     const errs: string[] = [];
     const fmt = hackathon?.submissionFormat;
     if (!submitForm.content.trim()) {
-      errs.push('제출 내용이 비어있습니다.');
+      errs.push('파일을 업로드해주세요.');
       return errs;
     }
     if (fmt?.type === 'markdown') {
@@ -542,7 +550,7 @@ export default function HackathonDetailPage() {
       {hackathon.status === 'active' && (
         <button
           onClick={handleSidebarCTA}
-          className="w-full px-4 py-2.5 bg-primary text-text-on-primary rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+          className="w-full px-4 py-2 bg-primary text-text-on-primary rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
         >
           <Send size={16} /> 제출하기
         </button>
@@ -550,7 +558,7 @@ export default function HackathonDetailPage() {
       {hackathon.status === 'upcoming' && (
         <button
           disabled
-          className="w-full px-4 py-2.5 bg-border text-text-secondary rounded-xl font-semibold text-sm flex items-center justify-center gap-2 cursor-not-allowed opacity-70"
+          className="w-full px-4 py-2 bg-border text-text-secondary rounded-xl font-semibold text-sm flex items-center justify-center gap-2 cursor-not-allowed opacity-70"
         >
           <Bell size={16} /> 알림 받기
         </button>
@@ -558,7 +566,7 @@ export default function HackathonDetailPage() {
       {hackathon.status === 'ended' && (
         <button
           onClick={handleSidebarCTA}
-          className="w-full px-4 py-2.5 bg-surface border border-border text-text-primary rounded-xl font-semibold text-sm hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+          className="w-full px-4 py-2 bg-surface border border-border text-text-primary rounded-xl font-semibold text-sm hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
         >
           <Star size={16} /> 결과 보기
         </button>
@@ -686,7 +694,7 @@ export default function HackathonDetailPage() {
                 key={tab.id}
                 data-testid={`tab-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm whitespace-nowrap border-b-2 transition-all ${
+                className={`flex items-center gap-1.5 px-4 py-2 text-sm whitespace-nowrap border-b-2 transition-all ${
                   activeTab === tab.id
                     ? 'border-primary text-primary font-semibold'
                     : 'border-transparent text-text-secondary hover:text-primary/70 cursor-pointer'
@@ -833,7 +841,7 @@ export default function HackathonDetailPage() {
                         <div key={i} className="border border-border rounded-lg overflow-hidden">
                           <button
                             onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                            className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-text-primary hover:bg-interactive-hover transition-colors text-left cursor-pointer"
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-text-primary hover:bg-interactive-hover transition-colors text-left cursor-pointer"
                           >
                             <span className="flex items-center gap-2">
                               <span className="text-primary font-bold">Q.</span>
@@ -861,7 +869,7 @@ export default function HackathonDetailPage() {
                     <div className="relative group">
                       <button
                         onClick={handleDownloadJSON}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-text-primary text-text-on-primary font-mono text-sm rounded-lg hover:bg-text-primary/90 transition-colors cursor-pointer active:scale-[0.98]"
+                        className="flex items-center gap-2 px-4 py-2 bg-text-primary text-text-on-primary font-mono text-sm rounded-lg hover:bg-text-primary/90 transition-colors cursor-pointer active:scale-[0.98]"
                       >
                         <Download size={16} /> JSON 다운로드
                         <Info size={14} className="text-white/60" />
@@ -875,7 +883,7 @@ export default function HackathonDetailPage() {
                     <div className="relative" ref={ideDropdownRef}>
                       <button
                         onClick={() => setIdeDropdownOpen((v) => !v)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-primary text-text-on-primary font-mono text-sm rounded-lg hover:bg-primary/90 transition-colors cursor-pointer active:scale-[0.98]"
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-text-on-primary font-mono text-sm rounded-lg hover:bg-primary/90 transition-colors cursor-pointer active:scale-[0.98]"
                       >
                         <Terminal size={16} /> IDE에서 열기 <ChevronDown size={14} className={`transition-transform ${ideDropdownOpen ? 'rotate-180' : ''}`} />
                       </button>
@@ -887,7 +895,7 @@ export default function HackathonDetailPage() {
                               <button
                                 key={opt.action}
                                 onClick={() => handleIdeAction(opt.action)}
-                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text-primary hover:bg-interactive-hover transition-colors text-left cursor-pointer"
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-interactive-hover transition-colors text-left cursor-pointer"
                               >
                                 <Icon size={15} className="text-text-secondary shrink-0" />
                                 {opt.label}
@@ -1157,7 +1165,7 @@ export default function HackathonDetailPage() {
                           {/* Header — clickable */}
                           <button
                             onClick={() => setExpandedNotice(isExpanded ? null : n.id)}
-                            className="w-full flex items-center gap-2 px-5 py-4 text-left cursor-pointer hover:bg-interactive-hover/50 transition-colors"
+                            className="w-full flex items-center gap-2 px-5 py-3 text-left cursor-pointer hover:bg-interactive-hover/50 transition-colors"
                           >
                             {n.pinned && <Pin size={14} className="text-primary shrink-0" />}
                             {n.category && (
@@ -1235,7 +1243,7 @@ export default function HackathonDetailPage() {
 
             {/* Submit */}
             {activeTab === 'submit' && (
-              <div data-testid="tab-content-submit" className="space-y-6">
+              <div data-testid="tab-content-submit" className="space-y-4">
                 <h2 className="text-lg font-bold">제출</h2>
 
                 {/* Mini calendar */}
@@ -1243,7 +1251,7 @@ export default function HackathonDetailPage() {
 
                 {/* Submission Guide Card */}
                 {hackathon.submissionFormat && (
-                  <div className="bg-primary-light/20 border border-primary/20 rounded-xl p-5">
+                  <div className="bg-surface border border-border rounded-xl p-5">
                     <h3 className="font-semibold text-sm text-primary flex items-center gap-2 mb-2">
                       <Info size={16} /> 제출 가이드
                     </h3>
@@ -1291,107 +1299,67 @@ export default function HackathonDetailPage() {
                 ) : (
                   <div className="bg-surface border border-border rounded-xl shadow-sm p-6 space-y-4">
 
-                    {/* File Upload (quantitative / hybrid) */}
-                    {(hackathon.type === 'quantitative' || hackathon.type === 'hybrid') && (
-                      <>
-                        <div
-                          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                          onDragLeave={() => setDragOver(false)}
-                          onDrop={handleFileDrop}
-                          onClick={() => fileInputRef.current?.click()}
-                          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-                            dragOver ? 'border-primary bg-primary-light/20' : 'border-border hover:border-primary/50'
-                          }`}
-                        >
-                          <Upload size={32} className="mx-auto text-text-secondary mb-2" />
-                          <p className="text-sm text-text-secondary">
-                            {submitForm.fileName
-                              ? <span className="text-primary font-medium">{submitForm.fileName} ({submitForm.fileSize}KB)</span>
-                              : <>파일을 드래그하거나 <span className="text-primary font-medium">클릭하여 업로드</span></>
-                            }
-                          </p>
-                          <p className="text-xs text-text-secondary mt-1">
-                            {hackathon.submissionFormat?.type === 'json' ? 'JSON' : 'CSV'} 파일만 지원
-                          </p>
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept={hackathon.submissionFormat?.type === 'json' ? '.json' : '.csv'}
-                            onChange={handleFileInput}
-                            className="hidden"
-                          />
-                        </div>
+                    {/* File Upload */}
+                    <div
+                      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                      onDragLeave={() => setDragOver(false)}
+                      onDrop={handleFileDrop}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+                        dragOver ? 'border-primary bg-primary-light/20' : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <Upload size={32} className="mx-auto text-text-secondary mb-2" />
+                      <p className="text-sm text-text-secondary">
+                        {submitForm.fileName
+                          ? <span className="text-primary font-medium">{submitForm.fileName} ({submitForm.fileSize}KB)</span>
+                          : <>파일을 드래그하거나 <span className="text-primary font-medium">클릭하여 업로드</span></>
+                        }
+                      </p>
+                      <p className="text-xs text-text-secondary mt-1">
+                        {hackathon.submissionFormat?.type === 'json' ? 'JSON' : hackathon.submissionFormat?.type === 'csv' ? 'CSV' : 'MD, TXT'} 파일 지원
+                      </p>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept={hackathon.submissionFormat?.type === 'json' ? '.json' : hackathon.submissionFormat?.type === 'csv' ? '.csv' : '.md,.txt'}
+                        onChange={handleFileInput}
+                        className="hidden"
+                      />
+                    </div>
 
-                        {/* File Preview Table */}
-                        {parsedPreview.length > 0 && (
-                          <div className="overflow-x-auto">
-                            <p className="text-xs font-medium text-text-secondary mb-2">미리보기 (처음 5행)</p>
-                            <table className="w-full text-xs border border-border rounded-lg overflow-hidden">
-                              <thead className="bg-border/50">
-                                <tr>
-                                  {parsedPreview[0]?.map((h, i) => (
-                                    <th key={i} className="px-3 py-1.5 text-left font-semibold">{h}</th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {parsedPreview.slice(1).map((row, ri) => (
-                                  <tr key={ri} className="border-t border-border">
-                                    {row.map((cell, ci) => (
-                                      <td key={ci} className="px-3 py-1.5 text-text-secondary font-mono">{cell}</td>
-                                    ))}
-                                  </tr>
+                    {/* File Preview Table */}
+                    {parsedPreview.length > 0 && (
+                      <div className="overflow-x-auto">
+                        <p className="text-xs font-medium text-text-secondary mb-2">미리보기 (처음 5행)</p>
+                        <table className="w-full text-xs border border-border rounded-lg overflow-hidden">
+                          <thead className="bg-border/50">
+                            <tr>
+                              {parsedPreview[0]?.map((h, i) => (
+                                <th key={i} className="px-3 py-1.5 text-left font-semibold">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {parsedPreview.slice(1).map((row, ri) => (
+                              <tr key={ri} className="border-t border-border">
+                                {row.map((cell, ci) => (
+                                  <td key={ci} className="px-3 py-1.5 text-text-secondary font-mono">{cell}</td>
                                 ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
 
-                    {/* Markdown Editor (qualitative) */}
-                    {hackathon.type === 'qualitative' && (
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-sm font-medium text-text-primary">제출 내용 (마크다운)</label>
-                          <button
-                            onClick={() => setShowMarkdownPreview((v) => !v)}
-                            className="flex items-center gap-1 text-xs text-text-secondary hover:text-primary cursor-pointer"
-                          >
-                            {showMarkdownPreview ? <EyeOff size={14} /> : <Eye size={14} />}
-                            {showMarkdownPreview ? '편집' : '미리보기'}
-                          </button>
+                    {/* Uploaded file content preview (for text types) */}
+                    {submitForm.fileName && hackathon.submissionFormat?.type === 'markdown' && submitForm.content && (
+                      <div className="bg-background border border-border rounded-lg p-4">
+                        <p className="text-xs font-medium text-text-secondary mb-2">파일 내용 미리보기</p>
+                        <div className="text-sm text-text-primary leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap font-mono">
+                          {submitForm.content.slice(0, 1000)}{submitForm.content.length > 1000 && '...'}
                         </div>
-                        {showMarkdownPreview ? (
-                          <div className="w-full bg-surface border border-border rounded-lg px-4 py-3 text-sm min-h-[200px] prose prose-sm max-w-none whitespace-pre-wrap">
-                            {submitForm.content || <span className="text-text-secondary">내용이 없습니다</span>}
-                          </div>
-                        ) : (
-                          <textarea
-                            data-testid="submission-content"
-                            rows={10}
-                            placeholder={hackathon.submissionFormat?.sampleContent || '마크다운 형식으로 작성해주세요...'}
-                            value={submitForm.content}
-                            onChange={(e) => setSubmitForm({ ...submitForm, content: e.target.value })}
-                            className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm font-mono focus:ring-2 focus:ring-primary-light focus:border-primary transition-shadow resize-none"
-                          />
-                        )}
-                        {/* Char counter */}
-                        {hackathon.submissionFormat && (
-                          <div className="flex justify-end mt-1 text-xs">
-                            <span className={
-                              (hackathon.submissionFormat.minChars && submitForm.content.length < hackathon.submissionFormat.minChars)
-                                ? 'text-error'
-                                : (hackathon.submissionFormat.maxChars && submitForm.content.length > hackathon.submissionFormat.maxChars)
-                                  ? 'text-error'
-                                  : 'text-text-secondary'
-                            }>
-                              {submitForm.content.length}자
-                              {hackathon.submissionFormat.minChars && ` / 최소 ${hackathon.submissionFormat.minChars}`}
-                              {hackathon.submissionFormat.maxChars && ` / 최대 ${hackathon.submissionFormat.maxChars}`}
-                            </span>
-                          </div>
-                        )}
                       </div>
                     )}
 
@@ -1439,7 +1407,7 @@ export default function HackathonDetailPage() {
                       data-testid="submit-button"
                       onClick={handleSubmit}
                       disabled={!submitForm.content.trim() || getSubmitErrors().length > 0}
-                      className="w-full sm:w-auto px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                      className="w-full sm:w-auto px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
                     >
                       <Send size={16} /> 제출하기
                     </button>

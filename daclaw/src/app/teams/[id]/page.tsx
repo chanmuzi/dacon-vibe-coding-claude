@@ -6,20 +6,13 @@ import {
   ArrowLeft, Users, Trophy, Send, CheckCircle2,
   Star, BarChart3, Layers, MessageSquare,
 } from 'lucide-react';
-import Modal from '@/components/Modal';
 import { useTeamStore } from '@/store/team';
 import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
 import { useMessageStore } from '@/store/message';
 import UserAvatar from '@/components/UserAvatar';
-import type { Role } from '@/types';
-
-const ROLE_LABELS: Record<Role, string> = {
-  developer: '개발자',
-  designer: '디자이너',
-  planner: '기획자',
-  'data-scientist': '데이터 사이언티스트',
-};
+import ApplyFormModal from '@/components/ApplyFormModal';
+import { ROLE_LABELS } from '@/lib/constants';
 
 export default function TeamPublicPage() {
   const params = useParams();
@@ -32,7 +25,6 @@ export default function TeamPublicPage() {
   const { addMessage, init: initMessages } = useMessageStore();
 
   const [showApplyModal, setShowApplyModal] = useState(false);
-  const [dmMessage, setDmMessage] = useState('');
   const [toast, setToast] = useState('');
 
   useEffect(() => {
@@ -55,22 +47,20 @@ export default function TeamPublicPage() {
     setShowApplyModal(true);
   }
 
-  function handleSendApply() {
-    if (!dmMessage.trim() || !team || !user) return;
+  function handleSendApply(content: string) {
+    if (!team || !user) return;
     const leader = team.members[0];
     if (!leader) return;
     addMessage({
       id: `msg-${crypto.randomUUID()}`,
       from: user.id,
       to: leader.userId,
-      content: dmMessage,
+      content,
       type: 'team-request',
       teamId: team.id,
       read: false,
       createdAt: new Date().toISOString(),
     });
-    setDmMessage('');
-    setShowApplyModal(false);
     showToast('참가 신청이 전송되었습니다!');
   }
 
@@ -268,9 +258,9 @@ export default function TeamPublicPage() {
         {team.recruitStatus === 'open' ? (
           <button
             onClick={handleApplyClick}
-            className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
           >
-            <Send size={16} /> 참가 신청
+            <Send size={14} /> 참가 신청
           </button>
         ) : (
           <div className="px-4 py-3 bg-background border border-border rounded-lg text-sm text-text-secondary inline-flex items-center gap-2">
@@ -279,27 +269,12 @@ export default function TeamPublicPage() {
         )}
       </div>
 
-      {/* Apply Modal */}
-      <Modal isOpen={showApplyModal} onClose={() => setShowApplyModal(false)} maxWidth="max-w-md">
-        <h2 className="text-lg font-bold text-text-primary mb-4">참가 신청 — {team.name}</h2>
-        <p className="text-sm text-text-secondary mb-4">
-          팀장에게 메시지를 보내 참가를 신청하세요.
-        </p>
-        <textarea
-          value={dmMessage}
-          onChange={(e) => setDmMessage(e.target.value)}
-          placeholder="자기소개와 참가 동기를 작성해주세요..."
-          rows={4}
-          className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm mb-4 focus:ring-2 focus:ring-primary-light focus:border-primary resize-none text-text-primary placeholder:text-text-secondary"
-        />
-        <button
-          onClick={handleSendApply}
-          disabled={!dmMessage.trim()}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
-        >
-          <Send size={16} /> 신청 보내기
-        </button>
-      </Modal>
+      <ApplyFormModal
+        isOpen={showApplyModal}
+        onClose={() => setShowApplyModal(false)}
+        teamName={team.name}
+        onSend={handleSendApply}
+      />
     </div>
   );
 }

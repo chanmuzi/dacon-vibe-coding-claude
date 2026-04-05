@@ -10,6 +10,7 @@ interface MissionState {
   initialized: boolean;
   init: () => void;
   toggleMission: (id: string, onComplete?: (points: number) => void) => void;
+  completeMission: (id: string, onComplete?: (points: number) => void) => void;
 }
 
 export const useMissionStore = create<MissionState>((set, get) => ({
@@ -39,5 +40,16 @@ export const useMissionStore = create<MissionState>((set, get) => ({
     if (!wasCompleted && onComplete) {
       onComplete(target.points);
     }
+  },
+
+  completeMission: (id, onComplete?: (points: number) => void) => {
+    const target = get().missions.find((m) => m.id === id);
+    if (!target || target.completed) return;
+    const missions = get().missions.map((m) =>
+      m.id === id ? { ...m, completed: true } : m
+    );
+    setItem('missions', missions);
+    set({ missions });
+    if (onComplete) onComplete(target.points);
   },
 }));

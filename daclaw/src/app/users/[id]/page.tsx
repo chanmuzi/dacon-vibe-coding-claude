@@ -1,31 +1,28 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useParams, notFound } from 'next/navigation';
+import { useParams, useRouter, notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, Trophy, Users, FileText, MessageSquare, Star, BarChart3,
-  Calendar, Heart, Award,
+  Calendar, Heart, Award, Mail,
 } from 'lucide-react';
 import { useRankingStore } from '@/store/ranking';
 import { useTeamStore } from '@/store/team';
 import { useHackathonStore } from '@/store/hackathon';
 import { useCommunityStore } from '@/store/community';
 import { useSubmissionStore } from '@/store/submission';
-import { seedBadges, gradeConfig } from '@/data/seed';
+import { useUserStore } from '@/store/user';
+import { seedBadges } from '@/data/seed';
 import UserAvatar from '@/components/UserAvatar';
+import GradeBadge from '@/components/GradeBadge';
 import IconMapper from '@/components/IconMapper';
+import { ROLE_LABELS } from '@/lib/constants';
 import type { Role, Grade } from '@/types';
-
-const ROLE_LABELS: Record<string, string> = {
-  developer: '개발자',
-  designer: '디자이너',
-  planner: '기획자',
-  'data-scientist': '데이터 사이언티스트',
-};
 
 export default function UserProfilePage() {
   const params = useParams();
+  const router = useRouter();
   const userId = params.id as string;
 
   const rankings = useRankingStore((s) => s.rankings);
@@ -33,8 +30,9 @@ export default function UserProfilePage() {
   const hackathons = useHackathonStore((s) => s.hackathons);
   const posts = useCommunityStore((s) => s.posts);
   const submissions = useSubmissionStore((s) => s.submissions);
+  const currentUser = useUserStore((s) => s.user);
 
-  // Construct user profile from ranking + team data
+  // Construct user profile from ranking + team data + logged-in user
   const rankEntry = rankings.find((r) => r.userId === userId);
   let user: { id: string; nickname: string; role: Role; grade: Grade; badges: string[]; points: number; techStack: string[]; joinedAt: string; selectedBadges: string[] } | null = null;
   if (rankEntry) {
@@ -67,6 +65,20 @@ export default function UserProfilePage() {
         break;
       }
     }
+  }
+  // Fallback: logged-in user viewing their own profile (registered users not in seed data)
+  if (!user && currentUser?.id === userId) {
+    user = {
+      id: currentUser.id,
+      nickname: currentUser.nickname,
+      role: currentUser.role as Role,
+      grade: currentUser.grade as Grade || 'rookie',
+      badges: currentUser.badges || [],
+      points: currentUser.points || 0,
+      techStack: currentUser.techStack || [],
+      joinedAt: currentUser.joinedAt || '2026-01-01',
+      selectedBadges: currentUser.selectedBadges || currentUser.badges?.slice(0, 3) || [],
+    };
   }
 
   const ranking = useMemo(() => {
@@ -101,20 +113,21 @@ export default function UserProfilePage() {
 
   if (!user) notFound();
 
-  const grade = gradeConfig[user.grade];
+  const isOwnProfile = currentUser?.id === userId;
+
   const selectedBadges = (user.selectedBadges.length > 0 ? user.selectedBadges : user.badges.slice(0, 3))
     .map((id: string) => seedBadges.find((b) => b.id === id))
     .filter(Boolean);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
-      {/* Back button */}
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-primary mb-6 transition-colors"
+      {/* Back button — router.back() */}
+      <button
+        onClick={() => router.back()}
+        className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-primary mb-6 transition-colors cursor-pointer"
       >
         <ArrowLeft size={16} /> 돌아가기
-      </Link>
+      </button>
 
       {/* Profile Header */}
       <div className="bg-surface border border-border rounded-xl shadow-sm p-6 mb-6">
@@ -123,12 +136,7 @@ export default function UserProfilePage() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-bold text-text-primary">{user.nickname}</h1>
-              {grade && (
-                <span className="flex items-center gap-1 text-sm font-semibold" style={{ color: grade.color }}>
-                  <IconMapper name={grade.icon} size={18} />
-                  {grade.label}
-                </span>
-              )}
+              <GradeBadge grade={user.grade} size="md" />
             </div>
             <p className="text-sm text-text-secondary mb-3">
               {ROLE_LABELS[user.role] ?? user.role} · 가입일 {user.joinedAt}
@@ -161,6 +169,17 @@ export default function UserProfilePage() {
               </div>
             )}
           </div>
+
+          {/* DM button — only for other users */}
+          {!isOwnProfile && (
+            <Link
+              href={`/messages?to=${userId}`}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm font-medium text-text-primary hover:bg-primary-light hover:text-primary hover:border-primary-light transition-colors cursor-pointer active:scale-[0.98] shrink-0"
+            >
+              <Mail size={14} />
+              메시지
+            </Link>
+          )}
         </div>
       </div>
 
@@ -180,12 +199,13 @@ export default function UserProfilePage() {
         ))}
       </div>
 
-      {/* Ranking info */}
+      {/* Ranking info — with GradeBadge */}
       {ranking && (
         <div className="bg-surface border border-border rounded-xl shadow-sm p-5 mb-6">
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 size={16} className="text-primary" />
             <h2 className="font-semibold text-text-primary">랭킹 정보</h2>
+            <GradeBadge grade={ranking.grade} size="md" />
           </div>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
