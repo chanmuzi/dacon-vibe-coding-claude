@@ -10,6 +10,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
 
+import Link from 'next/link';
 import { useUserStore } from '@/store/user';
 import { useHackathonStore } from '@/store/hackathon';
 import { useTeamStore } from '@/store/team';
@@ -617,13 +618,13 @@ function SubmissionChart() {
 
 function MyHackathons() {
   const { user } = useUserStore();
-  const { getMyHackathons, deleteHackathon } = useHackathonStore();
+  const { hackathons, getMyHackathons, deleteHackathon } = useHackathonStore();
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const myHackathons = useMemo(() => {
     if (!user) return [];
     return getMyHackathons(user.id);
-  }, [user, getMyHackathons]);
+  }, [user, hackathons, getMyHackathons]);
 
   const statusLabel: Record<string, string> = {
     active: '진행중',
@@ -684,12 +685,12 @@ function MyHackathons() {
         <div className="flex flex-col items-center gap-3 py-8 text-center">
           <Trophy className="w-8 h-8 text-border" />
           <p className="text-sm text-text-secondary">아직 만든 대회가 없습니다.</p>
-          <a
+          <Link
             href="/create"
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-text-on-primary text-sm font-semibold hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98] shadow-sm"
           >
             <Plus className="w-4 h-4" /> 대회 만들기
-          </a>
+          </Link>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -698,14 +699,14 @@ function MyHackathons() {
               key={h.slug}
               className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/40 hover:bg-primary-light/20 transition-all group"
             >
-              <a href={`/hackathons/${h.slug}`} className="flex-1 min-w-0">
+              <Link href={`/hackathons/${h.slug}`} className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-text-primary truncate group-hover:text-primary transition-colors">
                   {h.title}
                 </div>
                 <div className="text-xs text-text-secondary mt-0.5 font-mono">
                   마감: {h.endDate}
                 </div>
-              </a>
+              </Link>
               <span
                 className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${statusColor[h.status] ?? ''}`}
               >
@@ -720,12 +721,12 @@ function MyHackathons() {
               </button>
             </div>
           ))}
-          <a
+          <Link
             href="/create"
             className="flex items-center justify-center gap-1.5 mt-2 py-2 rounded-lg border border-border text-sm font-medium text-primary hover:bg-primary-light transition-colors cursor-pointer active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" /> 새 대회 만들기
-          </a>
+          </Link>
         </div>
       )}
     </SectionCard>
