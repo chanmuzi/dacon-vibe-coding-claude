@@ -12,7 +12,7 @@ dacon-vibe-coding-claude/        ← git root
 ├── docs/                        ← 디자인 시스템, 참고 스크린샷
 └── daclaw/                      ← Next.js 앱 (Vercel root directory: daclaw)
     ├── src/app/                 ← 페이지 (14개, 동적 라우트 4개 포함)
-    ├── src/components/          ← 공통 컴포넌트 (14개, Modal 포함)
+    ├── src/components/          ← 공통 컴포넌트 (15개, Modal, CustomSelect 포함)
     ├── src/data/seed.ts         ← Mock 데이터
     ├── src/store/               ← Zustand 상태관리 (8개 스토어)
     └── src/types/index.ts       ← TypeScript 타입 정의
@@ -36,6 +36,7 @@ Next.js 16 App Router, TypeScript, Tailwind CSS v4, tw-animate-css, Zustand, Rec
 - localStorage 기반 mock 인증 (서버 없음)
 - 클라이언트 사이드 시드 데이터 (`src/data/seed.ts`)
 - `.map(h => h.field)` 사용 시 `.filter(Boolean)`으로 undefined/null 방어 (localStorage 데이터는 스키마 미보장)
+- localStorage 필드 접근 시 `??` 대신 `||` 사용 — `??`는 빈 문자열(`''`)을 통과시키므로, `h.organizer || '미지정'` 패턴 사용
 
 ## Design System
 
@@ -46,6 +47,8 @@ Next.js 16 App Router, TypeScript, Tailwind CSS v4, tw-animate-css, Zustand, Rec
 - 아이콘은 Lucide React만 사용 (UI 컴포넌트에서 Emoji 아이콘 금지, 파비콘/브랜딩은 예외)
 - 새 색상이 필요하면 `globals.css`에 토큰을 추가한 뒤 사용
 - 컴포넌트 패턴(Card, Badge, Button 등)은 디자인 시스템 문서의 규격을 따름
+- **native `<select>` 사용 금지** → `@/components/CustomSelect` 사용 (디자인 일관성)
+- **모든 클릭 가능 요소에 `cursor-pointer` 필수** + `active:scale` 촉감 효과
 
 ### 애니메이션 규칙
 - **JS 애니메이션 라이브러리 사용 금지** (framer-motion 등) — CSS 순수 애니메이션만 사용

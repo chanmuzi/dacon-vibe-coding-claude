@@ -136,8 +136,17 @@ px-6 py-3 rounded-lg border border-border text-text-primary font-medium hover:bg
 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-text-on-primary
 
 <!-- Filter chip (inactive) -->
-px-3 py-1.5 rounded-lg text-sm font-medium bg-background text-text-secondary hover:text-text-primary hover:bg-primary-light
+px-3 py-1.5 rounded-lg text-sm font-medium bg-background text-text-secondary hover:text-text-primary hover:bg-interactive-hover cursor-pointer active:scale-[0.98]
+
+<!-- Filter chip (active) -->
+px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-text-on-primary shadow-sm cursor-pointer active:scale-[0.98]
 ```
+
+**Affordance 필수 규칙:**
+- 모든 클릭 가능 요소에 `cursor-pointer` 필수
+- CTA/필터 버튼: `active:scale-[0.98]`
+- 아이콘 버튼: `active:scale-95`
+- 비활성 상태: `bg-background` + `hover:bg-interactive-hover` + `hover:text-text-primary` (hover 시 변화 명확)
 
 ### 5.2 Card
 
@@ -163,7 +172,88 @@ text-xs bg-primary-light text-primary px-2 py-0.5 rounded-full
 bg-primary text-text-on-primary text-xs font-semibold px-2 py-1 rounded-full
 ```
 
-### 5.4 Input
+### 5.4 CustomSelect (드롭다운)
+
+native `<select>` 대신 `@/components/CustomSelect` 컴포넌트를 사용합니다.
+프로젝트 디자인 토큰과 일관된 스타일을 제공하며, 열릴 때 토글과 드롭다운이 이어져 보입니다.
+
+```tsx
+import CustomSelect from '@/components/CustomSelect';
+
+<CustomSelect
+  value={value}
+  onChange={setValue}
+  options={[
+    { value: 'all', label: '전체', icon: <Icon /> },  // icon은 선택
+    { value: 'option1', label: '옵션 1' },
+  ]}
+/>
+```
+
+| 상태 | 스타일 |
+|------|--------|
+| 닫힌 상태 | `border border-border rounded-lg bg-surface` |
+| 열린 상태 | 토글 `rounded-t-lg rounded-b-none`, 드롭다운 `rounded-b-lg border-t-0` (연결형) |
+| 선택된 항목 | `bg-primary-light text-primary font-medium` + 체크마크 |
+| hover 항목 | `hover:bg-interactive-hover` |
+
+### 5.5 Toast 알림
+
+간단한 상태 기반 토스트. 2초 후 자동 사라짐.
+
+```tsx
+const [toastMessage, setToastMessage] = useState<string | null>(null);
+useEffect(() => {
+  if (!toastMessage) return;
+  const t = setTimeout(() => setToastMessage(null), 2000);
+  return () => clearTimeout(t);
+}, [toastMessage]);
+
+// 렌더링 (페이지 하단 fixed)
+{toastMessage && (
+  <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+    <div className="bg-text-primary text-text-on-primary px-5 py-2.5 rounded-lg shadow-xl text-sm font-medium animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+      {toastMessage}
+    </div>
+  </div>
+)}
+```
+
+### 5.6 Dismissible 배너
+
+세션 닫기(X) + 하루 닫기(localStorage) 2단계 dismiss 패턴.
+
+```tsx
+// SSR-safe: useState에서 localStorage 읽지 않음
+const [show, setShow] = useState(true);
+useEffect(() => {
+  const dismissed = localStorage.getItem('key');
+  if (dismissed === new Date().toISOString().split('T')[0]) setShow(false);
+}, []);
+
+// 닫기 애니메이션: opacity + max-h transition (modal-panel 아님)
+className={`transition-all duration-200 ease-out ${
+  closing ? 'opacity-0 max-h-0' : 'opacity-100 max-h-[200px] animate-in fade-in-0 slide-in-from-top-2 duration-300'
+}`}
+```
+
+### 5.7 기관 이니셜 아바타
+
+organizer 로고가 없을 때 `hackathon.color` 기반 원형 이니셜 표시.
+
+```tsx
+<span
+  className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-text-on-primary"
+  style={{ backgroundColor: hackathon.color || '#6B7280' }}
+>
+  {(hackathon.organizer || '?')[0]}
+</span>
+<span className="font-medium text-text-primary truncate">
+  {hackathon.organizer || '미지정'}
+</span>
+```
+
+### 5.8 Input
 
 ```
 bg-surface border border-border rounded-lg px-4 py-2.5 text-text-primary
