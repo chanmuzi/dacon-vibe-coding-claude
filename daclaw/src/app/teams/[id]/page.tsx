@@ -21,6 +21,26 @@ const ROLE_LABELS: Record<Role, string> = {
   'data-scientist': '데이터 사이언티스트',
 };
 
+const APPLY_ROLES: Role[] = ['developer', 'designer', 'planner', 'data-scientist'];
+
+interface ApplyForm {
+  intro: string;
+  positions: Role[];
+  techStack: string;
+  portfolio: string;
+}
+
+function buildDmContent(form: ApplyForm): string {
+  const positions = form.positions.map((r) => ROLE_LABELS[r]).join(', ') || '미정';
+  const parts = [
+    `[자기소개]\n${form.intro}`,
+    `[가능 포지션] ${positions}`,
+  ];
+  if (form.techStack.trim()) parts.push(`[기술스택] ${form.techStack}`);
+  if (form.portfolio.trim()) parts.push(`[포트폴리오] ${form.portfolio}`);
+  return parts.join('\n\n');
+}
+
 export default function TeamPublicPage() {
   const params = useParams();
   const router = useRouter();
@@ -32,8 +52,17 @@ export default function TeamPublicPage() {
   const { addMessage, init: initMessages } = useMessageStore();
 
   const [showApplyModal, setShowApplyModal] = useState(false);
-  const [dmMessage, setDmMessage] = useState('');
+  const [applyForm, setApplyForm] = useState<ApplyForm>({ intro: '', positions: [], techStack: '', portfolio: '' });
   const [toast, setToast] = useState('');
+
+  function toggleApplyPosition(role: Role) {
+    setApplyForm((prev) => ({
+      ...prev,
+      positions: prev.positions.includes(role)
+        ? prev.positions.filter((r) => r !== role)
+        : [...prev.positions, role],
+    }));
+  }
 
   useEffect(() => {
     initTeams();
@@ -56,20 +85,20 @@ export default function TeamPublicPage() {
   }
 
   function handleSendApply() {
-    if (!dmMessage.trim() || !team || !user) return;
+    if (!applyForm.intro.trim() || !team || !user) return;
     const leader = team.members[0];
     if (!leader) return;
     addMessage({
       id: `msg-${crypto.randomUUID()}`,
       from: user.id,
       to: leader.userId,
-      content: dmMessage,
+      content: buildDmContent(applyForm),
       type: 'team-request',
       teamId: team.id,
       read: false,
       createdAt: new Date().toISOString(),
     });
-    setDmMessage('');
+    setApplyForm({ intro: '', positions: [], techStack: '', portfolio: '' });
     setShowApplyModal(false);
     showToast('참가 신청이 전송되었습니다!');
   }
@@ -268,9 +297,9 @@ export default function TeamPublicPage() {
         {team.recruitStatus === 'open' ? (
           <button
             onClick={handleApplyClick}
-            className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
           >
-            <Send size={16} /> 참가 신청
+            <Send size={14} /> 참가 신청
           </button>
         ) : (
           <div className="px-4 py-3 bg-background border border-border rounded-lg text-sm text-text-secondary inline-flex items-center gap-2">
@@ -279,26 +308,71 @@ export default function TeamPublicPage() {
         )}
       </div>
 
-      {/* Apply Modal */}
+      {/* Apply Modal — Rich form (캠프와 동일) */}
       <Modal isOpen={showApplyModal} onClose={() => setShowApplyModal(false)} maxWidth="max-w-md">
         <h2 className="text-lg font-bold text-text-primary mb-4">참가 신청 — {team.name}</h2>
-        <p className="text-sm text-text-secondary mb-4">
-          팀장에게 메시지를 보내 참가를 신청하세요.
-        </p>
-        <textarea
-          value={dmMessage}
-          onChange={(e) => setDmMessage(e.target.value)}
-          placeholder="자기소개와 참가 동기를 작성해주세요..."
-          rows={4}
-          className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm mb-4 focus:ring-2 focus:ring-primary-light focus:border-primary resize-none text-text-primary placeholder:text-text-secondary"
-        />
-        <button
-          onClick={handleSendApply}
-          disabled={!dmMessage.trim()}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
-        >
-          <Send size={16} /> 신청 보내기
-        </button>
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium block mb-1">
+              자기소개 <span className="text-error text-xs">*</span>
+            </label>
+            <textarea
+              value={applyForm.intro}
+              onChange={(e) => setApplyForm({ ...applyForm, intro: e.target.value })}
+              placeholder="자기소개와 참가 동기를 작성해주세요..."
+              rows={3}
+              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary resize-none"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1">가능 포지션</label>
+            <div className="flex flex-wrap gap-2">
+              {APPLY_ROLES.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => toggleApplyPosition(r)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer active:scale-[0.98] ${
+                    applyForm.positions.includes(r)
+                      ? 'bg-primary text-white'
+                      : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
+                  }`}
+                >
+                  {ROLE_LABELS[r]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1">기술스택</label>
+            <input
+              type="text"
+              value={applyForm.techStack}
+              onChange={(e) => setApplyForm({ ...applyForm, techStack: e.target.value })}
+              placeholder="React, Python, Figma ... (쉼표로 구분)"
+              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1">
+              포트폴리오 링크 <span className="text-text-secondary text-xs">(선택)</span>
+            </label>
+            <input
+              type="url"
+              value={applyForm.portfolio}
+              onChange={(e) => setApplyForm({ ...applyForm, portfolio: e.target.value })}
+              placeholder="https://..."
+              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
+            />
+          </div>
+          <button
+            onClick={handleSendApply}
+            disabled={!applyForm.intro.trim()}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
+          >
+            <Send size={16} /> 신청 보내기
+          </button>
+        </div>
       </Modal>
     </div>
   );
