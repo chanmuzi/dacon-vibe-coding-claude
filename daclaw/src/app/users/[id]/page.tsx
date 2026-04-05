@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, Trophy, Users, FileText, MessageSquare, Star, BarChart3,
@@ -99,16 +99,7 @@ export default function UserProfilePage() {
     return hackathons.filter((h) => participatedHackathonSlugs.includes(h.slug));
   }, [hackathons, participatedHackathonSlugs]);
 
-  if (!user) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <Users className="w-12 h-12 text-border mx-auto mb-4" />
-        <h1 className="text-xl font-bold text-text-primary mb-2">유저를 찾을 수 없습니다</h1>
-        <p className="text-text-secondary mb-4">존재하지 않는 프로필입니다.</p>
-        <Link href="/" className="text-primary hover:underline text-sm">홈으로 돌아가기</Link>
-      </div>
-    );
-  }
+  if (!user) notFound();
 
   const grade = gradeConfig[user.grade];
   const selectedBadges = (user.selectedBadges.length > 0 ? user.selectedBadges : user.badges.slice(0, 3))

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, notFound } from 'next/navigation';
 import {
   ArrowLeft, Users, Trophy, Send, CheckCircle2,
   Star, BarChart3, Layers, MessageSquare,
@@ -79,23 +79,7 @@ export default function TeamPublicPage() {
     setTimeout(() => setToast(''), 3000);
   }
 
-  if (!team) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <button
-          onClick={() => router.push('/camp')}
-          className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors mb-6"
-        >
-          <ArrowLeft size={16} /> 팀원 모집으로 돌아가기
-        </button>
-        <div className="bg-surface border border-border rounded-xl shadow-sm p-12 text-center">
-          <Users size={48} className="text-text-secondary mx-auto mb-4 opacity-40" />
-          <p className="text-text-secondary text-lg">팀을 찾을 수 없습니다</p>
-          <p className="text-text-secondary text-sm mt-1 opacity-60">삭제되었거나 존재하지 않는 팀입니다.</p>
-        </div>
-      </div>
-    );
-  }
+  if (!team) notFound();
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
