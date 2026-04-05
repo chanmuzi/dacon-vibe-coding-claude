@@ -23,14 +23,33 @@ export const useHackathonStore = create<HackathonState>((set, get) => ({
 
   init: () => {
     if (get().initialized) return;
+
+    // Version-based re-seed: when seed data changes, force refresh non-custom hackathons
+    const SEED_VERSION = 5;
+    const storedVersion = getItem<number>('hackathons-seed-version');
     const stored = getItem<Hackathon[]>('hackathons');
     const bookmarks = getItem<Bookmark[]>('bookmarks') ?? [];
-    if (stored && stored.length > 0) {
-      set({ hackathons: stored, bookmarks, initialized: true });
+
+    if (stored && stored.length > 0 && storedVersion === SEED_VERSION) {
+      // Migrate: fill missing organizer/color
+      const migrated = stored.map((h) => {
+        if (h.organizer && h.color) return h;
+        const seed = seedHackathons.find((s) => s.slug === h.slug);
+        return {
+          ...h,
+          organizer: h.organizer || seed?.organizer || (h.isCustom ? '개인' : '미지정'),
+          color: h.color || seed?.color || '#6B7280',
+        };
+      });
+      setItem('hackathons', migrated);
+      set({ hackathons: migrated, bookmarks, initialized: true });
     } else {
-      setItem('hackathons', seedHackathons);
-      setItem('bookmarks', []);
-      set({ hackathons: seedHackathons, bookmarks: [], initialized: true });
+      // Re-seed: keep user-created hackathons, replace seed ones
+      const customHackathons = (stored ?? []).filter((h) => h.isCustom);
+      const merged = [...seedHackathons, ...customHackathons];
+      setItem('hackathons', merged);
+      setItem('hackathons-seed-version', SEED_VERSION);
+      set({ hackathons: merged, bookmarks, initialized: true });
     }
   },
 

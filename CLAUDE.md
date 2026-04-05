@@ -55,6 +55,19 @@ Next.js 16 App Router, TypeScript, Tailwind CSS v4, tw-animate-css, Zustand, Rec
 - 버튼 촉감: CTA 버튼 `active:scale-[0.98]`, 아이콘 버튼 `active:scale-95`
 - 타이밍 기준: 모달 열기 200ms, 닫기 150ms, 페이지 진입 500ms (모두 ease-out)
 
+## 완료 검증 규칙
+
+작업 완료를 보고하기 전 반드시 아래 체크리스트를 통과해야 합니다:
+
+1. **빌드 검증**: `npx next build` 또는 `npx tsc --noEmit` 성공 확인
+2. **런타임 검증**: dev 서버 로그(`daclaw/.next/dev/logs/next-development.log`)에서 에러 없음 확인
+3. **접속 검증**: 변경된 페이지에 `curl` 또는 브라우저 접속하여 렌더링 정상 확인
+4. **방어 코딩**: localStorage 데이터는 스키마 미보장이므로, 모든 필드 접근 시 optional chaining(`?.`) 또는 fallback 처리
+5. **Hydration 검증**: `useState` 초기값에서 `typeof window`, `localStorage`, `sessionStorage`, `Date.now()` 등 서버/클라이언트 분기 사용 금지. 브라우저 전용 값은 반드시 `useEffect` 내에서 읽을 것 (SSR 초기값 = 클라이언트 초기값 일치 필수). 네비게이션 `href`에 query param 포함 시 `pathname` 비교 로직과 충돌 가능 — `href`는 경로만, query는 페이지 내부에서 처리.
+6. **Hydration 자동 검증**: 변경된 파일에 대해 `grep -n 'useState.*typeof window\|useState.*localStorage\|useState.*sessionStorage\|useState.*Date.now'` 실행하여 위반 패턴 사전 차단. `next build`는 hydration 에러를 잡지 못하므로 코드 패턴 검사가 필수.
+
+빌드만 통과하고 런타임/Hydration 에러가 있는 상태에서 "완료"로 보고하지 말 것.
+
 ## Agentation Feedback
 
 브라우저에서 Agentation 어노테이션으로 UI 피드백을 받을 수 있습니다.

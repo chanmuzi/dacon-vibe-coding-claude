@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user';
 import {
   Trophy, Users, BarChart3, MessageSquare, LayoutDashboard,
@@ -44,6 +44,7 @@ const GRADE_INFO: Record<string, { label: string; style: string }> = {
 
 export default function Navigation() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isLoggedIn, login, register, logout, showAuthModal, openAuthModal, closeAuthModal } = useUserStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -143,6 +144,13 @@ export default function Navigation() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={(e) => {
+                      // If already on this page, force clean navigation (reset query params like view=calendar)
+                      if (active) {
+                        e.preventDefault();
+                        router.push(item.href);
+                      }
+                    }}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       active
                         ? 'bg-primary text-text-on-primary'
