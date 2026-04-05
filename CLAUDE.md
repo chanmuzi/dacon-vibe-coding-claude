@@ -12,8 +12,10 @@ dacon-vibe-coding-claude/        ← git root
 ├── docs/                        ← 디자인 시스템, 참고 스크린샷
 └── daclaw/                      ← Next.js 앱 (Vercel root directory: daclaw)
     ├── src/app/                 ← 페이지 (15개, 동적 라우트 4개 포함)
-    ├── src/components/          ← 공통 컴포넌트 (15개, Modal, CustomSelect 포함)
-    ├── src/data/seed.ts         ← Mock 데이터
+    │   └── api/                 ← API 라우트 (chat, analyze, recommend-teams, generate-hackathon)
+    ├── src/components/          ← 공통 컴포넌트 (16개 + create/ 8개 + dashboard/ 1개)
+    │   └── create/              ← 대회 생성 위자드 컴포넌트 (WizardProgress, StepBasicInfo 등)
+    ├── src/data/seed.ts         ← Mock 데이터 (SEED_VERSION 8)
     ├── src/store/               ← Zustand 상태관리 (8개 스토어)
     └── src/types/index.ts       ← TypeScript 타입 정의
 ```
