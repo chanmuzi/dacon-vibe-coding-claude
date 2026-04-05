@@ -22,6 +22,9 @@ import {
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
+  TrendingUp,
+  UserPlus,
+  Compass,
 } from 'lucide-react';
 
 function getTimeLeft(endDate: string) {
@@ -59,7 +62,7 @@ const POST_TYPE_LABEL: Record<string, string> = {
 
 const POST_TYPE_COLOR: Record<string, string> = {
   question: 'bg-type-quantitative/20 text-type-quantitative',
-  tip: 'bg-type-qualitative/20 text-type-qualitative',
+  tip: 'bg-warning-light text-warning',
   'team-find': 'bg-primary/15 text-primary',
   free: 'bg-surface-alt text-text-secondary',
 };
@@ -107,37 +110,27 @@ export default function HomePage() {
   const nowDate = new Date();
   const [calendarYear, setCalendarYear] = useState(nowDate.getFullYear());
   const [calendarMonth, setCalendarMonth] = useState(nowDate.getMonth());
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   const { firstDay, daysInMonth, today } = getMonthDays(calendarYear, calendarMonth);
 
-  // E2: Calendar event indicators — both startDate and endDate
-  type CalendarEvent = { hackathonTitle: string; color: string };
-  const calendarEventsByDay = new Map<number, CalendarEvent[]>();
+  // Deadline-only calendar — endDate tracking with status
+  type DeadlineEvent = { title: string; slug: string; color: string; status: string };
+  const calendarEventsByDay = new Map<number, DeadlineEvent[]>();
   hackathons.forEach((h) => {
-    const dotColor = h.color || 'var(--color-primary)';
-    const addDate = (dateStr: string) => {
-      const d = new Date(dateStr);
-      if (d.getFullYear() === calendarYear && d.getMonth() === calendarMonth) {
-        const day = d.getDate();
-        const existing = calendarEventsByDay.get(day) ?? [];
-        calendarEventsByDay.set(day, [...existing, { hackathonTitle: h.title, color: dotColor }]);
-      }
-    };
-    addDate(h.startDate);
-    addDate(h.endDate);
+    const d = new Date(h.endDate);
+    if (d.getFullYear() === calendarYear && d.getMonth() === calendarMonth) {
+      const day = d.getDate();
+      const existing = calendarEventsByDay.get(day) ?? [];
+      calendarEventsByDay.set(day, [...existing, {
+        title: h.title,
+        slug: h.slug,
+        color: h.color || '#0049DB',
+        status: h.status,
+      }]);
+    }
   });
 
-  // E1: dead-line dates for legacy highlight (end dates only)
-  const deadlineDates = new Set(
-    hackathons
-      .map((h) => {
-        const d = new Date(h.endDate);
-        if (d.getFullYear() === calendarYear && d.getMonth() === calendarMonth)
-          return d.getDate();
-        return null;
-      })
-      .filter(Boolean) as number[]
-  );
 
   const monthName = new Date(calendarYear, calendarMonth).toLocaleString('ko-KR', {
     year: 'numeric',
@@ -146,6 +139,7 @@ export default function HomePage() {
 
   // E1: navigation handlers
   function prevMonth() {
+    setSelectedDay(null);
     if (calendarMonth === 0) {
       setCalendarYear((y) => y - 1);
       setCalendarMonth(11);
@@ -154,6 +148,7 @@ export default function HomePage() {
     }
   }
   function nextMonth() {
+    setSelectedDay(null);
     if (calendarMonth === 11) {
       setCalendarYear((y) => y + 1);
       setCalendarMonth(0);
@@ -203,16 +198,19 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="text-center py-12 sm:py-20">
         <h1 className="text-4xl sm:text-5xl font-bold text-text-primary mb-4">
-          해커톤의 모든 것, <span className="text-primary">DACLAW</span>
+          해커톤의 모든 것, <span className="text-primary">DACLAW 🦞</span>
         </h1>
         <p className="text-lg text-text-secondary max-w-2xl mx-auto mb-6">
-          해커톤 탐색부터 팀 매칭, 제출, 성장 추적까지 — 참가자와 운영자를 위한 올인원 플랫폼
+          AI 팀 매칭 · 실시간 순위 · 성장 트래킹 — 참가자 중심으로 다시 설계한 대회 플랫폼
         </p>
 
         {/* L2: Imminent hackathon highlight */}
         {imminentHackathon && (
           <div className="mb-6">
-            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-xl px-4 py-2 mb-4">
+            <Link
+              href={`/hackathons/${imminentHackathon.slug}`}
+              className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-xl px-4 py-2 mb-4 hover:bg-primary/15 hover:border-primary/30 transition-colors group"
+            >
               <Flame size={16} className="text-primary" />
               <span className="text-sm font-semibold text-primary">
                 {imminentHackathon.title}
@@ -222,7 +220,8 @@ export default function HomePage() {
                   D-{timeLeft.days > 0 ? timeLeft.days : '0'} 마감
                 </span>
               )}
-            </div>
+              <ArrowRight size={14} className="text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Link>
           </div>
         )}
 
@@ -238,13 +237,10 @@ export default function HomePage() {
                 마감까지
               </span>
             </div>
-            <div
-              data-testid="countdown"
-              className="flex justify-center gap-3 sm:gap-5"
-            >
+            <div data-testid="countdown" className="flex justify-center gap-3 sm:gap-5">
               {[
                 { label: '일', value: timeLeft.days },
-                { label: '시', value: timeLeft.hours },
+                { label: '시간', value: timeLeft.hours },
                 { label: '분', value: timeLeft.minutes },
                 { label: '초', value: timeLeft.seconds },
               ].map(({ label, value }) => (
@@ -278,7 +274,7 @@ export default function HomePage() {
             data-testid="explore-hackathons"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-colors"
           >
-            <Trophy size={18} />
+            <Compass size={18} />
             해커톤 탐색하기
           </Link>
           <Link
@@ -295,7 +291,7 @@ export default function HomePage() {
       <section className="mb-12">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-            <Flame size={22} className="text-primary" /> 진행 중인 해커톤
+            <Flame size={22} className="text-warning" /> 진행 중인 해커톤
           </h2>
           <Link
             href="/hackathons"
@@ -382,10 +378,10 @@ export default function HomePage() {
       </section>
 
       {/* L1: Popular Hackathons */}
-      <section className="mb-12">
+      <section className="mb-12 border-t border-border pt-12">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-            <Trophy size={22} className="text-primary" /> 인기 대회
+            <TrendingUp size={22} className="text-type-qualitative" /> 인기 대회
           </h2>
           <Link
             href="/hackathons"
@@ -394,7 +390,7 @@ export default function HomePage() {
             전체보기 <ArrowRight size={14} />
           </Link>
         </div>
-        <div className="flex gap-5 overflow-x-auto pb-2 -mx-1 px-1">
+        <div className="flex gap-5 overflow-x-auto pt-2 pb-2 -mt-2 -mx-1 px-1">
           {popularHackathons.map((h) => (
             <Link
               key={h.slug}
@@ -432,10 +428,10 @@ export default function HomePage() {
 
       {/* L1: Recent Community Posts */}
       {communityInit && recentPosts.length > 0 && (
-        <section className="mb-12">
+        <section className="mb-12 border-t border-border pt-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-              <MessageSquare size={22} className="text-primary" /> 최근 커뮤니티
+              <MessageSquare size={22} className="text-info" /> 최근 커뮤니티
             </h2>
             <Link
               href="/community"
@@ -482,10 +478,10 @@ export default function HomePage() {
 
       {/* L1: Active Team Recruitment */}
       {teamInit && openTeams.length > 0 && (
-        <section className="mb-12">
+        <section className="mb-12 border-t border-border pt-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-              <Users size={22} className="text-primary" /> 활발한 팀 모집
+              <UserPlus size={22} className="text-success" /> 활발한 팀 모집
             </h2>
             <Link
               href="/camp"
@@ -509,7 +505,7 @@ export default function HomePage() {
                     <h3 className="font-bold text-text-primary line-clamp-1 flex-1 mr-2">
                       {team.name}
                     </h3>
-                    <span className="flex-none inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-type-qualitative/20 text-type-qualitative">
+                    <span className="flex-none inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-success-light text-success">
                       모집 중
                     </span>
                   </div>
@@ -532,17 +528,17 @@ export default function HomePage() {
       )}
 
       {/* Quick Links + Mini Calendar */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 border-t border-border pt-12">
         {/* Quick Links (L3) */}
         <section className="lg:col-span-2">
           <h2 className="text-xl font-bold text-text-primary mb-4">빠른 이동</h2>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {[
-              { href: '/rankings', icon: BarChart3, label: '랭킹', desc: '순위 확인하기' },
-              { href: '/camp', icon: Users, label: '팀 모집', desc: 'AI로 팀 매칭' },
-              { href: '/community', icon: MessageSquare, label: '커뮤니티', desc: '질문·팁 나누기' },
-              { href: '/create', icon: Target, label: '대회 만들기', desc: '직접 주최하기' },
-              { href: '/dashboard', icon: LayoutDashboard, label: '내 대시보드', desc: '내 활동 보기' },
+              { href: '/rankings', icon: BarChart3, label: '랭킹', desc: '순위 확인하기', iconColor: 'text-type-qualitative' },
+              { href: '/camp', icon: Users, label: '팀 모집', desc: 'AI로 팀 매칭', iconColor: 'text-success' },
+              { href: '/community', icon: MessageSquare, label: '커뮤니티', desc: '질문·팁 나누기', iconColor: 'text-info' },
+              { href: '/create', icon: Target, label: '대회 만들기', desc: '직접 주최하기', iconColor: 'text-warning' },
+              { href: '/dashboard', icon: LayoutDashboard, label: '내 대시보드', desc: '내 활동 보기', iconColor: 'text-primary' },
             ].map((item) => (
               <Link
                 key={item.href}
@@ -550,7 +546,7 @@ export default function HomePage() {
                 className="bg-surface border border-border rounded-xl p-5 text-center hover:-translate-y-1 hover:border-primary-light hover:shadow-md transition-all duration-200"
               >
                 <div className="text-3xl mb-2 flex justify-center">
-                  <item.icon size={28} className="text-primary" />
+                  <item.icon size={28} className={item.iconColor} />
                 </div>
                 <div className="font-bold text-text-primary text-sm">{item.label}</div>
                 <div className="text-xs text-text-secondary mt-1">{item.desc}</div>
@@ -561,11 +557,9 @@ export default function HomePage() {
 
         {/* Mini Calendar (E1, E2) */}
         <section>
-          <h2 className="text-xl font-bold text-text-primary mb-4">
-            <span className="flex items-center gap-2">
-              <Calendar size={18} className="text-primary" />
-              해커톤 일정
-            </span>
+          <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
+            <Calendar size={18} className="text-error" />
+            제출 마감
           </h2>
           <div className="bg-surface border border-border rounded-xl p-4 shadow-sm">
             {/* E1: Month navigation header */}
@@ -573,20 +567,32 @@ export default function HomePage() {
               <button
                 onClick={prevMonth}
                 aria-label="이전 달"
-                className="p-1 rounded-lg hover:bg-primary-light transition-colors text-text-secondary hover:text-primary"
+                className="p-1.5 rounded-lg border border-transparent hover:border-border hover:bg-primary-light transition-all text-text-secondary hover:text-primary active:scale-95"
               >
                 <ChevronLeft size={16} />
               </button>
               <span className="text-sm font-semibold text-text-primary">
                 {monthName}
               </span>
-              <button
-                onClick={nextMonth}
-                aria-label="다음 달"
-                className="p-1 rounded-lg hover:bg-primary-light transition-colors text-text-secondary hover:text-primary"
-              >
-                <ChevronRight size={16} />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => { setCalendarYear(nowDate.getFullYear()); setCalendarMonth(nowDate.getMonth()); setSelectedDay(null); }}
+                  className={`text-xs px-2 py-1 rounded-md font-medium transition-all active:scale-95 ${
+                    calendarYear === nowDate.getFullYear() && calendarMonth === nowDate.getMonth()
+                      ? 'bg-primary text-text-on-primary'
+                      : 'bg-primary/10 text-primary hover:bg-primary/20'
+                  }`}
+                >
+                  오늘
+                </button>
+                <button
+                  onClick={nextMonth}
+                  aria-label="다음 달"
+                  className="p-1.5 rounded-lg border border-transparent hover:border-border hover:bg-primary-light transition-all text-text-secondary hover:text-primary active:scale-95"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
             </div>
             {/* Day headers */}
             <div className="grid grid-cols-7 mb-1">
@@ -606,45 +612,71 @@ export default function HomePage() {
                   return <div key={`empty-${idx}`} />;
                 }
                 const isToday = day === today;
-                const isDeadline = deadlineDates.has(day);
                 const events = calendarEventsByDay.get(day) ?? [];
                 const hasEvents = events.length > 0;
-                // Build tooltip text
-                const tooltipText = events.map((e) => e.hackathonTitle).join(', ');
+                const hasActiveDeadline = events.some(e => e.status === 'active');
+                const isSelected = day === selectedDay;
+                const tooltipText = events.map((e) => `${e.title} 마감`).join(', ');
                 return (
                   <div
                     key={day}
                     title={hasEvents ? tooltipText : undefined}
-                    className={`relative text-center text-sm py-1.5 rounded-lg font-mono leading-none cursor-default
+                    onClick={hasEvents && !isToday ? () => setSelectedDay(isSelected ? null : day) : undefined}
+                    className={`text-center text-sm py-1.5 rounded-lg font-mono leading-none transition-all
+                      ${hasEvents && !isToday ? 'cursor-pointer hover:brightness-90' : 'cursor-default'}
                       ${isToday ? 'bg-primary text-text-on-primary font-bold' : ''}
-                      ${isDeadline && !isToday ? 'bg-primary-light text-primary font-semibold' : ''}
-                      ${!isToday && !isDeadline ? 'text-text-primary' : ''}
+                      ${isSelected ? 'bg-primary-light text-primary font-bold ring-2 ring-primary' : ''}
+                      ${hasEvents && !isToday && !isSelected ? 'font-semibold' : ''}
+                      ${!isToday && !hasEvents ? 'text-text-primary' : ''}
                     `}
+                    style={hasEvents && !isToday && !isSelected && events[0].color.startsWith('#')
+                      ? { backgroundColor: `${events[0].color}20`, color: events[0].color }
+                      : undefined}
                   >
                     {day}
-                    {/* E2: Colored dots for events */}
-                    {hasEvents && !isToday && (
-                      <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
-                        {events.slice(0, 3).map((ev, i) => (
-                          <span
-                            key={i}
-                            className="w-1 h-1 rounded-full inline-block"
-                            style={{ backgroundColor: ev.color }}
-                          />
-                        ))}
-                      </span>
-                    )}
                   </div>
                 );
               })}
             </div>
-            {/* Legend */}
-            {calendarEventsByDay.size > 0 && (
-              <div className="mt-3 pt-3 border-t border-border flex items-center gap-2 text-xs text-text-secondary">
-                <span className="inline-block w-2 h-2 rounded-full bg-primary" />
-                해커톤 일정
-              </div>
-            )}
+            {/* Month deadline list — highlight matches selectedDay */}
+            {(() => {
+              const monthDeadlines = hackathons
+                .filter(h => {
+                  const d = new Date(h.endDate);
+                  return d.getFullYear() === calendarYear && d.getMonth() === calendarMonth;
+                })
+                .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
+              return monthDeadlines.length > 0 ? (
+                <div className="mt-3 pt-3 border-t border-border space-y-1">
+                  {monthDeadlines.map(h => {
+                    const isEnded = h.status === 'ended';
+                    const deadlineDay = new Date(h.endDate).getDate();
+                    const isHighlighted = selectedDay === deadlineDay;
+                    return (
+                      <Link
+                        key={h.slug}
+                        href={`/hackathons/${h.slug}`}
+                        className={`flex items-center gap-2 text-xs py-1.5 pl-2.5 pr-1 rounded-r-lg border-l-[3px] transition-all group
+                          ${isHighlighted ? 'bg-primary-light' : 'hover:bg-background'}
+                          ${isEnded ? 'opacity-50' : ''}`}
+                        style={{ borderLeftColor: h.color || '#0049DB' }}
+                      >
+                        <span className={`truncate group-hover:text-primary transition-colors ${isEnded ? 'line-through text-text-secondary' : 'text-text-primary font-medium'}`}>
+                          {h.title}
+                        </span>
+                        <span className={`flex-none ml-auto font-mono ${isEnded ? 'text-text-secondary' : 'text-text-primary'}`}>
+                          {h.endDate.replaceAll('-', '.')}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="mt-3 pt-3 border-t border-border text-xs text-text-secondary text-center py-2">
+                  이 달에는 마감 일정이 없습니다
+                </div>
+              );
+            })()}
           </div>
         </section>
       </div>

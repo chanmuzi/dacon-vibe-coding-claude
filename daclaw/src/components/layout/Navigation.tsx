@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUserStore } from '@/store/user';
 import {
   Trophy, Users, BarChart3, MessageSquare, LayoutDashboard,
-  Menu, X, Search, LogIn, LogOut, User, Eye, EyeOff,
+  Menu, X, Search, LogIn, LogOut, User, Eye, EyeOff, ChevronDown,
 } from 'lucide-react';
 import GlobalSearch from '@/components/GlobalSearch';
 import Modal from '@/components/Modal';
@@ -27,12 +27,28 @@ const ROLES: { key: Role; label: string }[] = [
   { key: 'data-scientist', label: '데이터 사이언티스트' },
 ];
 
+const ROLE_STYLE: Record<string, string> = {
+  developer: 'bg-role-developer-light text-role-developer',
+  designer: 'bg-role-designer-light text-role-designer',
+  planner: 'bg-role-planner-light text-role-planner',
+  'data-scientist': 'bg-role-data-scientist-light text-role-data-scientist',
+};
+
+const GRADE_INFO: Record<string, { label: string; style: string }> = {
+  rookie: { label: '루키', style: 'bg-grade-rookie/15 text-grade-rookie' },
+  challenger: { label: '챌린저', style: 'bg-grade-challenger/15 text-grade-challenger' },
+  expert: { label: '엑스퍼트', style: 'bg-grade-expert/15 text-grade-expert' },
+  master: { label: '마스터', style: 'bg-grade-master/15 text-grade-master' },
+  legend: { label: '레전드', style: 'bg-grade-legend/15 text-grade-legend' },
+};
+
 export default function Navigation() {
   const pathname = usePathname();
   const { user, isLoggedIn, login, register, logout, showAuthModal, openAuthModal, closeAuthModal } = useUserStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Auth modal state
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
@@ -40,6 +56,8 @@ export default function Navigation() {
   const [registerForm, setRegisterForm] = useState({ nickname: '', email: '', password: '', passwordConfirm: '', role: 'developer' as Role });
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState('');
+
+  useEffect(() => { setShowUserMenu(false); }, [pathname]);
 
   const resetForms = () => {
     setLoginForm({ nickname: '', password: '' });
@@ -150,18 +168,60 @@ export default function Navigation() {
               </button>
 
               {isLoggedIn ? (
-                <div className="hidden md:flex items-center gap-2">
-                  <Link href="/dashboard" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-light text-primary text-sm font-medium">
+                <div className="hidden md:flex items-center gap-2 relative">
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-light text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
+                  >
                     <User size={14} />
                     {user?.nickname}
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="p-2 rounded-lg text-text-secondary hover:bg-error-light hover:text-error transition-colors"
-                    aria-label="로그아웃"
-                  >
-                    <LogOut size={18} />
+                    <ChevronDown size={12} className={`transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`} />
                   </button>
+                  {showUserMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
+                      <div className="absolute right-0 top-full mt-2 w-72 bg-surface border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+                        <div className="p-4 border-b border-border">
+                          <div className="font-bold text-text-primary text-sm">{user?.nickname}</div>
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${ROLE_STYLE[user?.role ?? 'developer']}`}>
+                              {ROLES.find(r => r.key === user?.role)?.label}
+                            </span>
+                            <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${GRADE_INFO[user?.grade ?? 'rookie']?.style}`}>
+                              {GRADE_INFO[user?.grade ?? 'rookie']?.label}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="p-1.5">
+                          <Link
+                            href="/dashboard"
+                            onClick={() => setShowUserMenu(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-primary hover:bg-primary-light transition-colors"
+                          >
+                            <LayoutDashboard size={16} className="text-text-secondary" />
+                            대시보드
+                          </Link>
+                          <Link
+                            href={`/users/${user?.id}`}
+                            onClick={() => setShowUserMenu(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-primary hover:bg-primary-light transition-colors"
+                          >
+                            <User size={16} className="text-text-secondary" />
+                            내 프로필
+                          </Link>
+                        </div>
+                        <div className="p-1.5 border-t border-border">
+                          <button
+                            onClick={() => { setShowUserMenu(false); handleLogout(); }}
+                            className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-error hover:bg-error-light transition-colors"
+                          >
+                            <LogOut size={16} />
+                            로그아웃
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <button
