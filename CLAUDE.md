@@ -11,7 +11,7 @@
 dacon-vibe-coding-claude/        ← git root
 ├── docs/                        ← 디자인 시스템, 참고 스크린샷
 └── daclaw/                      ← Next.js 앱 (Vercel root directory: daclaw)
-    ├── src/app/                 ← 페이지 (14개, 동적 라우트 4개 포함)
+    ├── src/app/                 ← 페이지 (15개, 동적 라우트 4개 포함)
     ├── src/components/          ← 공통 컴포넌트 (15개, Modal, CustomSelect 포함)
     ├── src/data/seed.ts         ← Mock 데이터
     ├── src/store/               ← Zustand 상태관리 (8개 스토어)
@@ -36,6 +36,7 @@ Next.js 16 App Router, TypeScript, Tailwind CSS v4, tw-animate-css, Zustand, Rec
 - localStorage 기반 mock 인증 (서버 없음)
 - 클라이언트 사이드 시드 데이터 (`src/data/seed.ts`)
 - `.map(h => h.field)` 사용 시 `.filter(Boolean)`으로 undefined/null 방어 (localStorage 데이터는 스키마 미보장)
+- 시드 데이터 변경 시 `SEED_VERSION`을 올리고, 해당 스토어 `init()`에 버전 체크 로직 필수 (`hackathon`, `community`, `message` 스토어 참고)
 - localStorage 필드 접근 시 `??` 대신 `||` 사용 — `??`는 빈 문자열(`''`)을 통과시키므로, `h.organizer || '미지정'` 패턴 사용
 
 ## Design System
@@ -66,8 +67,9 @@ Next.js 16 App Router, TypeScript, Tailwind CSS v4, tw-animate-css, Zustand, Rec
 2. **런타임 검증**: dev 서버 로그(`daclaw/.next/dev/logs/next-development.log`)에서 에러 없음 확인
 3. **접속 검증**: 변경된 페이지에 `curl` 또는 브라우저 접속하여 렌더링 정상 확인
 4. **방어 코딩**: localStorage 데이터는 스키마 미보장이므로, 모든 필드 접근 시 optional chaining(`?.`) 또는 fallback 처리
-5. **Hydration 검증**: `useState` 초기값에서 `typeof window`, `localStorage`, `sessionStorage`, `Date.now()` 등 서버/클라이언트 분기 사용 금지. 브라우저 전용 값은 반드시 `useEffect` 내에서 읽을 것 (SSR 초기값 = 클라이언트 초기값 일치 필수). 네비게이션 `href`에 query param 포함 시 `pathname` 비교 로직과 충돌 가능 — `href`는 경로만, query는 페이지 내부에서 처리.
-6. **Hydration 자동 검증**: 변경된 파일에 대해 `grep -n 'useState.*typeof window\|useState.*localStorage\|useState.*sessionStorage\|useState.*Date.now'` 실행하여 위반 패턴 사전 차단. `next build`는 hydration 에러를 잡지 못하므로 코드 패턴 검사가 필수.
+5. **IME 한글 입력 보호**: `onKeyDown`에서 Enter로 전송하는 모든 textarea에 `onCompositionStart/End` + `isComposing` 가드 필수 (한글 조합 중 Enter 시 이중 입력 방지)
+6. **Hydration 검증**: `useState` 초기값에서 `typeof window`, `localStorage`, `sessionStorage`, `Date.now()` 등 서버/클라이언트 분기 사용 금지. 브라우저 전용 값은 반드시 `useEffect` 내에서 읽을 것 (SSR 초기값 = 클라이언트 초기값 일치 필수). 네비게이션 `href`에 query param 포함 시 `pathname` 비교 로직과 충돌 가능 — `href`는 경로만, query는 페이지 내부에서 처리.
+7. **Hydration 자동 검증**: 변경된 파일에 대해 `grep -n 'useState.*typeof window\|useState.*localStorage\|useState.*sessionStorage\|useState.*Date.now'` 실행하여 위반 패턴 사전 차단. `next build`는 hydration 에러를 잡지 못하므로 코드 패턴 검사가 필수.
 
 빌드만 통과하고 런타임/Hydration 에러가 있는 상태에서 "완료"로 보고하지 말 것.
 
