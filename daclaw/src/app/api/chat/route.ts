@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 const SYSTEM_PROMPT = `당신은 DACLAW 해커톤 플랫폼의 AI 도우미입니다.
 아래 제공된 대회 정보를 기반으로 사용자의 질문에 답변하세요.
@@ -11,14 +12,30 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'NO_API_KEY' }, { status: 503 });
   }
 
-  const { messages, hackathonContext } = await req.json();
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  if (!checkRateLimit(ip, 10)) {
+    return Response.json({ error: 'RATE_LIMITED' }, { status: 429 });
+  }
+
+  let body: { messages?: unknown; hackathonContext?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: 'INVALID_JSON' }, { status: 400 });
+  }
+
+  const { messages, hackathonContext } = body;
+
+  if (!Array.isArray(messages) || messages.length > 20) {
+    return Response.json({ error: 'INVALID_MESSAGES' }, { status: 400 });
+  }
 
   const systemContent = `${SYSTEM_PROMPT}\n\n--- 대회 정보 ---\n${hackathonContext}`;
 
   const openaiMessages = [
     { role: 'system', content: systemContent },
     ...messages.map((m: { role: string; content: string }) => ({
-      role: m.role,
+      role: m.role === 'user' ? 'user' : 'assistant',
       content: m.content,
     })),
   ];
@@ -39,8 +56,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!response.ok) {
-    const err = await response.text();
-    return Response.json({ error: 'OPENAI_ERROR', detail: err }, { status: 502 });
+    return Response.json({ error: 'OPENAI_ERROR' }, { status: 502 });
   }
 
   // Proxy the SSE stream directly

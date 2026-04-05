@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams, notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -158,7 +158,7 @@ function MiniCalendar({ startDate, endDate }: { startDate: string; endDate: stri
   );
 }
 
-export default function HackathonDetailPage() {
+export default function HackathonDetailContent() {
   const params = useParams();
   const router = useRouter();
   const slug = params.slug as string;

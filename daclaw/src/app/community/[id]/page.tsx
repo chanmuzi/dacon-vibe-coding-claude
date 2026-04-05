@@ -29,25 +29,9 @@ import { useTeamStore } from '@/store/team';
 import { useMessageStore } from '@/store/message';
 import Modal from '@/components/Modal';
 import GradeBadge from '@/components/GradeBadge';
-import type { Comment, Role, Message } from '@/types';
-
-const ROLE_LABELS: Record<Role, string> = {
-  developer: '개발자',
-  designer: '디자이너',
-  planner: '기획자',
-  'data-scientist': '데이터 사이언티스트',
-};
-const APPLY_ROLES: Role[] = ['developer', 'designer', 'planner', 'data-scientist'];
-
-interface ApplyForm { intro: string; positions: Role[]; techStack: string; portfolio: string; }
-
-function buildDmContent(form: ApplyForm): string {
-  const positions = form.positions.map((r) => ROLE_LABELS[r]).join(', ') || '미정';
-  const parts = [`[자기소개]\n${form.intro}`, `[가능 포지션] ${positions}`];
-  if (form.techStack.trim()) parts.push(`[기술스택] ${form.techStack}`);
-  if (form.portfolio.trim()) parts.push(`[포트폴리오] ${form.portfolio}`);
-  return parts.join('\n\n');
-}
+import ApplyFormModal from '@/components/ApplyFormModal';
+import { ROLE_LABELS } from '@/lib/constants';
+import type { Comment } from '@/types';
 
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
   question: { label: '질문', cls: 'bg-info-light text-info' },
@@ -142,41 +126,19 @@ export default function CommunityPostDetailPage() {
   const [editingCommentText, setEditingCommentText] = useState('');
   const [isComposing, setIsComposing] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
-  const [applyForm, setApplyForm] = useState<ApplyForm>({ intro: '', positions: [], techStack: '', portfolio: '' });
   const [applyToast, setApplyToast] = useState('');
-
-  function toggleApplyPosition(role: Role) {
-    setApplyForm((prev) => ({
-      ...prev,
-      positions: prev.positions.includes(role)
-        ? prev.positions.filter((r) => r !== role)
-        : [...prev.positions, role],
-    }));
-  }
-
-  function handleSendApply(teamId: string) {
-    if (!applyForm.intro.trim() || !user) return;
-    const team = teams.find((t) => t.id === teamId);
-    const leader = team?.members[0];
-    if (!leader) return;
-    addMessage({
-      id: `msg-${Date.now()}`,
-      from: user.id,
-      to: leader.userId,
-      content: buildDmContent(applyForm),
-      type: 'team-request',
-      teamId,
-      read: false,
-      createdAt: new Date().toISOString(),
-    });
-    setApplyForm({ intro: '', positions: [], techStack: '', portfolio: '' });
-    setShowApplyModal(false);
-    setApplyToast('참가 신청이 전송되었습니다!');
-    setTimeout(() => setApplyToast(''), 3000);
-  }
 
   const liked = user ? post?.likedBy.includes(user.id) ?? false : false;
   const isAuthor = user && post ? user.id === post.authorId : false;
+
+  const authorTeam = post?.type === 'team-find'
+    ? (post.teamId
+        ? teams.find((t) => t.id === post.teamId)
+        : teams.find((t) =>
+            t.members.some((m) => m.userId === post.authorId) &&
+            (!post.hackathonTag || t.hackathonSlugs?.includes(post.hackathonTag))
+          ))
+    : null;
 
   function getGrade(authorId: string): string | null {
     const rank = rankings.find((r) => r.userId === authorId);
@@ -202,14 +164,14 @@ export default function CommunityPostDetailPage() {
   }
 
   function handleStartEdit() {
-    if (!post) return;
+    if (!post || !user) return;
     setEditContent(post.content);
     setIsEditing(true);
   }
 
   function handleSaveEdit() {
-    if (!post || !editContent.trim()) return;
-    updatePost(post.id, { content: editContent }, user!.id);
+    if (!post || !editContent.trim() || !user) return;
+    updatePost(post.id, { content: editContent }, user.id);
     setIsEditing(false);
   }
 
@@ -219,10 +181,10 @@ export default function CommunityPostDetailPage() {
   }
 
   function handleDelete() {
-    if (!post) return;
+    if (!post || !user) return;
     if (window.confirm('게시글을 삭제하시겠습니까?')) {
       router.push('/community');
-      deletePost(post.id, user!.id);
+      deletePost(post.id, user.id);
     }
   }
 
@@ -232,16 +194,16 @@ export default function CommunityPostDetailPage() {
   }
 
   function handleSaveEditComment(commentId: string) {
-    if (!post || !editingCommentText.trim()) return;
-    updateComment(post.id, commentId, editingCommentText, user!.id);
+    if (!post || !editingCommentText.trim() || !user) return;
+    updateComment(post.id, commentId, editingCommentText, user.id);
     setEditingCommentId(null);
     setEditingCommentText('');
   }
 
   function handleDeleteComment(commentId: string) {
-    if (!post) return;
+    if (!post || !user) return;
     if (window.confirm('댓글을 삭제하시겠습니까?')) {
-      deleteComment(post.id, commentId, user!.id);
+      deleteComment(post.id, commentId, user.id);
     }
   }
 
@@ -270,22 +232,14 @@ export default function CommunityPostDetailPage() {
                 {post.type === 'team-find' && <Users size={10} className="inline mr-0.5 -mt-px" />}
                 {badge.label}
               </span>
-              {post.type === 'team-find' && (() => {
-                const authorTeam = post.teamId
-                  ? teams.find((t) => t.id === post.teamId)
-                  : teams.find((t) =>
-                      t.members.some((m) => m.userId === post.authorId) &&
-                      (!post.hackathonTag || t.hackathonSlugs?.includes(post.hackathonTag))
-                    );
-                return authorTeam ? (
-                  <Link
-                    href={`/teams/${authorTeam.id}`}
-                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-type-qualitative-light text-type-qualitative hover:underline"
-                  >
-                    <ExternalLink size={10} /> 팀 보러가기
-                  </Link>
-                ) : null;
-              })()}
+              {post.type === 'team-find' && authorTeam && (
+                <Link
+                  href={`/teams/${authorTeam.id}`}
+                  className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-type-qualitative-light text-type-qualitative hover:underline"
+                >
+                  <ExternalLink size={10} /> 팀 보러가기
+                </Link>
+              )}
             </div>
             <h1 className="text-2xl font-bold text-text-primary leading-tight">
               {post.title}
@@ -442,36 +396,27 @@ export default function CommunityPostDetailPage() {
         </div>
 
         {/* Team-find CTA */}
-        {post.type === 'team-find' && (() => {
-          const authorTeam = post.teamId
-            ? teams.find((t) => t.id === post.teamId)
-            : teams.find((t) =>
-                t.members.some((m) => m.userId === post.authorId) &&
-                (!post.hackathonTag || t.hackathonSlugs?.includes(post.hackathonTag))
-              );
-          if (!authorTeam) return null;
-          return (
-            <div className="mt-5 pt-5 border-t border-border">
-              <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-type-qualitative-light border border-type-qualitative/20">
-                <div>
-                  <p className="text-sm font-semibold text-type-qualitative">{authorTeam.name}</p>
-                  <p className="text-xs text-text-secondary mt-0.5">
-                    {authorTeam.members.length}/{authorTeam.maxMembers}명 · {authorTeam.recruitRoles.map((r) => r === 'developer' ? '개발자' : r === 'designer' ? '디자이너' : r === 'planner' ? '기획자' : '데이터 사이언티스트').join(', ')} 모집 중
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    if (!isLoggedIn) { useUserStore.getState().openAuthModal(); return; }
-                    setShowApplyModal(true);
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-type-qualitative text-white text-sm font-medium hover:opacity-90 transition-all cursor-pointer active:scale-[0.98] shrink-0"
-                >
-                  <Users size={14} /> 참가 신청하기
-                </button>
+        {post.type === 'team-find' && authorTeam && (
+          <div className="mt-5 pt-5 border-t border-border">
+            <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-type-qualitative-light border border-type-qualitative/20">
+              <div>
+                <p className="text-sm font-semibold text-type-qualitative">{authorTeam.name}</p>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  {authorTeam.members.length}/{authorTeam.maxMembers}명 · {authorTeam.recruitRoles.map((r) => ROLE_LABELS[r]).join(', ')} 모집 중
+                </p>
               </div>
+              <button
+                onClick={() => {
+                  if (!isLoggedIn) { useUserStore.getState().openAuthModal(); return; }
+                  setShowApplyModal(true);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-type-qualitative text-white text-sm font-medium hover:opacity-90 transition-all cursor-pointer active:scale-[0.98] shrink-0"
+              >
+                <Users size={14} /> 참가 신청하기
+              </button>
             </div>
-          );
-        })()}
+          </div>
+        )}
 
         {/* Actions — inline like button */}
         {!isEditing && (
@@ -611,79 +556,31 @@ export default function CommunityPostDetailPage() {
         </div>
       )}
 
-      {/* Apply Modal — same rich form as camp/team pages */}
-      {post.type === 'team-find' && (() => {
-        const applyTeamId = post.teamId || null;
-        const applyTeam = applyTeamId ? teams.find((t) => t.id === applyTeamId) : null;
-        if (!applyTeam) return null;
-        return (
-          <Modal isOpen={showApplyModal} onClose={() => setShowApplyModal(false)} maxWidth="max-w-md">
-            <h2 className="text-lg font-bold text-text-primary mb-4">참가 신청 — {applyTeam.name}</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium block mb-1">
-                  자기소개 <span className="text-error text-xs">*</span>
-                </label>
-                <textarea
-                  value={applyForm.intro}
-                  onChange={(e) => setApplyForm({ ...applyForm, intro: e.target.value })}
-                  placeholder="자기소개와 참가 동기를 작성해주세요..."
-                  rows={3}
-                  className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary resize-none"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium block mb-1">가능 포지션</label>
-                <div className="flex flex-wrap gap-2">
-                  {APPLY_ROLES.map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => toggleApplyPosition(r)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer active:scale-[0.98] ${
-                        applyForm.positions.includes(r)
-                          ? 'bg-primary text-white'
-                          : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
-                      }`}
-                    >
-                      {ROLE_LABELS[r]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium block mb-1">기술스택</label>
-                <input
-                  type="text"
-                  value={applyForm.techStack}
-                  onChange={(e) => setApplyForm({ ...applyForm, techStack: e.target.value })}
-                  placeholder="React, Python, Figma ... (쉼표로 구분)"
-                  className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium block mb-1">
-                  포트폴리오 링크 <span className="text-text-secondary text-xs">(선택)</span>
-                </label>
-                <input
-                  type="url"
-                  value={applyForm.portfolio}
-                  onChange={(e) => setApplyForm({ ...applyForm, portfolio: e.target.value })}
-                  placeholder="https://..."
-                  className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-                />
-              </div>
-              <button
-                onClick={() => handleSendApply(applyTeam.id)}
-                disabled={!applyForm.intro.trim()}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
-              >
-                <Send size={16} /> 신청 보내기
-              </button>
-            </div>
-          </Modal>
-        );
-      })()}
+      {/* Apply Modal */}
+      {authorTeam && (
+        <ApplyFormModal
+          isOpen={showApplyModal}
+          onClose={() => setShowApplyModal(false)}
+          teamName={authorTeam.name}
+          onSend={(content) => {
+            if (!user) return;
+            const leader = authorTeam.members[0];
+            if (!leader) return;
+            addMessage({
+              id: `msg-${Date.now()}`,
+              from: user.id,
+              to: leader.userId,
+              content,
+              type: 'team-request',
+              teamId: authorTeam.id,
+              read: false,
+              createdAt: new Date().toISOString(),
+            });
+            setApplyToast('참가 신청이 전송되었습니다!');
+            setTimeout(() => setApplyToast(''), 3000);
+          }}
+        />
+      )}
     </div>
   );
 }

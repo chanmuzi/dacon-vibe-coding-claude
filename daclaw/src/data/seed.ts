@@ -813,3 +813,5 @@ export const gradeConfig: Record<string, { label: string; icon: string; color: s
   challenger: { label: 'Challenger', icon: 'Swords', color: 'var(--color-grade-challenger)', min: 1500, max: 4999 },
   legend: { label: 'Legend', icon: 'Trophy', color: 'var(--color-grade-legend)', min: 5000, max: Infinity },
 };
+
+export const GRADE_ORDER = Object.keys(gradeConfig);

@@ -167,11 +167,15 @@ export default function QAChatbot() {
 
       setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
+      let buffer = '';
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split('\n')) {
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete last line for next iteration
+        for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const data = line.slice(6).trim();
           if (data === '[DONE]') break;
@@ -203,7 +207,11 @@ export default function QAChatbot() {
     } catch {
       const hackathons = useHackathonStore.getState().hackathons;
       const fallback = getLocalAnswer(msgText, hackathons);
-      setMessages((prev) => [...prev, { role: 'assistant', content: fallback }]);
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { role: 'assistant', content: fallback };
+        return updated;
+      });
     } finally {
       setLoading(false);
     }

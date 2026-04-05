@@ -8,18 +8,14 @@ import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
 import { useMessageStore } from '@/store/message';
 import {
-  Users, Plus, Sparkles, Send, Filter, ChevronDown, UserPlus, CheckCircle2, Check, Loader2,
+  Users, Plus, Sparkles, Check, Loader2, UserPlus, CheckCircle2,
 } from 'lucide-react';
 import Modal from '@/components/Modal';
 import UserAvatar from '@/components/UserAvatar';
+import CustomSelect from '@/components/CustomSelect';
+import ApplyFormModal from '@/components/ApplyFormModal';
+import { ROLE_LABELS } from '@/lib/constants';
 import type { Team, Role } from '@/types';
-
-const ROLE_LABELS: Record<Role, string> = {
-  developer: '개발자',
-  designer: '디자이너',
-  planner: '기획자',
-  'data-scientist': '데이터 사이언티스트',
-};
 
 function calcMatchRate(team: Team, userRole: Role | undefined, userStack: string[], hackathonTags: string[]): number {
   const roleMatch = userRole && team.recruitRoles.includes(userRole) ? 40 : 0;
@@ -35,24 +31,41 @@ function getMatchReason(rate: number): { label: string; className: string } {
   return { label: '탐색 추천', className: 'text-text-secondary' };
 }
 
-const APPLY_ROLES: Role[] = ['developer', 'designer', 'planner', 'data-scientist'];
-
-interface ApplyForm {
-  intro: string;
-  positions: Role[];
-  techStack: string;
-  portfolio: string;
-}
-
-function buildDmContent(form: ApplyForm): string {
-  const positions = form.positions.map((r) => ROLE_LABELS[r]).join(', ') || '미정';
-  const parts = [
-    `[자기소개]\n${form.intro}`,
-    `[가능 포지션] ${positions}`,
-  ];
-  if (form.techStack.trim()) parts.push(`[기술스택] ${form.techStack}`);
-  if (form.portfolio.trim()) parts.push(`[포트폴리오] ${form.portfolio}`);
-  return parts.join('\n\n');
+function AiRecCard({ rec, teams: allTeams, userRole }: { rec: { teamId: string; teamName: string; matchScore: number; reason: string }; teams: Team[]; userRole?: string }) {
+  const team = allTeams.find((t) => t.id === rec.teamId);
+  const cardStyle = rec.matchScore >= 80
+    ? 'border-primary bg-primary-light/10'
+    : rec.matchScore >= 60
+      ? 'border-info/40 bg-info-light/5'
+      : 'border-border';
+  const badgeClass = rec.matchScore >= 80
+    ? 'bg-primary text-white'
+    : rec.matchScore >= 60
+      ? 'bg-info text-white'
+      : 'bg-primary-light text-primary';
+  return (
+    <a
+      href={team ? `/teams/${team.id}` : '#'}
+      className={`block border rounded-lg p-3 hover:shadow-md transition-all group cursor-pointer ${cardStyle}`}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className="font-semibold text-sm text-text-primary group-hover:text-primary transition-colors">{rec.teamName}</span>
+        <span className={`font-mono text-sm font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${badgeClass}`}>
+          <Sparkles size={10} /> {rec.matchScore}%
+        </span>
+      </div>
+      <p className="text-xs text-text-secondary leading-relaxed">{rec.reason}</p>
+      {team && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {team.recruitRoles.map((r) => (
+            <span key={r} className="text-xs bg-primary-light/60 text-primary px-1.5 py-0.5 rounded">
+              {userRole === r && <Check size={12} className="inline" />} {ROLE_LABELS[r]}
+            </span>
+          ))}
+        </div>
+      )}
+    </a>
+  );
 }
 
 export default function CampPage() {
@@ -66,7 +79,6 @@ export default function CampPage() {
   const [roleFilter, setRoleFilter] = useState<Role | 'all'>('all');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [applyTeam, setApplyTeam] = useState<Team | null>(null);
-  const [applyForm, setApplyForm] = useState<ApplyForm>({ intro: '', positions: [], techStack: '', portfolio: '' });
   const [toast, setToast] = useState('');
   const [createForm, setCreateForm] = useState({ name: '', description: '', hackathonSlug: '', roles: [] as Role[], maxMembers: 4 });
   const [recLoading, setRecLoading] = useState(false);
@@ -203,25 +215,6 @@ export default function CampPage() {
     showToast('팀이 생성되었습니다!');
   }
 
-  function handleSendDM() {
-    if (!applyForm.intro.trim() || !applyTeam || !isLoggedIn || !user) return;
-    const leader = applyTeam.members[0];
-    if (!leader) return;
-    addMessage({
-      id: `msg-${crypto.randomUUID()}`,
-      from: user?.id ?? 'anonymous',
-      to: leader?.userId ?? '',
-      content: buildDmContent(applyForm),
-      type: 'team-request',
-      teamId: applyTeam.id,
-      read: false,
-      createdAt: new Date().toISOString(),
-    });
-    setApplyForm({ intro: '', positions: [], techStack: '', portfolio: '' });
-    setApplyTeam(null);
-    showToast('참가 신청이 전송되었습니다!');
-  }
-
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
@@ -237,6 +230,7 @@ export default function CampPage() {
   const REC_STEP_MESSAGES = ['프로필 분석 중...', '팀 매칭 중...', '결과 정리 중...'];
 
   function handleAiRecommend() {
+    if (cooldownEnd > Date.now()) return;
     setRecLoading(true);
     setAiError(false);
     const startTime = Date.now();
@@ -298,15 +292,6 @@ export default function CampPage() {
       });
   }
 
-  function toggleApplyPosition(role: Role) {
-    setApplyForm((prev) => ({
-      ...prev,
-      positions: prev.positions.includes(role)
-        ? prev.positions.filter((r) => r !== role)
-        : [...prev.positions, role],
-    }));
-  }
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
       {/* Toast */}
@@ -335,20 +320,14 @@ export default function CampPage() {
 
           {/* Filters */}
           <div className="flex flex-wrap gap-3 mb-6">
-            <div className="relative">
-              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
-              <select
-                value={hackFilter}
-                onChange={(e) => setHackFilter(e.target.value)}
-                className="pl-8 pr-8 py-2 bg-surface border border-border rounded-lg text-sm text-text-primary focus:ring-2 focus:ring-primary-light focus:border-primary appearance-none"
-              >
-                <option value="all">모든 해커톤</option>
-                {hackathons.map((h) => (
-                  <option key={h.slug} value={h.slug}>{h.title}</option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
-            </div>
+            <CustomSelect
+              value={hackFilter}
+              onChange={setHackFilter}
+              options={[
+                { value: 'all', label: '모든 해커톤' },
+                ...hackathons.map((h) => ({ value: h.slug, label: h.title })),
+              ]}
+            />
             <div className="flex gap-1">
               {(['all', 'developer', 'designer', 'planner', 'data-scientist'] as const).map((r) => (
                 <button
@@ -462,43 +441,9 @@ export default function CampPage() {
                 {aiRecs.length === 0 ? (
                   <p className="text-sm text-text-secondary text-center py-4">매칭되는 팀이 없습니다.</p>
                 ) : (
-                  aiRecs.map((rec) => {
-                    const team = teams.find((t) => t.id === rec.teamId);
-                    const cardStyle = rec.matchScore >= 80
-                      ? 'border-primary bg-primary-light/10'
-                      : rec.matchScore >= 60
-                        ? 'border-info/40 bg-info-light/5'
-                        : 'border-border';
-                    const badgeClass = rec.matchScore >= 80
-                      ? 'bg-primary text-white'
-                      : rec.matchScore >= 60
-                        ? 'bg-info text-white'
-                        : 'bg-primary-light text-primary';
-                    return (
-                      <a
-                        key={rec.teamId}
-                        href={team ? `/teams/${team.id}` : '#'}
-                        className={`block border rounded-lg p-3 hover:shadow-md transition-all group cursor-pointer ${cardStyle}`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-semibold text-sm text-text-primary group-hover:text-primary transition-colors">{rec.teamName}</span>
-                          <span className={`font-mono text-sm font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${badgeClass}`}>
-                            <Sparkles size={10} /> {rec.matchScore}%
-                          </span>
-                        </div>
-                        <p className="text-xs text-text-secondary leading-relaxed">{rec.reason}</p>
-                        {team && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {team.recruitRoles.map((r) => (
-                              <span key={r} className="text-xs bg-primary-light/60 text-primary px-1.5 py-0.5 rounded">
-                                {user?.role === r && <Check size={12} className="inline" />} {ROLE_LABELS[r]}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </a>
-                    );
-                  })
+                  aiRecs.map((rec) => (
+                    <AiRecCard key={rec.teamId} rec={rec} teams={teams} userRole={user?.role} />
+                  ))
                 )}
                 {(() => {
                   const isCooldown = cooldownEnd > Date.now();
@@ -569,43 +514,9 @@ export default function CampPage() {
               {aiRecs.length === 0 ? (
                 <p className="text-sm text-text-secondary text-center py-4">매칭되는 팀이 없습니다.</p>
               ) : (
-                aiRecs.map((rec) => {
-                  const team = teams.find((t) => t.id === rec.teamId);
-                  const cardStyle = rec.matchScore >= 80
-                    ? 'border-primary bg-primary-light/10'
-                    : rec.matchScore >= 60
-                      ? 'border-info/40 bg-info-light/5'
-                      : 'border-border';
-                  const badgeClass = rec.matchScore >= 80
-                    ? 'bg-primary text-white'
-                    : rec.matchScore >= 60
-                      ? 'bg-info text-white'
-                      : 'bg-primary-light text-primary';
-                  return (
-                    <a
-                      key={rec.teamId}
-                      href={team ? `/teams/${team.id}` : '#'}
-                      className={`block border rounded-lg p-3 hover:shadow-md transition-all group cursor-pointer ${cardStyle}`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-sm text-text-primary group-hover:text-primary transition-colors">{rec.teamName}</span>
-                        <span className={`font-mono text-sm font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${badgeClass}`}>
-                          <Sparkles size={10} /> {rec.matchScore}%
-                        </span>
-                      </div>
-                      <p className="text-xs text-text-secondary leading-relaxed">{rec.reason}</p>
-                      {team && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {team.recruitRoles.map((r) => (
-                            <span key={r} className="text-xs bg-primary-light/60 text-primary px-1.5 py-0.5 rounded">
-                              {user?.role === r && <Check size={12} className="inline" />} {ROLE_LABELS[r]}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </a>
-                  );
-                })
+                aiRecs.map((rec) => (
+                  <AiRecCard key={rec.teamId} rec={rec} teams={teams} userRole={user?.role} />
+                ))
               )}
             </div>
             <button
@@ -675,17 +586,15 @@ export default function CampPage() {
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">해커톤</label>
-            <select
+            <CustomSelect
               value={createForm.hackathonSlug}
-              onChange={(e) => setCreateForm({ ...createForm, hackathonSlug: e.target.value })}
-              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-              required
-            >
-              <option value="">선택하세요</option>
-              {hackathons.filter((h) => h.status !== 'ended').map((h) => (
-                <option key={h.slug} value={h.slug}>{h.title}</option>
-              ))}
-            </select>
+              onChange={(v) => setCreateForm({ ...createForm, hackathonSlug: v })}
+              options={[
+                { value: '', label: '선택하세요' },
+                ...hackathons.filter((h) => h.status !== 'ended').map((h) => ({ value: h.slug, label: h.title })),
+              ]}
+              className="w-full"
+            />
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">모집 역할</label>
@@ -725,83 +634,29 @@ export default function CampPage() {
         </form>
       </Modal>
 
-      {/* Apply Modal — G8-1: Rich form */}
-      <Modal isOpen={!!applyTeam} onClose={() => setApplyTeam(null)} maxWidth="max-w-md">
-        <h2 className="text-lg font-bold mb-4">참가 신청 — {applyTeam?.name}</h2>
-
-        <div className="space-y-4">
-          {/* 자기소개 */}
-          <div>
-            <label className="text-sm font-medium block mb-1">
-              자기소개 <span className="text-error text-xs">*</span>
-            </label>
-            <textarea
-              data-testid="dm-message-input"
-              value={applyForm.intro}
-              onChange={(e) => setApplyForm({ ...applyForm, intro: e.target.value })}
-              placeholder="자기소개와 참가 동기를 작성해주세요..."
-              rows={3}
-              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary resize-none"
-            />
-          </div>
-
-          {/* 가능 포지션 */}
-          <div>
-            <label className="text-sm font-medium block mb-1">가능 포지션</label>
-            <div className="flex flex-wrap gap-2">
-              {APPLY_ROLES.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => toggleApplyPosition(r)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer active:scale-[0.98] ${
-                    applyForm.positions.includes(r)
-                      ? 'bg-primary text-text-on-primary'
-                      : 'bg-surface border border-border text-text-secondary hover:bg-primary-light'
-                  }`}
-                >
-                  {ROLE_LABELS[r]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 기술스택 */}
-          <div>
-            <label className="text-sm font-medium block mb-1">기술스택</label>
-            <input
-              type="text"
-              value={applyForm.techStack}
-              onChange={(e) => setApplyForm({ ...applyForm, techStack: e.target.value })}
-              placeholder="React, Python, Figma ... (쉼표로 구분)"
-              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-            />
-          </div>
-
-          {/* 포트폴리오 */}
-          <div>
-            <label className="text-sm font-medium block mb-1">
-              포트폴리오 링크 <span className="text-text-secondary text-xs">(선택)</span>
-            </label>
-            <input
-              type="url"
-              value={applyForm.portfolio}
-              onChange={(e) => setApplyForm({ ...applyForm, portfolio: e.target.value })}
-              placeholder="https://..."
-              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary"
-            />
-          </div>
-
-          <button
-            data-testid="dm-send-button"
-            onClick={handleSendDM}
-            disabled={!applyForm.intro.trim()}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-text-on-primary rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
-          >
-            <Send size={16} /> 신청 보내기
-          </button>
-        </div>
-      </Modal>
+      {/* Apply Modal — replaced with shared ApplyFormModal component */}
+      <ApplyFormModal
+        isOpen={!!applyTeam}
+        onClose={() => setApplyTeam(null)}
+        teamName={applyTeam?.name || ''}
+        onSend={(content) => {
+          if (!applyTeam || !user) return;
+          const leader = applyTeam.members[0];
+          if (!leader) return;
+          addMessage({
+            id: `msg-${Date.now()}`,
+            from: user.id,
+            to: leader.userId,
+            content,
+            type: 'team-request',
+            teamId: applyTeam.id,
+            read: false,
+            createdAt: new Date().toISOString(),
+          });
+          setToast('참가 신청이 전송되었습니다!');
+          setTimeout(() => setToast(''), 3000);
+        }}
+      />
     </div>
   );
 }

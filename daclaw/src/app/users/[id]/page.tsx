@@ -17,14 +17,8 @@ import { seedBadges } from '@/data/seed';
 import UserAvatar from '@/components/UserAvatar';
 import GradeBadge from '@/components/GradeBadge';
 import IconMapper from '@/components/IconMapper';
+import { ROLE_LABELS } from '@/lib/constants';
 import type { Role, Grade } from '@/types';
-
-const ROLE_LABELS: Record<string, string> = {
-  developer: '개발자',
-  designer: '디자이너',
-  planner: '기획자',
-  'data-scientist': '데이터 사이언티스트',
-};
 
 export default function UserProfilePage() {
   const params = useParams();

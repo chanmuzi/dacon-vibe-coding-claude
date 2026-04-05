@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Medal, Info, Award, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { useRankingStore } from '@/store/ranking';
-import { gradeConfig, seedBadges } from '@/data/seed';
+import { gradeConfig, seedBadges, GRADE_ORDER } from '@/data/seed';
 import type { RankingEntry } from '@/types';
 import IconMapper from '@/components/IconMapper';
 import GradeBadge from '@/components/GradeBadge';
@@ -29,7 +29,6 @@ const PERIODS: { key: PeriodKey; label: string; testId: string }[] = [
   { key: 'weekly', label: '주간', testId: 'ranking-period-weekly' },
 ];
 
-const GRADE_ORDER: string[] = ['rookie', 'expert', 'master', 'challenger', 'legend'];
 
 // Stable pseudo-random multipliers derived from userId string (avoids hydration issues)
 function stableMultiplier(userId: string, min: number, max: number): number {
