@@ -269,7 +269,7 @@ export default function RankingsPage() {
   }, [rankings, tab, period]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         {/* Page header */}
@@ -294,7 +294,7 @@ export default function RankingsPage() {
                 key={key}
                 data-testid={testId}
                 onClick={() => setTab(key)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer active:scale-[0.98] ${
                   tab === key
                     ? 'bg-primary text-white'
                     : 'text-text-secondary hover:bg-primary-light hover:text-primary'
@@ -312,7 +312,7 @@ export default function RankingsPage() {
                 key={key}
                 data-testid={testId}
                 onClick={() => setPeriod(key)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer active:scale-[0.98] ${
                   period === key
                     ? 'bg-primary text-white'
                     : 'text-text-secondary hover:bg-primary-light hover:text-primary'

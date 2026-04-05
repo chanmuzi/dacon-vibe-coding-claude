@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, notFound } from 'next/navigation';
 import {
-  ArrowLeft, Users, Trophy, Send, X, CheckCircle2,
+  ArrowLeft, Users, Trophy, Send, CheckCircle2,
   Star, BarChart3, Layers, MessageSquare,
 } from 'lucide-react';
+import Modal from '@/components/Modal';
 import { useTeamStore } from '@/store/team';
 import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
@@ -78,26 +79,10 @@ export default function TeamPublicPage() {
     setTimeout(() => setToast(''), 3000);
   }
 
-  if (!team) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <button
-          onClick={() => router.push('/camp')}
-          className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors mb-6"
-        >
-          <ArrowLeft size={16} /> 팀원 모집으로 돌아가기
-        </button>
-        <div className="bg-surface border border-border rounded-xl shadow-sm p-12 text-center">
-          <Users size={48} className="text-text-secondary mx-auto mb-4 opacity-40" />
-          <p className="text-text-secondary text-lg">팀을 찾을 수 없습니다</p>
-          <p className="text-text-secondary text-sm mt-1 opacity-60">삭제되었거나 존재하지 않는 팀입니다.</p>
-        </div>
-      </div>
-    );
-  }
+  if (!team) notFound();
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
       {/* Toast */}
       {toast && (
         <div className="fixed top-20 right-4 z-50 bg-primary text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2">
@@ -108,7 +93,7 @@ export default function TeamPublicPage() {
       {/* Back button */}
       <button
         onClick={() => router.push('/camp')}
-        className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors mb-6"
+        className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors cursor-pointer mb-6"
       >
         <ArrowLeft size={16} /> 팀원 모집으로 돌아가기
       </button>
@@ -224,7 +209,7 @@ export default function TeamPublicPage() {
               <button
                 key={hack.slug}
                 onClick={() => router.push(`/hackathons/${hack.slug}`)}
-                className="flex items-start gap-3 p-4 bg-background rounded-lg border border-border hover:border-primary-light hover:shadow-sm transition-all text-left"
+                className="flex items-start gap-3 p-4 bg-background rounded-lg border border-border hover:border-primary-light hover:shadow-sm transition-all cursor-pointer active:scale-[0.98] text-left"
               >
                 <div
                   className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center"
@@ -283,7 +268,7 @@ export default function TeamPublicPage() {
         {team.recruitStatus === 'open' ? (
           <button
             onClick={handleApplyClick}
-            className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
           >
             <Send size={16} /> 참가 신청
           </button>
@@ -295,38 +280,26 @@ export default function TeamPublicPage() {
       </div>
 
       {/* Apply Modal */}
-      {showApplyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-text-primary">참가 신청 — {team.name}</h2>
-              <button
-                onClick={() => setShowApplyModal(false)}
-                className="p-1 rounded-lg hover:bg-background transition-colors"
-              >
-                <X size={20} className="text-text-secondary" />
-              </button>
-            </div>
-            <p className="text-sm text-text-secondary mb-4">
-              팀장에게 메시지를 보내 참가를 신청하세요.
-            </p>
-            <textarea
-              value={dmMessage}
-              onChange={(e) => setDmMessage(e.target.value)}
-              placeholder="자기소개와 참가 동기를 작성해주세요..."
-              rows={4}
-              className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm mb-4 focus:ring-2 focus:ring-primary-light focus:border-primary resize-none text-text-primary placeholder:text-text-secondary"
-            />
-            <button
-              onClick={handleSendApply}
-              disabled={!dmMessage.trim()}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Send size={16} /> 신청 보내기
-            </button>
-          </div>
-        </div>
-      )}
+      <Modal isOpen={showApplyModal} onClose={() => setShowApplyModal(false)} maxWidth="max-w-md">
+        <h2 className="text-lg font-bold text-text-primary mb-4">참가 신청 — {team.name}</h2>
+        <p className="text-sm text-text-secondary mb-4">
+          팀장에게 메시지를 보내 참가를 신청하세요.
+        </p>
+        <textarea
+          value={dmMessage}
+          onChange={(e) => setDmMessage(e.target.value)}
+          placeholder="자기소개와 참가 동기를 작성해주세요..."
+          rows={4}
+          className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm mb-4 focus:ring-2 focus:ring-primary-light focus:border-primary resize-none text-text-primary placeholder:text-text-secondary"
+        />
+        <button
+          onClick={handleSendApply}
+          disabled={!dmMessage.trim()}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
+        >
+          <Send size={16} /> 신청 보내기
+        </button>
+      </Modal>
     </div>
   );
 }

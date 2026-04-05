@@ -7,6 +7,7 @@ import { Search, X, Trophy, Users, MessageSquare } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathon';
 import { useTeamStore } from '@/store/team';
 import { useCommunityStore } from '@/store/community';
+import Modal from '@/components/Modal';
 
 interface SearchResult {
   category: '해커톤' | '팀' | '커뮤니티';
@@ -24,6 +25,8 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
 
   const hackathons = useHackathonStore((s) => s.hackathons);
   const teams = useTeamStore((s) => s.teams);
@@ -89,21 +92,31 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+    setFocusedIndex(-1);
+  }, [query]);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (focusedIndex >= 0 && resultsRef.current) {
+      const el = resultsRef.current.querySelector<HTMLElement>(`[data-result-index="${focusedIndex}"]`);
+      el?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [focusedIndex]);
 
   const grouped = results.reduce<Record<string, SearchResult[]>>((acc, r) => {
     if (!acc[r.category]) acc[r.category] = [];
     acc[r.category].push(r);
     return acc;
   }, {});
+
+  const flatResults: SearchResult[] = [];
+  const categoryOffsets = new Map<string, number>();
+  for (const cat of ['해커톤', '팀', '커뮤니티'] as const) {
+    const items = grouped[cat];
+    if (items?.length) {
+      categoryOffsets.set(cat, flatResults.length);
+      flatResults.push(...items);
+    }
+  }
 
   const categoryIcon = (cat: string) => {
     if (cat === '해커톤') return <Trophy size={14} />;
@@ -116,15 +129,23 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     onClose();
   };
 
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.nativeEvent.isComposing) return;
+    if (flatResults.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFocusedIndex((prev) => (prev + 1) % flatResults.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocusedIndex((prev) => (prev <= 0 ? flatResults.length - 1 : prev - 1));
+    } else if (e.key === 'Enter' && focusedIndex >= 0 && flatResults[focusedIndex]) {
+      e.preventDefault();
+      handleResultClick(flatResults[focusedIndex].href);
+    }
+  }
+
   return (
-    <div
-      className="fixed inset-0 z-[70] flex items-start justify-center pt-20 px-4 bg-black/50"
-      onClick={onClose}
-    >
-      <div
-        className="bg-surface rounded-2xl shadow-xl border border-border w-full max-w-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-xl" zIndex={70} showCloseButton={false} className="p-0">
         {/* Search Input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
           <Search size={20} className="text-text-secondary shrink-0" />
@@ -134,13 +155,14 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="해커톤, 팀, 커뮤니티 검색..."
             className="flex-1 bg-transparent text-text-primary placeholder:text-text-secondary focus:outline-none text-sm"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="text-text-secondary hover:text-text-primary transition-colors"
+              className="text-text-secondary hover:text-text-primary transition-colors cursor-pointer active:scale-95"
               aria-label="검색어 지우기"
             >
               <X size={16} />
@@ -149,7 +171,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
         </div>
 
         {/* Results */}
-        <div className="max-h-[400px] overflow-y-auto">
+        <div ref={resultsRef} className="max-h-[400px] overflow-y-auto">
           {query.trim() === '' ? (
             <div className="px-4 py-6 text-center text-text-secondary text-sm">
               검색어를 입력하세요
@@ -169,11 +191,17 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                       {categoryIcon(cat)}
                       {cat}
                     </div>
-                    {items.map((item, i) => (
+                    {items.map((item, i) => {
+                      const globalIndex = (categoryOffsets.get(cat) ?? 0) + i;
+                      return (
                       <button
                         key={i}
+                        data-result-index={globalIndex}
                         onClick={() => handleResultClick(item.href)}
-                        className="w-full text-left px-4 py-2.5 hover:bg-primary-light transition-colors"
+                        onMouseEnter={() => setFocusedIndex(globalIndex)}
+                        className={`w-full text-left px-4 py-2.5 hover:bg-primary-light transition-colors cursor-pointer ${
+                          globalIndex === focusedIndex ? 'bg-primary-light' : ''
+                        }`}
                       >
                         <div className="text-sm font-medium text-text-primary">{item.title}</div>
                         {item.description && (
@@ -182,7 +210,8 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                           </div>
                         )}
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })}
@@ -192,9 +221,10 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
 
         {/* Footer hint */}
         <div className="px-4 py-2 border-t border-border text-xs text-text-secondary flex gap-3">
+          <span>↑↓ 탐색</span>
+          <span>Enter 이동</span>
           <span>ESC 닫기</span>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

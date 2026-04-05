@@ -126,18 +126,27 @@ Tailwind 기본 스케일 사용. 주요 패턴:
 ### 5.1 Button
 
 ```
-<!-- Primary -->
-px-6 py-3 rounded-lg bg-primary text-text-on-primary font-medium hover:bg-primary/90 transition-colors
+<!-- Primary (CTA) -->
+px-6 py-3 rounded-lg bg-primary text-text-on-primary font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]
 
 <!-- Secondary (outline) -->
-px-6 py-3 rounded-lg border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-colors
+px-6 py-3 rounded-lg border border-border text-text-primary font-medium hover:bg-primary-light hover:border-primary-light transition-all duration-200 active:scale-[0.98]
 
 <!-- Filter chip (active) -->
 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-text-on-primary
 
 <!-- Filter chip (inactive) -->
-px-3 py-1.5 rounded-lg text-sm font-medium bg-background text-text-secondary hover:text-text-primary hover:bg-primary-light
+px-3 py-1.5 rounded-lg text-sm font-medium bg-background text-text-secondary hover:text-text-primary hover:bg-interactive-hover cursor-pointer active:scale-[0.98]
+
+<!-- Filter chip (active) -->
+px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-text-on-primary shadow-sm cursor-pointer active:scale-[0.98]
 ```
+
+**Affordance 필수 규칙:**
+- 모든 클릭 가능 요소에 `cursor-pointer` 필수
+- CTA/필터 버튼: `active:scale-[0.98]`
+- 아이콘 버튼: `active:scale-95`
+- 비활성 상태: `bg-background` + `hover:bg-interactive-hover` + `hover:text-text-primary` (hover 시 변화 명확)
 
 ### 5.2 Card
 
@@ -163,7 +172,88 @@ text-xs bg-primary-light text-primary px-2 py-0.5 rounded-full
 bg-primary text-text-on-primary text-xs font-semibold px-2 py-1 rounded-full
 ```
 
-### 5.4 Input
+### 5.4 CustomSelect (드롭다운)
+
+native `<select>` 대신 `@/components/CustomSelect` 컴포넌트를 사용합니다.
+프로젝트 디자인 토큰과 일관된 스타일을 제공하며, 열릴 때 토글과 드롭다운이 이어져 보입니다.
+
+```tsx
+import CustomSelect from '@/components/CustomSelect';
+
+<CustomSelect
+  value={value}
+  onChange={setValue}
+  options={[
+    { value: 'all', label: '전체', icon: <Icon /> },  // icon은 선택
+    { value: 'option1', label: '옵션 1' },
+  ]}
+/>
+```
+
+| 상태 | 스타일 |
+|------|--------|
+| 닫힌 상태 | `border border-border rounded-lg bg-surface` |
+| 열린 상태 | 토글 `rounded-t-lg rounded-b-none`, 드롭다운 `rounded-b-lg border-t-0` (연결형) |
+| 선택된 항목 | `bg-primary-light text-primary font-medium` + 체크마크 |
+| hover 항목 | `hover:bg-interactive-hover` |
+
+### 5.5 Toast 알림
+
+간단한 상태 기반 토스트. 2초 후 자동 사라짐.
+
+```tsx
+const [toastMessage, setToastMessage] = useState<string | null>(null);
+useEffect(() => {
+  if (!toastMessage) return;
+  const t = setTimeout(() => setToastMessage(null), 2000);
+  return () => clearTimeout(t);
+}, [toastMessage]);
+
+// 렌더링 (페이지 하단 fixed)
+{toastMessage && (
+  <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+    <div className="bg-text-primary text-text-on-primary px-5 py-2.5 rounded-lg shadow-xl text-sm font-medium animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+      {toastMessage}
+    </div>
+  </div>
+)}
+```
+
+### 5.6 Dismissible 배너
+
+세션 닫기(X) + 하루 닫기(localStorage) 2단계 dismiss 패턴.
+
+```tsx
+// SSR-safe: useState에서 localStorage 읽지 않음
+const [show, setShow] = useState(true);
+useEffect(() => {
+  const dismissed = localStorage.getItem('key');
+  if (dismissed === new Date().toISOString().split('T')[0]) setShow(false);
+}, []);
+
+// 닫기 애니메이션: opacity + max-h transition (modal-panel 아님)
+className={`transition-all duration-200 ease-out ${
+  closing ? 'opacity-0 max-h-0' : 'opacity-100 max-h-[200px] animate-in fade-in-0 slide-in-from-top-2 duration-300'
+}`}
+```
+
+### 5.7 기관 이니셜 아바타
+
+organizer 로고가 없을 때 `hackathon.color` 기반 원형 이니셜 표시.
+
+```tsx
+<span
+  className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-text-on-primary"
+  style={{ backgroundColor: hackathon.color || '#6B7280' }}
+>
+  {(hackathon.organizer || '?')[0]}
+</span>
+<span className="font-medium text-text-primary truncate">
+  {hackathon.organizer || '미지정'}
+</span>
+```
+
+### 5.8 Input
 
 ```
 bg-surface border border-border rounded-lg px-4 py-2.5 text-text-primary
@@ -219,15 +309,66 @@ import { Trophy, Users, BarChart3 } from 'lucide-react';
 
 ## 7. Animation & Transition
 
-| 패턴 | 규칙 |
-|------|------|
+CSS 순수 애니메이션 기반. `tw-animate-css` (Tailwind v4 전용)를 사용합니다.
+JS 애니메이션 라이브러리(framer-motion 등)는 사용하지 않습니다.
+
+### 7.1 전환 (Transition)
+
+| 패턴 | 클래스 |
+|------|--------|
 | 카드 hover | `transition-all duration-200` |
 | 색상 변화 | `transition-colors` |
 | 그림자 변화 | `transition-shadow` |
-| 커스텀 pulse | `animate-pulse-dot` (globals.css에 정의) |
-| 커스텀 breathing | `animate-breathing` (globals.css에 정의) |
+| 버튼 클릭 피드백 | `transition-all duration-200 active:scale-[0.98]` |
+| 아이콘 버튼 클릭 | `transition-all duration-200 active:scale-95` |
 
-Framer Motion은 페이지 전환, 리스트 애니메이션 등 복잡한 경우에만 사용합니다.
+### 7.2 페이지 진입 애니메이션 (tw-animate-css)
+
+| 패턴 | 클래스 | 타이밍 |
+|------|--------|--------|
+| 페이지 진입 | `animate-in fade-in-0 slide-in-from-bottom-2 duration-500` | 500ms |
+| 모바일 메뉴 | `animate-in fade-in-0 slide-in-from-top-2 duration-200` | 200ms |
+
+### 7.3 모달/패널 트랜지션 (CSS transition + @starting-style)
+
+모달과 챗봇 팝업은 tw-animate-css 클래스 스왑 대신 **CSS transition**을 사용합니다.
+`globals.css`에 정의된 `.modal-overlay` / `.modal-panel` 클래스 + `.entering` 토글 방식.
+
+| 요소 | 열기 | 닫기 | 방식 |
+|------|------|------|------|
+| 모달 오버레이 | 200ms ease-out | 150ms ease-out | `.modal-overlay.entering` |
+| 모달 콘텐츠 | 200ms ease-out (fade+zoom+slide) | 150ms ease-out | `.modal-panel.entering` |
+| 챗봇 팝업 | 200ms ease-out | 150ms ease-out | `.modal-panel.entering` |
+
+`@starting-style` 규칙이 초기 마운트 시 트랜지션 시작점을 제공하여 flickering을 방지합니다.
+
+### 7.4 커스텀 keyframes (globals.css)
+
+| 유틸리티 | 용도 |
+|---------|------|
+| `animate-pulse-dot` | 알림 점 깜박임 (2s) |
+| `animate-breathing` | 카드 호흡 효과 (3s) |
+| `shimmer` keyframe | Skeleton 로딩 shimmer (1.8s) |
+
+### 7.5 Modal 컴포넌트
+
+모든 모달은 `@/components/Modal` 컴포넌트를 사용합니다.
+인라인 overlay div 직접 작성은 금지 — 반드시 이 컴포넌트를 사용하세요.
+
+```tsx
+import Modal from '@/components/Modal';
+
+<Modal
+  isOpen={show}                    // 필수: 열림 상태
+  onClose={() => setShow(false)}   // 필수: 닫기 콜백 (overlay 클릭, ESC, 닫기 버튼)
+  maxWidth="max-w-md"              // 선택: 기본 "max-w-sm"
+  showCloseButton={true}           // 선택: 기본 true
+  zIndex={50}                      // 선택: 기본 50, 중첩 모달은 60+
+  className=""                     // 선택: content div에 추가 클래스
+>
+  {children}
+</Modal>
+```
 
 ---
 

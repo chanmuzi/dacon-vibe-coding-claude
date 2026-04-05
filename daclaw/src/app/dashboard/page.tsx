@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   User, Star, CheckCircle2, BookmarkCheck, Users,
   Bell, ChevronRight, Zap, Target, TrendingUp, Mail,
-  MailOpen, Shield, HelpCircle, X, Lock,
+  MailOpen, Shield, HelpCircle, Lock,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -20,6 +20,7 @@ import { gradeConfig, seedBadges } from '@/data/seed';
 import type { Role } from '@/types';
 import IconMapper from '@/components/IconMapper';
 import UserAvatar from '@/components/UserAvatar';
+import Modal from '@/components/Modal';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -88,7 +89,7 @@ function NotLoggedIn() {
   const { openAuthModal } = useUserStore();
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="min-h-screen bg-background flex items-center justify-center animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
       <div className="bg-surface border border-border rounded-2xl shadow-sm p-12 flex flex-col items-center gap-4 text-center max-w-sm w-full mx-4">
         <div className="w-16 h-16 rounded-full bg-primary-light flex items-center justify-center">
           <User className="w-8 h-8 text-primary" />
@@ -99,7 +100,7 @@ function NotLoggedIn() {
         </p>
         <button
           onClick={openAuthModal}
-          className="mt-2 px-6 py-2.5 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+          className="mt-2 px-6 py-2.5 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
         >
           로그인
         </button>
@@ -140,7 +141,7 @@ function SectionCard({
 
 // ─── Grade Modal ──────────────────────────────────────────────────────────────
 
-function GradeModal({ onClose, userPoints, userGrade }: { onClose: () => void; userPoints: number; userGrade: string }) {
+function GradeModal({ isOpen, onClose, userPoints, userGrade }: { isOpen: boolean; onClose: () => void; userPoints: number; userGrade: string }) {
   const gradeTable = [
     { key: 'rookie', range: '0 – 99 pt' },
     { key: 'challenger', range: '100 – 499 pt' },
@@ -155,52 +156,39 @@ function GradeModal({ onClose, userPoints, userGrade }: { onClose: () => void; u
   const ptsLeft = nextCfg ? Math.max(0, nextCfg.min - userPoints) : 0;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={onClose}
-    >
-      <div
-        className="bg-surface border border-border rounded-2xl shadow-lg p-6 w-80 mx-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-text-primary">등급 안내</h3>
-          <button onClick={onClose} className="text-text-secondary hover:text-text-primary transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="flex flex-col gap-1.5 mb-4">
-          {gradeTable.map(({ key, range }) => {
-            const cfg = gradeConfig[key];
-            const isCurrent = key === userGrade;
-            return (
-              <div
-                key={key}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isCurrent ? 'bg-primary-light border border-primary/30' : ''}`}
-              >
-                <IconMapper name={cfg?.icon ?? 'Sprout'} size={18} />
-                <span className="font-medium text-sm" style={{ color: cfg?.color }}>
-                  {cfg?.label}
-                </span>
-                <span className="ml-auto text-xs text-text-secondary font-mono">{range}</span>
-                {isCurrent && (
-                  <span className="text-xs px-1.5 py-0.5 bg-primary text-text-on-primary rounded font-medium">현재</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        {nextCfg && (
-          <p className="text-xs text-text-secondary text-center">
-            다음 등급 <span className="font-semibold" style={{ color: nextCfg.color }}>{nextCfg.label}</span>까지{' '}
-            <span className="font-mono font-semibold text-text-primary">{ptsLeft.toLocaleString()} pt</span> 남음
-          </p>
-        )}
-        {!nextCfg && (
-          <p className="text-xs text-text-secondary text-center font-medium">최고 등급 달성!</p>
-        )}
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-xs">
+      <h3 className="font-semibold text-text-primary mb-4">등급 안내</h3>
+      <div className="flex flex-col gap-1.5 mb-4">
+        {gradeTable.map(({ key, range }) => {
+          const cfg = gradeConfig[key];
+          const isCurrent = key === userGrade;
+          return (
+            <div
+              key={key}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isCurrent ? 'bg-primary-light border border-primary/30' : ''}`}
+            >
+              <IconMapper name={cfg?.icon ?? 'Sprout'} size={18} />
+              <span className="font-medium text-sm" style={{ color: cfg?.color }}>
+                {cfg?.label}
+              </span>
+              <span className="ml-auto text-xs text-text-secondary font-mono">{range}</span>
+              {isCurrent && (
+                <span className="text-xs px-1.5 py-0.5 bg-primary text-text-on-primary rounded font-medium">현재</span>
+              )}
+            </div>
+          );
+        })}
       </div>
-    </div>
+      {nextCfg && (
+        <p className="text-xs text-text-secondary text-center">
+          다음 등급 <span className="font-semibold" style={{ color: nextCfg.color }}>{nextCfg.label}</span>까지{' '}
+          <span className="font-mono font-semibold text-text-primary">{ptsLeft.toLocaleString()} pt</span> 남음
+        </p>
+      )}
+      {!nextCfg && (
+        <p className="text-xs text-text-secondary text-center font-medium">최고 등급 달성!</p>
+      )}
+    </Modal>
   );
 }
 
@@ -281,7 +269,7 @@ function ProfileForm() {
 
         <button
           type="submit"
-          className={`self-end px-5 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`self-end px-5 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer active:scale-[0.98] ${
             saved
               ? 'bg-success text-text-on-primary'
               : 'bg-primary text-text-on-primary hover:bg-primary/90'
@@ -332,13 +320,12 @@ function BadgePanel() {
 
   return (
     <>
-      {showGradeModal && (
-        <GradeModal
-          onClose={() => setShowGradeModal(false)}
-          userPoints={user.points}
-          userGrade={user.grade}
-        />
-      )}
+      <GradeModal
+        isOpen={showGradeModal}
+        onClose={() => setShowGradeModal(false)}
+        userPoints={user.points}
+        userGrade={user.grade}
+      />
       <SectionCard title="등급 & 배지" icon={<Star className="w-4 h-4" />} testId="badge-panel">
         {/* Current grade */}
         <div className="flex items-center gap-3 mb-5">
@@ -350,7 +337,7 @@ function BadgePanel() {
               </span>
               <button
                 onClick={() => setShowGradeModal(true)}
-                className="text-text-secondary hover:text-primary transition-colors"
+                className="text-text-secondary hover:text-primary transition-colors cursor-pointer active:scale-95"
                 title="등급 기준 보기"
               >
                 <HelpCircle className="w-4 h-4" />
@@ -398,7 +385,7 @@ function BadgePanel() {
                     key={badgeId}
                     title={badge.condition}
                     onClick={() => handleBadgeToggle(badgeId)}
-                    className={`relative flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                    className={`relative flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer active:scale-95 ${
                       isSelected
                         ? 'bg-primary-light text-primary border-2 border-primary'
                         : 'bg-primary-light text-primary border-2 border-transparent hover:border-primary/40'
@@ -524,7 +511,7 @@ function DailyMissions() {
             key={mission.id}
             data-testid="daily-mission-item"
             onClick={() => handleToggle(mission.id, mission.points, mission.completed)}
-            className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all w-full ${
+            className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer active:scale-[0.98] w-full ${
               mission.completed
                 ? 'completed bg-primary-light border-primary/20'
                 : 'bg-surface border-border hover:border-primary/40 hover:bg-primary-light/30'
@@ -856,7 +843,7 @@ function Messages() {
                 {isUnread && msg.id.startsWith('msg-extra-') ? null : isUnread && (
                   <button
                     onClick={() => markRead(msg.id)}
-                    className="text-xs text-primary hover:underline shrink-0"
+                    className="text-xs text-primary hover:underline shrink-0 cursor-pointer"
                   >
                     읽음
                   </button>
@@ -978,7 +965,7 @@ export default function DashboardPage() {
   const cfg = gradeConfig[user.grade];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         {/* Page header */}

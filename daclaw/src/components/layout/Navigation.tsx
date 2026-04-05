@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user';
 import {
   Trophy, Users, BarChart3, MessageSquare, LayoutDashboard,
-  Menu, X, Search, LogIn, LogOut, User, Eye, EyeOff,
+  Menu, X, Search, LogIn, LogOut, User, Eye, EyeOff, ChevronDown,
 } from 'lucide-react';
 import GlobalSearch from '@/components/GlobalSearch';
+import Modal from '@/components/Modal';
 import type { Role } from '@/types';
 
 const navItems = [
@@ -26,12 +27,29 @@ const ROLES: { key: Role; label: string }[] = [
   { key: 'data-scientist', label: '데이터 사이언티스트' },
 ];
 
+const ROLE_STYLE: Record<string, string> = {
+  developer: 'bg-role-developer-light text-role-developer',
+  designer: 'bg-role-designer-light text-role-designer',
+  planner: 'bg-role-planner-light text-role-planner',
+  'data-scientist': 'bg-role-data-scientist-light text-role-data-scientist',
+};
+
+const GRADE_INFO: Record<string, { label: string; style: string }> = {
+  rookie: { label: '루키', style: 'bg-grade-rookie/15 text-grade-rookie' },
+  challenger: { label: '챌린저', style: 'bg-grade-challenger/15 text-grade-challenger' },
+  expert: { label: '엑스퍼트', style: 'bg-grade-expert/15 text-grade-expert' },
+  master: { label: '마스터', style: 'bg-grade-master/15 text-grade-master' },
+  legend: { label: '레전드', style: 'bg-grade-legend/15 text-grade-legend' },
+};
+
 export default function Navigation() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isLoggedIn, login, register, logout, showAuthModal, openAuthModal, closeAuthModal } = useUserStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Auth modal state
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
@@ -39,6 +57,8 @@ export default function Navigation() {
   const [registerForm, setRegisterForm] = useState({ nickname: '', email: '', password: '', passwordConfirm: '', role: 'developer' as Role });
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState('');
+
+  useEffect(() => { setShowUserMenu(false); }, [pathname]);
 
   const resetForms = () => {
     setLoginForm({ nickname: '', password: '' });
@@ -124,6 +144,13 @@ export default function Navigation() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={(e) => {
+                      // If already on this page, force clean navigation (reset query params like view=calendar)
+                      if (active) {
+                        e.preventDefault();
+                        router.push(item.href);
+                      }
+                    }}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       active
                         ? 'bg-primary text-text-on-primary'
@@ -149,24 +176,66 @@ export default function Navigation() {
               </button>
 
               {isLoggedIn ? (
-                <div className="hidden md:flex items-center gap-2">
-                  <Link href="/dashboard" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-light text-primary text-sm font-medium">
+                <div className="hidden md:flex items-center gap-2 relative">
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-light text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
+                  >
                     <User size={14} />
                     {user?.nickname}
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="p-2 rounded-lg text-text-secondary hover:bg-error-light hover:text-error transition-colors"
-                    aria-label="로그아웃"
-                  >
-                    <LogOut size={18} />
+                    <ChevronDown size={12} className={`transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`} />
                   </button>
+                  {showUserMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
+                      <div className="absolute right-0 top-full mt-2 w-72 bg-surface border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+                        <div className="p-4 border-b border-border">
+                          <div className="font-bold text-text-primary text-sm">{user?.nickname}</div>
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${ROLE_STYLE[user?.role ?? 'developer']}`}>
+                              {ROLES.find(r => r.key === user?.role)?.label}
+                            </span>
+                            <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${GRADE_INFO[user?.grade ?? 'rookie']?.style}`}>
+                              {GRADE_INFO[user?.grade ?? 'rookie']?.label}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="p-1.5">
+                          <Link
+                            href="/dashboard"
+                            onClick={() => setShowUserMenu(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-primary hover:bg-primary-light transition-colors"
+                          >
+                            <LayoutDashboard size={16} className="text-text-secondary" />
+                            대시보드
+                          </Link>
+                          <Link
+                            href={`/users/${user?.id}`}
+                            onClick={() => setShowUserMenu(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-primary hover:bg-primary-light transition-colors"
+                          >
+                            <User size={16} className="text-text-secondary" />
+                            내 프로필
+                          </Link>
+                        </div>
+                        <div className="p-1.5 border-t border-border">
+                          <button
+                            onClick={() => { setShowUserMenu(false); handleLogout(); }}
+                            className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-error hover:bg-error-light transition-colors"
+                          >
+                            <LogOut size={16} />
+                            로그아웃
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <button
                   data-testid="login-button"
                   onClick={openAuthModal}
-                  className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-colors"
+                  className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
                 >
                   <LogIn size={16} />
                   로그인
@@ -188,7 +257,7 @@ export default function Navigation() {
 
         {/* Mobile Menu */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-border bg-surface">
+          <div className="md:hidden border-t border-border bg-surface animate-in fade-in-0 slide-in-from-top-2 duration-200">
             <div className="px-4 py-3 space-y-1">
               {navItems.map((item) => {
                 const active = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -220,7 +289,7 @@ export default function Navigation() {
               ) : (
                 <button
                   onClick={() => { openAuthModal(); setMobileOpen(false); }}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium bg-primary text-text-on-primary"
+                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium bg-primary text-text-on-primary transition-all duration-200 active:scale-[0.98]"
                 >
                   <LogIn size={18} />
                   로그인
@@ -235,9 +304,7 @@ export default function Navigation() {
       <GlobalSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />
 
       {/* Auth Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={handleModalClose}>
-          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+      <Modal isOpen={showAuthModal} onClose={handleModalClose} maxWidth="max-w-sm" zIndex={60}>
             {/* Tab Header */}
             <div className="flex border-b border-border mb-5">
               <button
@@ -307,7 +374,7 @@ export default function Navigation() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2.5 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
                   >
                     로그인
                   </button>
@@ -389,41 +456,37 @@ export default function Navigation() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2.5 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 active:scale-[0.98]"
                   >
                     가입하기
                   </button>
                 </div>
               </form>
             )}
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Logout Confirm Dialog */}
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-xs p-6 text-center">
-            <LogOut size={32} className="mx-auto text-error mb-3" />
-            <h3 className="font-bold text-text-primary mb-2">로그아웃</h3>
-            <p className="text-sm text-text-secondary mb-5">정말 로그아웃하시겠습니까?</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 px-4 py-2.5 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={confirmLogout}
-                className="flex-1 px-4 py-2.5 rounded-lg bg-error text-white text-sm font-medium hover:bg-error/90 transition-colors"
-              >
-                로그아웃
-              </button>
-            </div>
+      <Modal isOpen={showLogoutConfirm} onClose={() => setShowLogoutConfirm(false)} maxWidth="max-w-xs" zIndex={60} showCloseButton={false}>
+        <div className="text-center">
+          <LogOut size={32} className="mx-auto text-error mb-3" />
+          <h3 className="font-bold text-text-primary mb-2">로그아웃</h3>
+          <p className="text-sm text-text-secondary mb-5">정말 로그아웃하시겠습니까?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowLogoutConfirm(false)}
+              className="flex-1 px-4 py-2.5 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background transition-colors"
+            >
+              취소
+            </button>
+            <button
+              onClick={confirmLogout}
+              className="flex-1 px-4 py-2.5 rounded-lg bg-error text-white text-sm font-medium hover:bg-error/90 transition-colors"
+            >
+              로그아웃
+            </button>
           </div>
         </div>
-      )}
+      </Modal>
     </>
   );
 }

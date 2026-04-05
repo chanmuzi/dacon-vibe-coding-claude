@@ -281,7 +281,7 @@ function CompareInner() {
   const excluded2 = [slugs[0], slugs[1]].filter(Boolean) as string[];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Header */}
         <div className="mb-8">
@@ -311,7 +311,7 @@ function CompareInner() {
                   {slugs[i] && (
                     <button
                       onClick={() => clearSlug(i)}
-                      className="ml-auto p-1 rounded-full hover:bg-border transition-colors"
+                      className="ml-auto p-1 rounded-full hover:bg-border transition-colors cursor-pointer active:scale-95"
                       aria-label="선택 해제"
                     >
                       <X className="w-3.5 h-3.5 text-text-secondary" />

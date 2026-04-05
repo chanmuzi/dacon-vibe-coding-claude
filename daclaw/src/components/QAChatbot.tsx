@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, RotateCcw } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathon';
 
@@ -96,21 +96,24 @@ export default function QAChatbot() {
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
   const [isComposing, setIsComposing] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const hackathons = useHackathonStore((s) => s.hackathons);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // M1: Manage visibility — React 19 prop-change pattern for open transition
-  const [prevOpen, setPrevOpen] = useState(open);
-  if (open && !prevOpen) {
-    setVisible(true);
-  }
-  if (open !== prevOpen) {
-    setPrevOpen(open);
-  }
-  // Delay hide for close animation
+  // Toggle: set visible synchronously with open to prevent first-click swallow
+  const handleToggle = useCallback(() => {
+    setOpen((prev) => {
+      if (!prev) setVisible(true);
+      return !prev;
+    });
+  }, []);
+
+  const closeChatbot = useCallback(() => setOpen(false), []);
+
+  // Delay hide for close animation (match modal-panel 150ms + buffer)
   useEffect(() => {
     if (!open) {
-      const timer = setTimeout(() => setVisible(false), 300);
+      const timer = setTimeout(() => setVisible(false), 170);
       return () => clearTimeout(timer);
     }
   }, [open]);
@@ -121,11 +124,33 @@ export default function QAChatbot() {
     }
   }, [messages, open]);
 
+  // ESC key to close
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeChatbot();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [open, closeChatbot]);
+
+  // Outside click to close
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        closeChatbot();
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open, closeChatbot]);
+
   const send = (text?: string) => {
     const msgText = (text ?? input).trim();
     if (!msgText) return;
     const userMsg: ChatMessage = { role: 'user', text: msgText };
-    const botText = getAnswer(msgText, hackathons);
+    const botText = getAnswer(msgText, useHackathonStore.getState().hackathons);
     const botMsg: ChatMessage = { role: 'bot', text: botText };
     setMessages((prev) => [...prev, userMsg, botMsg]);
     setInput('');
@@ -135,15 +160,14 @@ export default function QAChatbot() {
     if (e.key === 'Enter' && !isComposing) send();
   };
 
-  // M4: Reset conversation
-  const handleReset = () => {
-    if (window.confirm('새 대화를 시작하시겠습니까?')) {
-      setMessages([WELCOME_MESSAGE]);
-      setInput('');
-    }
+  // Inline reset confirmation
+  const confirmReset = () => {
+    setMessages([WELCOME_MESSAGE]);
+    setInput('');
+    setShowResetConfirm(false);
   };
 
-  // M5: Suggestion chip click
+  // Suggestion chip click
   const handleSuggestion = (question: string) => {
     send(question);
   };
@@ -151,40 +175,56 @@ export default function QAChatbot() {
   const isWelcomeOnly = messages.length === 1;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
-      {/* M1: Chat Popup with animation — always rendered when visible */}
+    <div ref={containerRef} className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+      {/* Chat Popup with animation */}
       {visible && (
         <div
-          className="bg-surface rounded-2xl shadow-xl border border-border w-full max-w-sm flex flex-col"
-          style={{
-            maxHeight: '500px',
-            transition: 'transform 300ms ease, opacity 300ms ease',
-            transform: open ? 'translateY(0)' : 'translateY(100%)',
-            opacity: open ? 1 : 0,
-          }}
+          className={`bg-surface rounded-2xl shadow-xl border border-border w-full max-w-sm flex flex-col modal-panel ${open ? 'entering' : 'pointer-events-none'}`}
+          style={{ maxHeight: '500px' }}
         >
-          {/* M3: Header with branding emoji + M4: Reset button */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border rounded-t-2xl bg-primary text-text-on-primary">
+          {/* Header */}
+          <div className="relative flex items-center justify-between px-4 py-3 border-b border-border rounded-t-2xl bg-primary text-text-on-primary">
             <div className="flex items-center gap-2">
               <MessageCircle size={18} />
-              <span className="font-semibold text-sm">🦞 DACLAW 도우미</span>
+              <span className="font-semibold text-sm">DACLAW 도우미</span>
             </div>
             <div className="flex items-center gap-1">
               <button
-                onClick={handleReset}
-                className="p-1 rounded-lg hover:bg-white/20 transition-colors"
+                onClick={() => setShowResetConfirm(true)}
+                className="p-1.5 rounded-lg hover:bg-white/20 transition-colors cursor-pointer"
                 aria-label="대화 초기화"
+                title="대화 초기화"
               >
                 <RotateCcw size={16} />
               </button>
               <button
-                onClick={() => setOpen(false)}
-                className="p-1 rounded-lg hover:bg-white/20 transition-colors"
+                onClick={closeChatbot}
+                className="p-1.5 rounded-lg hover:bg-white/20 transition-colors cursor-pointer"
                 aria-label="닫기"
+                title="닫기"
               >
                 <X size={16} />
               </button>
             </div>
+
+            {/* Inline reset confirmation — replaces window.confirm */}
+            {showResetConfirm && (
+              <div className="absolute top-full left-0 right-0 bg-surface border border-border rounded-b-xl shadow-md px-4 py-3 flex items-center gap-3 z-10">
+                <span className="text-xs text-text-primary flex-1">새 대화를 시작하시겠습니까?</span>
+                <button
+                  onClick={confirmReset}
+                  className="text-xs font-semibold px-3 py-1.5 bg-primary text-text-on-primary rounded-lg hover:bg-primary/90 transition-colors cursor-pointer active:scale-[0.98]"
+                >
+                  확인
+                </button>
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  className="text-xs font-semibold px-3 py-1.5 bg-background text-text-secondary rounded-lg hover:bg-interactive-hover transition-colors cursor-pointer active:scale-[0.98]"
+                >
+                  취소
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Messages */}
@@ -207,7 +247,7 @@ export default function QAChatbot() {
               </div>
             ))}
 
-            {/* M5: Suggestion chips — shown only when welcome message is alone */}
+            {/* Suggestion chips — shown only when welcome message is alone */}
             {isWelcomeOnly && (
               <div className="flex flex-wrap gap-2 pt-1">
                 {SUGGESTED_QUESTIONS.map((q) => (
@@ -241,8 +281,9 @@ export default function QAChatbot() {
             <button
               onClick={() => send()}
               disabled={!input.trim()}
-              className="p-2 rounded-lg bg-primary text-text-on-primary hover:bg-primary/90 transition-colors disabled:opacity-40"
+              className="p-2 rounded-lg bg-primary text-text-on-primary hover:bg-primary/90 transition-colors disabled:opacity-40 active:scale-95 cursor-pointer disabled:cursor-not-allowed"
               aria-label="전송"
+              title="전송"
             >
               <Send size={16} />
             </button>
@@ -250,12 +291,15 @@ export default function QAChatbot() {
         </div>
       )}
 
-      {/* Toggle Button */}
+      {/* FAB Toggle — breathing animation when closed, tooltip for affordance */}
       <button
         data-testid="chatbot-toggle"
-        onClick={() => setOpen((v) => !v)}
-        className="w-14 h-14 rounded-full bg-primary text-text-on-primary shadow-lg hover:bg-primary/90 transition-all flex items-center justify-center"
-        aria-label="챗봇 열기"
+        onClick={handleToggle}
+        className={`w-14 h-14 rounded-full bg-primary text-text-on-primary shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all duration-200 active:scale-95 flex items-center justify-center cursor-pointer ${
+          !open ? 'animate-breathing' : ''
+        }`}
+        aria-label={open ? '챗봇 닫기' : '챗봇 열기'}
+        title={open ? '챗봇 닫기' : 'DACLAW 도우미와 대화하기'}
       >
         {open ? <X size={22} /> : <MessageCircle size={22} />}
       </button>
