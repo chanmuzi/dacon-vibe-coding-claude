@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
 import {
   User, Star, CheckCircle2, BookmarkCheck, Users,
   Bell, ChevronRight, Zap, Target, TrendingUp, Mail,
-  MailOpen, Shield, HelpCircle, Lock,
+  MailOpen, Shield, HelpCircle, Lock, Sparkles, Loader2,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -45,7 +46,7 @@ const DIFFICULTY_LABELS: Record<string, string> = {
 
 const BADGE_MAP = Object.fromEntries(seedBadges.map((b) => [b.id, b]));
 
-const GRADE_ORDER = ['rookie', 'challenger', 'expert', 'master', 'legend'];
+const GRADE_ORDER = ['rookie', 'expert', 'master', 'challenger', 'legend'];
 
 // Mock point history data (H2)
 const POINT_HISTORY: { date: string; reason: string; points: number }[] = [
@@ -61,27 +62,14 @@ const POINT_HISTORY: { date: string; reason: string; points: number }[] = [
   { date: '2026-03-20', reason: '미션 완료: 팀에 참가 신청하기', points: 15 },
 ];
 
-// Extra mock messages to supplement seed data (H4)
-const EXTRA_MESSAGES = [
-  {
-    id: 'msg-extra-1',
-    from: 'user-3',
-    to: 'current-user',
-    content: '안녕하세요! 팀 관련해서 문의드립니다. 혹시 개발자 포지션 아직 여석 있나요?',
-    type: 'dm' as const,
-    read: false,
-    createdAt: '2026-03-29',
-  },
-  {
-    id: 'msg-extra-2',
-    from: 'system',
-    to: 'current-user',
-    content: '바이브 코딩 대회 중간 발표가 예정되어 있습니다. 3월 30일 오후 2시에 Discord에서 진행됩니다.',
-    type: 'announcement' as const,
-    read: false,
-    createdAt: '2026-03-28',
-  },
-];
+// Mission ID → navigation href map
+const MISSION_HREF: Record<string, string> = {
+  'dm-1': '/hackathons',
+  'dm-2': '/community',
+  'dm-3': '/hackathons',
+  'dm-4': '/camp',
+  'dm-5': '/community',
+};
 
 // ─── Not Logged In ────────────────────────────────────────────────────────────
 
@@ -142,13 +130,13 @@ function SectionCard({
 // ─── Grade Modal ──────────────────────────────────────────────────────────────
 
 function GradeModal({ isOpen, onClose, userPoints, userGrade }: { isOpen: boolean; onClose: () => void; userPoints: number; userGrade: string }) {
-  const gradeTable = [
-    { key: 'rookie', range: '0 – 99 pt' },
-    { key: 'challenger', range: '100 – 499 pt' },
-    { key: 'expert', range: '500 – 1,499 pt' },
-    { key: 'master', range: '1,500 – 4,999 pt' },
-    { key: 'legend', range: '5,000+ pt' },
-  ];
+  const gradeTable = GRADE_ORDER.map((key) => {
+    const g = gradeConfig[key];
+    const range = g.max === Infinity
+      ? `${g.min.toLocaleString()}+ pt`
+      : `${g.min.toLocaleString()} – ${g.max.toLocaleString()} pt`;
+    return { key, range };
+  });
 
   const gradeIdx = GRADE_ORDER.indexOf(userGrade);
   const nextGradeKey = gradeIdx < GRADE_ORDER.length - 1 ? GRADE_ORDER[gradeIdx + 1] : null;
@@ -468,20 +456,11 @@ function PointHistory() {
 // ─── Daily Missions ───────────────────────────────────────────────────────────
 
 function DailyMissions() {
-  const { missions, toggleMission, init } = useMissionStore();
-  const { addPoints } = useUserStore();
+  const { missions, init } = useMissionStore();
 
   useEffect(() => {
     init();
   }, [init]);
-
-  function handleToggle(id: string, points: number, completed: boolean) {
-    if (!completed) {
-      toggleMission(id, (pts) => addPoints(pts));
-    } else {
-      toggleMission(id);
-    }
-  }
 
   const completedCount = missions.filter((m) => m.completed).length;
 
@@ -506,44 +485,50 @@ function DailyMissions() {
       </div>
 
       <div className="flex flex-col gap-2">
-        {missions.map((mission) => (
-          <button
-            key={mission.id}
-            data-testid="daily-mission-item"
-            onClick={() => handleToggle(mission.id, mission.points, mission.completed)}
-            className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer active:scale-[0.98] w-full ${
-              mission.completed
-                ? 'completed bg-primary-light border-primary/20'
-                : 'bg-surface border-border hover:border-primary/40 hover:bg-primary-light/30'
-            }`}
-          >
-            <CheckCircle2
-              className={`w-5 h-5 shrink-0 mt-0.5 transition-colors ${
-                mission.completed ? 'text-primary' : 'text-border'
+        {missions.map((mission) => {
+          const href = MISSION_HREF[mission.id] ?? '/hackathons';
+          return (
+            <a
+              key={mission.id}
+              data-testid="daily-mission-item"
+              href={mission.completed ? undefined : href}
+              className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all w-full ${
+                mission.completed
+                  ? 'bg-primary-light border-primary/20'
+                  : 'bg-surface border-border hover:border-primary/40 hover:bg-primary-light/30 cursor-pointer active:scale-[0.98]'
               }`}
-            />
-            <div className="flex-1 min-w-0">
-              <div
-                className={`text-sm font-medium transition-colors ${
-                  mission.completed
-                    ? 'line-through text-text-secondary'
-                    : 'text-text-primary'
+            >
+              <CheckCircle2
+                className={`w-5 h-5 shrink-0 mt-0.5 transition-colors ${
+                  mission.completed ? 'text-primary' : 'text-border'
                 }`}
-              >
-                {mission.title}
+              />
+              <div className="flex-1 min-w-0">
+                <div
+                  className={`text-sm font-medium transition-colors ${
+                    mission.completed
+                      ? 'line-through text-text-secondary'
+                      : 'text-text-primary'
+                  }`}
+                >
+                  {mission.title}
+                </div>
+                <div className="text-xs text-text-secondary mt-0.5">{mission.description}</div>
               </div>
-              <div className="text-xs text-text-secondary mt-0.5">{mission.description}</div>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span
-                className={`text-xs px-1.5 py-0.5 rounded font-medium ${DIFFICULTY_COLORS[mission.difficulty] ?? ''}`}
-              >
-                {DIFFICULTY_LABELS[mission.difficulty] ?? mission.difficulty}
-              </span>
-              <span className="text-xs font-mono font-semibold text-primary">+{mission.points}pt</span>
-            </div>
-          </button>
-        ))}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded font-medium ${DIFFICULTY_COLORS[mission.difficulty] ?? ''}`}
+                >
+                  {DIFFICULTY_LABELS[mission.difficulty] ?? mission.difficulty}
+                </span>
+                <span className="text-xs font-mono font-semibold text-primary">+{mission.points}pt</span>
+              </div>
+              {!mission.completed && (
+                <ChevronRight className="w-4 h-4 text-text-secondary shrink-0 mt-0.5" />
+              )}
+            </a>
+          );
+        })}
       </div>
     </SectionCard>
   );
@@ -717,7 +702,7 @@ function TeamMemberships() {
   };
 
   return (
-    <SectionCard title="내 팀" icon={<Users className="w-4 h-4" />}>
+    <SectionCard title="내 팀" icon={<Users className="w-4 h-4" />} id="section-teams">
       {myTeams.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <Users className="w-8 h-8 text-border" />
@@ -733,13 +718,16 @@ function TeamMemberships() {
         <div className="flex flex-col gap-2">
           {myTeams.map((team) => {
             const myMember = team.members.find((m) => m.userId === user?.id);
+            const firstSlug = (team.hackathonSlugs ?? [])[0];
+            const href = firstSlug ? `/hackathons/${firstSlug}` : '/camp';
             return (
-              <div
+              <a
                 key={team.id}
-                className="flex items-center gap-3 p-3 rounded-xl border border-border"
+                href={href}
+                className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/40 hover:bg-primary-light/20 transition-all group cursor-pointer"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-text-primary truncate">{team.name}</div>
+                  <div className="text-sm font-medium text-text-primary truncate group-hover:text-primary transition-colors">{team.name}</div>
                   <div className="text-xs text-text-secondary mt-0.5">{(team.hackathonSlugs ?? []).join(', ') || '미정'}</div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -752,7 +740,8 @@ function TeamMemberships() {
                     </span>
                   )}
                 </div>
-              </div>
+                <ChevronRight className="w-4 h-4 text-text-secondary group-hover:text-primary shrink-0 transition-colors" />
+              </a>
             );
           })}
         </div>
@@ -763,94 +752,135 @@ function TeamMemberships() {
 
 // ─── Messages ─────────────────────────────────────────────────────────────────
 
+interface DashboardNotice {
+  id: string;
+  type: 'dm' | 'announcement' | 'team-request';
+  title: string;
+  content: string;
+  date: string;
+  read: boolean;
+  href: string;
+  hackathonSlug?: string;
+  msgId?: string;
+}
+
 function Messages() {
   const { messages, markRead, init } = useMessageStore();
   const { user } = useUserStore();
+  const { hackathons, bookmarks } = useHackathonStore();
+  const { teams } = useTeamStore();
 
   useEffect(() => {
     init();
   }, [init]);
 
-  const myMessages = useMemo(() => {
+  const items = useMemo(() => {
     if (!user) return [];
-    const storeMessages = messages
+    const result: DashboardNotice[] = [];
+
+    // 1) DMs & team requests from message store
+    const myMessages = messages
       .filter((m) => m.to === user.id || m.from === user.id)
-      .slice()
-      .sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1));
+      .sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1))
+      .slice(0, 5);
 
-    // Merge extra mock messages (H4) if they don't already exist
-    const extraMapped = EXTRA_MESSAGES
-      .filter((em) => !storeMessages.some((m) => m.id === em.id))
-      .map((em) => ({ ...em, to: user.id }));
+    for (const msg of myMessages) {
+      const isIncoming = msg.to === user.id;
+      result.push({
+        id: msg.id,
+        type: msg.type,
+        title: msg.type === 'team-request' ? '팀 참가 요청' : 'DM',
+        content: msg.content,
+        date: msg.createdAt.slice(0, 10),
+        read: msg.read || !isIncoming,
+        href: '/messages',
+        msgId: msg.id,
+      });
+    }
 
-    return [...extraMapped, ...storeMessages].sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1));
-  }, [messages, user]);
+    // 2) Announcements from participating hackathons (bookmarked or team-joined)
+    const bookmarkedSlugs = new Set(bookmarks.map((b) => b.hackathonSlug));
+    const teamSlugs = new Set(
+      teams
+        .filter((t) => t.members.some((m) => m.userId === user.id))
+        .flatMap((t) => t.hackathonSlugs ?? [])
+    );
+    const participatingSlugs = new Set([...bookmarkedSlugs, ...teamSlugs]);
 
-  const unreadCount = myMessages.filter((m) => !m.read && m.to === user?.id).length;
+    for (const h of hackathons) {
+      if (!participatingSlugs.has(h.slug)) continue;
+      for (const notice of (h.notices ?? []).slice(0, 3)) {
+        result.push({
+          id: `notice-${h.slug}-${notice.id}`,
+          type: 'announcement',
+          title: `[${h.title}] ${notice.title}`,
+          content: notice.content,
+          date: notice.createdAt,
+          read: true,
+          href: `/hackathons/${h.slug}?tab=notice`,
+          hackathonSlug: h.slug,
+        });
+      }
+    }
+
+    return result.sort((a, b) => (a.date > b.date ? -1 : 1)).slice(0, 8);
+  }, [messages, user, hackathons, bookmarks, teams]);
+
+  const unreadCount = items.filter((i) => !i.read).length;
 
   return (
     <SectionCard
       title={`메시지 & 알림${unreadCount > 0 ? ` (${unreadCount})` : ''}`}
       icon={<Bell className="w-4 h-4" />}
+      id="section-messages"
     >
-      {myMessages.length === 0 ? (
+      {items.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <Bell className="w-8 h-8 text-border" />
           <p className="text-sm text-text-secondary">메시지가 없습니다.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {myMessages.map((msg) => {
-            const isUnread = !msg.read && msg.to === user?.id;
-            const isTeamRequest = msg.type === 'team-request';
-            const isAnnouncement = msg.type === 'announcement';
-            return (
-              <div
-                key={msg.id}
-                className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${
-                  isUnread
-                    ? 'border-primary/30 bg-primary-light/30'
-                    : 'border-border bg-surface'
-                }`}
-              >
-                {isUnread ? (
-                  <Mail className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                ) : (
-                  <MailOpen className="w-4 h-4 text-text-secondary shrink-0 mt-0.5" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    {isTeamRequest && (
-                      <span className="text-xs px-1.5 py-0.5 bg-warning-light text-warning rounded font-medium">
-                        팀 요청
-                      </span>
-                    )}
-                    {isAnnouncement && (
-                      <span className="text-xs px-1.5 py-0.5 bg-primary-light text-primary rounded font-medium">
-                        공지
-                      </span>
-                    )}
-                    <span className="text-xs text-text-secondary font-mono">{msg.createdAt}</span>
-                    {isUnread && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block shrink-0" />
-                    )}
-                  </div>
-                  <p className="text-sm text-text-primary line-clamp-2">{msg.content}</p>
-                  <p className="text-xs text-text-secondary mt-1">
-                    {msg.from === user?.id ? `→ ${msg.to}` : `← ${msg.from}`}
-                  </p>
+          {items.map((item) => (
+            <a
+              key={item.id}
+              href={item.href}
+              className={`flex items-start gap-3 p-3 rounded-xl border transition-all group cursor-pointer ${
+                !item.read
+                  ? 'border-primary/30 bg-primary-light/30'
+                  : 'border-border bg-surface hover:border-primary/30 hover:bg-primary-light/10'
+              }`}
+              onClick={() => {
+                if (!item.read && item.msgId) markRead(item.msgId);
+              }}
+            >
+              {!item.read ? (
+                <Mail className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              ) : (
+                <MailOpen className="w-4 h-4 text-text-secondary shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  {item.type === 'team-request' && (
+                    <span className="text-xs px-1.5 py-0.5 bg-warning-light text-warning rounded font-medium">팀 요청</span>
+                  )}
+                  {item.type === 'announcement' && (
+                    <span className="text-xs px-1.5 py-0.5 bg-primary-light text-primary rounded font-medium">공지</span>
+                  )}
+                  {item.type === 'dm' && (
+                    <span className="text-xs px-1.5 py-0.5 bg-info-light text-info rounded font-medium">DM</span>
+                  )}
+                  <span className="text-xs text-text-secondary font-mono">{item.date}</span>
+                  {!item.read && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block shrink-0" />
+                  )}
                 </div>
-                {isUnread && msg.id.startsWith('msg-extra-') ? null : isUnread && (
-                  <button
-                    onClick={() => markRead(msg.id)}
-                    className="text-xs text-primary hover:underline shrink-0 cursor-pointer"
-                  >
-                    읽음
-                  </button>
-                )}
+                <p className="text-sm text-text-primary line-clamp-1 font-medium group-hover:text-primary transition-colors">{item.title}</p>
+                <p className="text-xs text-text-secondary line-clamp-1 mt-0.5">{item.content}</p>
               </div>
-            );
-          })}
+              <ChevronRight className="w-4 h-4 text-text-secondary group-hover:text-primary shrink-0 mt-1 transition-colors" />
+            </a>
+          ))}
         </div>
       )}
     </SectionCard>
@@ -891,7 +921,7 @@ function StatsBar() {
       value: myTeamCount.toString(),
       unit: '개',
       icon: <Users className="w-4 h-4" />,
-      sectionId: null,
+      sectionId: 'section-teams',
     },
     {
       label: '제출 횟수',
@@ -912,9 +942,16 @@ function StatsBar() {
     },
   ];
 
-  function scrollTo(id: string | null) {
+  function scrollAndFlash(id: string | null) {
     if (!id) return;
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth' });
+    el.classList.remove('border-flash');
+    // Force reflow to restart animation
+    void el.offsetWidth;
+    el.classList.add('border-flash');
+    el.addEventListener('animationend', () => el.classList.remove('border-flash'), { once: true });
   }
 
   return (
@@ -922,7 +959,7 @@ function StatsBar() {
       {stats.map((s) => (
         <div
           key={s.label}
-          onClick={() => scrollTo(s.sectionId)}
+          onClick={() => scrollAndFlash(s.sectionId)}
           className={`bg-surface border border-border rounded-xl px-4 py-3 flex items-center gap-3 transition-all ${
             s.sectionId
               ? 'cursor-pointer hover:border-primary-light hover:shadow-sm'
@@ -943,10 +980,206 @@ function StatsBar() {
   );
 }
 
+// ─── AI Profile Analysis Modal ───────────────────────────────────────────────
+
+const ANALYSIS_KEY = 'ai_analysis_last_date';
+
+function AIAnalysisModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { user } = useUserStore();
+  const { hackathons } = useHackathonStore();
+  const [phase, setPhase] = useState<'confirm' | 'loading' | 'result' | 'error' | 'limit'>('confirm');
+  const [result, setResult] = useState<string | null>(null);
+  const [matchedHackathons, setMatchedHackathons] = useState<{ slug: string; title: string }[]>([]);
+
+  // 하루 1회 제한 확인
+  const isUsedToday = useCallback(() => {
+    const last = localStorage.getItem(ANALYSIS_KEY);
+    return last === new Date().toISOString().split('T')[0];
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPhase(isUsedToday() ? 'limit' : 'confirm');
+      setResult(null);
+      setMatchedHackathons([]);
+    }
+  }, [isOpen, isUsedToday]);
+
+  function runAnalysis() {
+    if (!user) return;
+    setPhase('loading');
+
+    const activeHackathons = hackathons.filter((h) => h.status === 'active' || h.status === 'upcoming');
+
+    fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profile: {
+          role: user.role,
+          techStack: user.techStack,
+          interests: user.interests,
+          grade: user.grade,
+          points: user.points,
+          badges: user.badges,
+        },
+        hackathons: activeHackathons.map((h) => ({
+          title: h.title,
+          type: h.type,
+          status: h.status,
+          tags: h.tags,
+          endDate: h.endDate,
+          description: h.description,
+        })),
+      }),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (data.error === 'NO_API_KEY') {
+            setResult(getFallbackAnalysis(user, hackathons));
+            // 추천 대회 slug 매칭
+            matchHackathonLinks(getFallbackAnalysis(user, hackathons));
+            setPhase('result');
+            localStorage.setItem(ANALYSIS_KEY, new Date().toISOString().split('T')[0]);
+            return;
+          }
+          throw new Error('분석 요청 실패');
+        }
+        const data = await res.json();
+        setResult(data.result);
+        matchHackathonLinks(data.result);
+        setPhase('result');
+        localStorage.setItem(ANALYSIS_KEY, new Date().toISOString().split('T')[0]);
+      })
+      .catch(() => setPhase('error'));
+  }
+
+  function matchHackathonLinks(text: string) {
+    const matched = hackathons
+      .filter((h) => text.includes(h.title))
+      .map((h) => ({ slug: h.slug, title: h.title }));
+    setMatchedHackathons(matched);
+  }
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-md">
+      <div className="flex items-center gap-2 mb-4">
+        <Sparkles className="w-5 h-5 text-primary" />
+        <h3 className="font-semibold text-text-primary">AI 프로필 분석</h3>
+      </div>
+
+      {/* 확인 단계 */}
+      {phase === 'confirm' && (
+        <div className="flex flex-col items-center gap-4 py-4">
+          <div className="w-14 h-14 rounded-full bg-primary-light flex items-center justify-center">
+            <Sparkles className="w-7 h-7 text-primary" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-text-primary font-medium mb-1">현재 프로필을 분석하여 맞춤 대회를 추천합니다</p>
+            <p className="text-xs text-text-secondary">기술 스택, 관심 분야, 활동 기록을 기반으로 분석합니다</p>
+            <p className="text-xs text-text-secondary mt-1">(하루 1회 이용 가능)</p>
+          </div>
+          <button
+            onClick={runAnalysis}
+            className="px-6 py-2.5 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+          >
+            분석 시작하기
+          </button>
+        </div>
+      )}
+
+      {/* 분석 중 */}
+      {phase === 'loading' && (
+        <div className="flex flex-col items-center gap-3 py-8">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <p className="text-sm text-text-secondary">프로필을 분석하고 있습니다...</p>
+        </div>
+      )}
+
+      {/* 하루 제한 */}
+      {phase === 'limit' && (
+        <div className="flex flex-col items-center gap-3 py-6">
+          <CheckCircle2 className="w-8 h-8 text-success" />
+          <p className="text-sm text-text-primary font-medium">오늘은 이미 분석을 진행했습니다</p>
+          <p className="text-xs text-text-secondary">내일 다시 이용할 수 있습니다</p>
+        </div>
+      )}
+
+      {/* 에러 */}
+      {phase === 'error' && (
+        <div className="flex flex-col items-center gap-3 py-6">
+          <p className="text-sm text-error">분석 중 오류가 발생했습니다.</p>
+          <button
+            onClick={runAnalysis}
+            className="text-xs text-primary hover:underline cursor-pointer"
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
+
+      {/* 결과 */}
+      {phase === 'result' && result && (
+        <div>
+          <div className="prose-content text-sm text-text-primary leading-relaxed max-h-72 overflow-y-auto mb-4">
+            <ReactMarkdown>{result}</ReactMarkdown>
+          </div>
+
+          {/* 추천 대회 바로가기 */}
+          {matchedHackathons.length > 0 && (
+            <div className="border-t border-border pt-3">
+              <p className="text-xs font-medium text-text-secondary mb-2">추천 대회 바로가기</p>
+              <div className="flex flex-col gap-2">
+                {matchedHackathons.map((h) => (
+                  <a
+                    key={h.slug}
+                    href={`/hackathons/${h.slug}`}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg border border-border hover:border-primary/40 hover:bg-primary-light/20 transition-all group cursor-pointer"
+                  >
+                    <span className="text-sm font-medium text-text-primary group-hover:text-primary transition-colors truncate">{h.title}</span>
+                    <ChevronRight className="w-4 h-4 text-text-secondary group-hover:text-primary shrink-0" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function getFallbackAnalysis(user: NonNullable<ReturnType<typeof useUserStore.getState>['user']>, hackathons: ReturnType<typeof useHackathonStore.getState>['hackathons']): string {
+  const roleLabels: Record<string, string> = { developer: '개발자', designer: '디자이너', planner: '기획자', 'data-scientist': '데이터 사이언티스트' };
+  const active = hackathons.filter((h) => h.status === 'active');
+  const matched = active.filter((h) =>
+    h.tags.some((tag) => user.techStack.some((t) => tag.toLowerCase().includes(t.toLowerCase())) || user.interests.some((i) => tag.toLowerCase().includes(i.toLowerCase())))
+  );
+
+  let text = `### 프로필 요약\n${roleLabels[user.role] || user.role} · ${user.grade} 등급 (${user.points}pt)\n- 기술: ${user.techStack.join(', ') || '미설정'}\n- 관심: ${user.interests.join(', ') || '미설정'}\n\n`;
+
+  if (matched.length > 0) {
+    text += `### 추천 대회\n`;
+    matched.slice(0, 3).forEach((h, i) => {
+      text += `${i + 1}. **${h.title}**\n   - 태그: ${h.tags.join(', ')}\n   - 마감: ${h.endDate}\n\n`;
+    });
+  } else if (active.length > 0) {
+    text += `### 현재 진행 중인 대회\n`;
+    active.slice(0, 3).forEach((h, i) => {
+      text += `${i + 1}. **${h.title}** (마감: ${h.endDate})\n`;
+    });
+    text += `\n> 프로필의 기술 스택과 관심 분야를 설정하면 더 정확한 추천을 받을 수 있습니다.\n`;
+  }
+
+  text += `\n### 성장 조언\n꾸준한 대회 참여와 커뮤니티 활동으로 포인트를 쌓아보세요!`;
+  return text;
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { user, isLoggedIn, init: initUser } = useUserStore();
+  const { user, isLoggedIn, initialized, init: initUser } = useUserStore();
   const { init: initHackathon } = useHackathonStore();
   const { init: initTeam } = useTeamStore();
   const { init: initSubmission } = useSubmissionStore();
@@ -958,6 +1191,13 @@ export default function DashboardPage() {
     initSubmission();
   }, [initUser, initHackathon, initTeam, initSubmission]);
 
+  const [showAnalysis, setShowAnalysis] = useState(false);
+
+  // 초기화 전에는 빈 화면 표시 (뒤로가기 시 깜빡임 방지)
+  if (!initialized) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
   if (!isLoggedIn || !user) {
     return <NotLoggedIn />;
   }
@@ -966,13 +1206,14 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
+      <AIAnalysisModal isOpen={showAnalysis} onClose={() => setShowAnalysis(false)} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         {/* Page header */}
         <div className="mb-6">
           <div className="flex items-center gap-3">
             <UserAvatar role={user.role} size="lg" />
-            <div>
+            <div className="flex-1">
               <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
                 {user.nickname}
                 <span title={cfg?.label ?? user.grade} style={{ color: cfg?.color }}><IconMapper name={cfg?.icon ?? 'Sprout'} size={20} /></span>
@@ -984,6 +1225,14 @@ export default function DashboardPage() {
                 <span className="text-xs text-text-secondary">가입일: {user.joinedAt}</span>
               </div>
             </div>
+            <button
+              onClick={() => setShowAnalysis(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-text-on-primary text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98] shadow-sm shrink-0"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">AI 프로필 분석</span>
+              <span className="sm:hidden">AI 분석</span>
+            </button>
           </div>
         </div>
 

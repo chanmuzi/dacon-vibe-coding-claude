@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useRouter, notFound } from 'next/navigation';
+import { useParams, useRouter, useSearchParams, notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, Bookmark, BookmarkCheck, Users, Calendar, Clock,
@@ -168,7 +168,9 @@ export default function HackathonDetailPage() {
   const { submissions, addSubmission, getLeaderboard, updateLeaderboard } = useSubmissionStore();
   const { user, isLoggedIn, openAuthModal } = useUserStore();
 
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get('tab') as TabId) || 'overview';
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [toast, setToast] = useState('');
   const [submitForm, setSubmitForm] = useState({ content: '', memo: '', report: '', fileName: '', fileSize: '' });
   const [ideDropdownOpen, setIdeDropdownOpen] = useState(false);

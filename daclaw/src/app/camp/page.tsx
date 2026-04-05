@@ -7,8 +7,9 @@ import { useTeamStore } from '@/store/team';
 import { useHackathonStore } from '@/store/hackathon';
 import { useUserStore } from '@/store/user';
 import { useMessageStore } from '@/store/message';
+import ReactMarkdown from 'react-markdown';
 import {
-  Users, Plus, Sparkles, Send, Filter, ChevronDown, UserPlus, CheckCircle2, Check, Loader2,
+  Users, Plus, Sparkles, Send, Filter, ChevronDown, UserPlus, CheckCircle2, Check, Loader2, ChevronRight,
 } from 'lucide-react';
 import Modal from '@/components/Modal';
 import UserAvatar from '@/components/UserAvatar';
@@ -70,6 +71,8 @@ export default function CampPage() {
   const [toast, setToast] = useState('');
   const [createForm, setCreateForm] = useState({ name: '', description: '', hackathonSlug: '', roles: [] as Role[], maxMembers: 4 });
   const [recLoading, setRecLoading] = useState(false);
+  const [aiRecs, setAiRecs] = useState<{ teamId: string; teamName: string; matchScore: number; reason: string }[] | null>(null);
+  const [aiError, setAiError] = useState(false);
 
   // G11: Auto-filter from URL param ?hackathon=slug (React 19 prop-change pattern)
   const [prevSearchParams, setPrevSearchParams] = useState(searchParams);
@@ -311,7 +314,7 @@ export default function CampPage() {
               <h2 className="font-bold text-text-primary">AI 추천 팀</h2>
             </div>
 
-            {/* G6: Not logged in → CTA card */}
+            {/* Not logged in → CTA */}
             {!isLoggedIn ? (
               <div className="text-center py-6">
                 <Sparkles className="mx-auto mb-2 text-primary" size={28} />
@@ -325,36 +328,113 @@ export default function CampPage() {
                 </button>
               </div>
             ) : recLoading ? (
-              /* G7: Loading animation */
               <div className="flex flex-col items-center py-6 gap-2 text-text-secondary">
                 <Loader2 size={22} className="animate-spin text-primary" />
-                <p className="text-sm">매칭 분석 중...</p>
+                <p className="text-sm">AI 매칭 분석 중...</p>
+              </div>
+            ) : aiRecs ? (
+              /* AI recommendations result */
+              <div className="space-y-3">
+                {aiRecs.length === 0 ? (
+                  <p className="text-sm text-text-secondary text-center py-4">매칭되는 팀이 없습니다.</p>
+                ) : (
+                  aiRecs.map((rec) => {
+                    const team = teams.find((t) => t.id === rec.teamId);
+                    return (
+                      <a
+                        key={rec.teamId}
+                        href={team ? `/teams/${team.id}` : '#'}
+                        className="block border border-border rounded-lg p-3 hover:border-primary/40 hover:bg-primary-light/10 transition-all group cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-semibold text-sm text-text-primary group-hover:text-primary transition-colors">{rec.teamName}</span>
+                          <span className="font-mono text-sm font-bold text-primary bg-primary-light px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <Sparkles size={10} /> {rec.matchScore}%
+                          </span>
+                        </div>
+                        <p className="text-xs text-text-secondary leading-relaxed">{rec.reason}</p>
+                        {team && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {team.recruitRoles.map((r) => (
+                              <span key={r} className="text-xs bg-primary-light/60 text-primary px-1.5 py-0.5 rounded">
+                                {user?.role === r && <Check size={12} className="inline" />} {ROLE_LABELS[r]}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </a>
+                    );
+                  })
+                )}
+                <button
+                  onClick={() => { setAiRecs(null); setAiError(false); }}
+                  className="w-full text-xs text-text-secondary hover:text-primary transition-colors cursor-pointer mt-1 text-center"
+                >
+                  다시 추천받기
+                </button>
+              </div>
+            ) : aiError ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-text-secondary mb-2">추천 분석에 실패했습니다.</p>
+                <button
+                  onClick={() => { setAiError(false); }}
+                  className="text-xs text-primary hover:underline cursor-pointer"
+                >
+                  다시 시도
+                </button>
               </div>
             ) : (
-              /* G7: Recommendations with match reason */
-              <div className="space-y-3">
-                {recommendations.map(({ team, rate, hackTitle }) => {
-                  const reason = getMatchReason(rate);
-                  return (
-                    <div key={team.id} className="border border-border rounded-lg p-3 hover:border-primary-light transition-colors">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-sm text-text-primary">{team.name}</span>
-                        <span data-testid="match-rate" className="font-mono text-sm font-bold text-primary bg-primary-light px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <Sparkles size={10} /> {rate}%
-                        </span>
-                      </div>
-                      <p className="text-xs text-text-secondary mb-1">{hackTitle}</p>
-                      <p className={`text-xs mb-2 ${reason.className}`}>{reason.label}</p>
-                      <div className="flex flex-wrap gap-1">
-                        {team.recruitRoles.map((r) => (
-                          <span key={r} className="text-xs bg-primary-light/60 text-primary px-1.5 py-0.5 rounded">
-                            {user?.role === r && <Check size={12} className="inline" />} {ROLE_LABELS[r]}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+              /* AI 추천 시작 버튼 */
+              <div className="text-center py-4">
+                <p className="text-xs text-text-secondary mb-3">프로필 기반으로 최적의 팀을 추천합니다</p>
+                <button
+                  onClick={() => {
+                    setRecLoading(true);
+                    const openTeams = teams.filter((t) => t.recruitStatus === 'open');
+                    const teamsPayload = openTeams.map((t) => {
+                      const hack = hackathons.find((h) => t.hackathonSlugs?.includes(h.slug));
+                      return {
+                        id: t.id,
+                        name: t.name,
+                        description: t.description,
+                        recruitRoles: t.recruitRoles.map((r) => ROLE_LABELS[r]),
+                        hackathonTitle: hack?.title ?? '미정',
+                        techStack: t.techStack ?? [],
+                        members: t.members.length,
+                        maxMembers: t.maxMembers,
+                      };
+                    });
+                    fetch('/api/recommend-teams', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        profile: { role: user?.role, techStack: user?.techStack, interests: user?.interests, grade: user?.grade },
+                        teams: teamsPayload,
+                      }),
+                    })
+                      .then(async (res) => {
+                        if (!res.ok) {
+                          // Fallback to local recommendations
+                          const fallback = recommendations.slice(0, 3).map(({ team, rate }) => ({
+                            teamId: team.id,
+                            teamName: team.name,
+                            matchScore: rate,
+                            reason: getMatchReason(rate).label,
+                          }));
+                          setAiRecs(fallback);
+                          return;
+                        }
+                        const data = await res.json();
+                        setAiRecs(data.recommendations?.slice(0, 3) ?? []);
+                      })
+                      .catch(() => setAiError(true))
+                      .finally(() => setRecLoading(false));
+                  }}
+                  className="px-5 py-2.5 bg-primary text-text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer active:scale-[0.98] flex items-center gap-2 mx-auto"
+                >
+                  <Sparkles size={16} />
+                  AI 추천받기
+                </button>
               </div>
             )}
           </div>

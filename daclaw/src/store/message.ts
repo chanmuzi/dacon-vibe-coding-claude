@@ -49,6 +49,17 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     const updated = [...get().messages, m];
     setItem('messages', updated);
     set({ messages: updated });
+    // Auto-complete mission dm-4 when sending a team-request
+    if (m.type === 'team-request') {
+      setTimeout(async () => {
+        try {
+          const { useMissionStore } = await import('@/store/mission');
+          const { useUserStore } = await import('@/store/user');
+          const ms = useMissionStore.getState();
+          ms.completeMission('dm-4', (pts: number) => useUserStore.getState().addPoints(pts));
+        } catch { /* ignore */ }
+      }, 0);
+    }
   },
 
   markRead: (id) => {

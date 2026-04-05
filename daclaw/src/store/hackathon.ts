@@ -76,7 +76,7 @@ export const useHackathonStore = create<HackathonState>((set, get) => ({
           const ms = useMissionStore.getState();
           const target = ms.missions.find((m: { id: string; completed: boolean }) => m.id === 'dm-1' && !m.completed);
           if (target) {
-            ms.toggleMission(target.id, (pts: number) => useUserStore.getState().addPoints(pts));
+            ms.completeMission(target.id, (pts: number) => useUserStore.getState().addPoints(pts));
           }
         } catch { /* store not ready */ }
       }, 0);

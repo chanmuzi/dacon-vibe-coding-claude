@@ -34,6 +34,15 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
     const updated = [...get().submissions, s];
     setItem('submissions', updated);
     set({ submissions: updated });
+    // Auto-complete mission dm-3: 제출 1회 완료
+    setTimeout(async () => {
+      try {
+        const { useMissionStore } = await import('@/store/mission');
+        const { useUserStore } = await import('@/store/user');
+        const ms = useMissionStore.getState();
+        ms.completeMission('dm-3', (pts: number) => useUserStore.getState().addPoints(pts));
+      } catch { /* ignore */ }
+    }, 0);
   },
 
   getByHackathon: (slug) => get().submissions.filter((s) => s.hackathonSlug === slug),

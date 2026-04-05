@@ -41,6 +41,15 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
     const updated = [p, ...get().posts];
     setItem('community', updated);
     set({ posts: updated });
+    // Auto-complete mission dm-5: 게시글 1개 작성
+    setTimeout(async () => {
+      try {
+        const { useMissionStore } = await import('@/store/mission');
+        const { useUserStore } = await import('@/store/user');
+        const ms = useMissionStore.getState();
+        ms.completeMission('dm-5', (pts: number) => useUserStore.getState().addPoints(pts));
+      } catch { /* ignore */ }
+    }, 0);
   },
 
   addComment: (postId, comment) => {
@@ -49,6 +58,15 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
     );
     setItem('community', posts);
     set({ posts });
+    // Auto-complete mission dm-2: 커뮤니티 댓글 1개 작성
+    setTimeout(async () => {
+      try {
+        const { useMissionStore } = await import('@/store/mission');
+        const { useUserStore } = await import('@/store/user');
+        const ms = useMissionStore.getState();
+        ms.completeMission('dm-2', (pts: number) => useUserStore.getState().addPoints(pts));
+      } catch { /* ignore */ }
+    }, 0);
   },
 
   toggleLike: (postId, userId) => {
