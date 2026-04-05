@@ -82,35 +82,42 @@ export default function HomePage() {
   }, [init, communityInitFn, teamInitFn]);
 
   const activeHackathons = hackathons.filter((h) => h.status === 'active');
-  const [now] = useState(() => Date.now());
+  const [now, setNow] = useState(0);
+
+  // Hydration-safe: read Date.now() only on client
+  useEffect(() => { setNow(Date.now()); }, []);
 
   // Find nearest deadline hackathon (L2)
-  const imminentHackathon = activeHackathons
-    .filter((h) => new Date(h.endDate).getTime() > now)
-    .sort(
-      (a, b) =>
-        new Date(a.endDate).getTime() - new Date(b.endDate).getTime()
-    )[0];
+  const imminentHackathon = now
+    ? activeHackathons
+        .filter((h) => new Date(h.endDate).getTime() > now)
+        .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())[0]
+    : undefined;
 
   const countdownTarget = imminentHackathon;
 
-  const [timeLeft, setTimeLeft] = useState(
-    countdownTarget ? getTimeLeft(countdownTarget.endDate) : null
-  );
+  const [timeLeft, setTimeLeft] = useState<ReturnType<typeof getTimeLeft> | null>(null);
 
   useEffect(() => {
     if (!countdownTarget) return;
+    setTimeLeft(getTimeLeft(countdownTarget.endDate));
     const interval = setInterval(() => {
       setTimeLeft(getTimeLeft(countdownTarget.endDate));
     }, 1000);
     return () => clearInterval(interval);
   }, [countdownTarget]);
 
-  // E1: Calendar month/year navigation state
-  const nowDate = new Date();
-  const [calendarYear, setCalendarYear] = useState(nowDate.getFullYear());
-  const [calendarMonth, setCalendarMonth] = useState(nowDate.getMonth());
+  // E1: Calendar month/year navigation state (hydration-safe fixed defaults)
+  const [calendarYear, setCalendarYear] = useState(2026);
+  const [calendarMonth, setCalendarMonth] = useState(3);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+
+  // Hydration-safe: sync calendar to actual month on client
+  useEffect(() => {
+    const d = new Date();
+    setCalendarYear(d.getFullYear());
+    setCalendarMonth(d.getMonth());
+  }, []);
 
   const { firstDay, daysInMonth, today } = getMonthDays(calendarYear, calendarMonth);
 
@@ -576,9 +583,9 @@ export default function HomePage() {
               </span>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => { setCalendarYear(nowDate.getFullYear()); setCalendarMonth(nowDate.getMonth()); setSelectedDay(null); }}
+                  onClick={() => { const d = new Date(); setCalendarYear(d.getFullYear()); setCalendarMonth(d.getMonth()); setSelectedDay(null); }}
                   className={`text-xs px-2 py-1 rounded-md font-medium transition-all active:scale-95 ${
-                    calendarYear === nowDate.getFullYear() && calendarMonth === nowDate.getMonth()
+                    calendarYear === new Date().getFullYear() && calendarMonth === new Date().getMonth()
                       ? 'bg-primary text-text-on-primary'
                       : 'bg-primary/10 text-primary hover:bg-primary/20'
                   }`}

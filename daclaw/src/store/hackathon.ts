@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import type { Hackathon, Bookmark } from '@/types';
 import { getItem, setItem } from '@/lib/localStorage';
-import { seedHackathons } from '@/data/seed';
+import { seedHackathons, SEED_VERSION } from '@/data/seed';
 
 interface HackathonState {
   hackathons: Hackathon[];
@@ -25,7 +25,6 @@ export const useHackathonStore = create<HackathonState>((set, get) => ({
     if (get().initialized) return;
 
     // Version-based re-seed: when seed data changes, force refresh non-custom hackathons
-    const SEED_VERSION = 5;
     const storedVersion = getItem<number>('hackathons-seed-version');
     const stored = getItem<Hackathon[]>('hackathons');
     const bookmarks = getItem<Bookmark[]>('bookmarks') ?? [];

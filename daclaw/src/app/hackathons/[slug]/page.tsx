@@ -166,11 +166,11 @@ export default function HackathonDetailPage() {
   const { getBySlug, isBookmarked, toggleBookmark } = useHackathonStore();
   const { teams } = useTeamStore();
   const { submissions, addSubmission, getLeaderboard, updateLeaderboard } = useSubmissionStore();
-  const { user, isLoggedIn } = useUserStore();
+  const { user, isLoggedIn, openAuthModal } = useUserStore();
 
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [toast, setToast] = useState('');
-  const [submitForm, setSubmitForm] = useState({ content: '', memo: '', fileName: '', fileSize: '' });
+  const [submitForm, setSubmitForm] = useState({ content: '', memo: '', report: '', fileName: '', fileSize: '' });
   const [ideDropdownOpen, setIdeDropdownOpen] = useState(false);
   const [fileErrors, setFileErrors] = useState<string[]>([]);
   const [parsedPreview, setParsedPreview] = useState<string[][]>([]);
@@ -239,9 +239,13 @@ export default function HackathonDetailPage() {
       score,
       createdAt: todayString(),
     };
+    // For hybrid: include report in memo
+    if (hackathon.type === 'hybrid' && submitForm.report) {
+      sub.memo = [submitForm.report, submitForm.memo].filter(Boolean).join(' | ');
+    }
     addSubmission(sub);
     if (score !== undefined) updateLeaderboard(slug, teamId, teamName, score);
-    setSubmitForm({ content: '', memo: '', fileName: '', fileSize: '' });
+    setSubmitForm({ content: '', memo: '', report: '', fileName: '', fileSize: '' });
     setToast('제출이 완료되었습니다!');
   }
 
@@ -303,24 +307,27 @@ export default function HackathonDetailPage() {
     setIdeDropdownOpen(false);
     const prompt = generateIdePrompt();
 
+    const openIde = () => {
+      if (action === 'cursor') window.open('cursor://open', '_self');
+      else if (action === 'vscode') window.open('vscode://', '_self');
+      else if (action === 'chatgpt') window.open('https://chat.openai.com', '_blank');
+      else if (action === 'claude') window.open('https://claude.ai', '_blank');
+    };
+
     if (action === 'copy') {
-      navigator.clipboard.writeText(prompt);
-      setToast('대회 컨텍스트가 클립보드에 복사되었습니다');
+      navigator.clipboard.writeText(prompt)
+        .then(() => setToast('대회 컨텍스트가 클립보드에 복사되었습니다'))
+        .catch(() => setToast('클립보드 복사에 실패했습니다. 수동으로 복사해주세요.'));
       return;
     }
 
     // Copy prompt to clipboard, then open IDE
     navigator.clipboard.writeText(prompt).then(() => {
       setToast('대회 컨텍스트가 복사되었습니다. AI 패널에 붙여넣기 하세요.');
-      if (action === 'cursor') {
-        window.open('cursor://open', '_self');
-      } else if (action === 'vscode') {
-        window.open('vscode://', '_self');
-      } else if (action === 'chatgpt') {
-        window.open('https://chat.openai.com', '_blank');
-      } else if (action === 'claude') {
-        window.open('https://claude.ai', '_blank');
-      }
+      openIde();
+    }).catch(() => {
+      setToast('클립보드 복사에 실패했습니다. 수동으로 복사해주세요.');
+      openIde();
     });
   }
 
@@ -350,16 +357,46 @@ export default function HackathonDetailPage() {
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
       if (fmt.type === 'csv') {
-        const lines = text.trim().split('\n');
-        const header = lines[0]?.split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
+        // RFC 4180-aware CSV parser: respects quoted fields with commas/newlines
+        function parseCsvLine(line: string): string[] {
+          const cells: string[] = [];
+          let current = '';
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (inQuotes) {
+              if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+              else if (ch === '"') { inQuotes = false; }
+              else { current += ch; }
+            } else {
+              if (ch === '"') { inQuotes = true; }
+              else if (ch === ',') { cells.push(current.trim()); current = ''; }
+              else { current += ch; }
+            }
+          }
+          cells.push(current.trim());
+          return cells;
+        }
+        // Split rows respecting quoted newlines
+        const rows: string[] = [];
+        let buf = '';
+        let q = false;
+        for (const ch of text.trim()) {
+          if (ch === '"') q = !q;
+          if (ch === '\n' && !q) { rows.push(buf); buf = ''; }
+          else { buf += ch; }
+        }
+        if (buf) rows.push(buf);
+
+        const header = parseCsvLine(rows[0] || '');
         if (fmt.columns) {
-          const missing = fmt.columns.filter((c) => !header?.includes(c));
+          const missing = fmt.columns.filter((c) => !header.includes(c));
           if (missing.length > 0) errors.push(`필수 컬럼 누락: ${missing.join(', ')}`);
         }
-        if (fmt.maxRows && lines.length - 1 > fmt.maxRows) {
-          errors.push(`행 수 초과: ${lines.length - 1}행 / 최대 ${fmt.maxRows}행`);
+        if (fmt.maxRows && rows.length - 1 > fmt.maxRows) {
+          errors.push(`행 수 초과: ${rows.length - 1}행 / 최대 ${fmt.maxRows}행`);
         }
-        const preview = lines.slice(0, 6).map((l) => l.split(',').map((c) => c.trim().replace(/^"|"$/g, '')));
+        const preview = rows.slice(0, 6).map((r) => parseCsvLine(r));
         setParsedPreview(preview);
       } else if (fmt.type === 'json') {
         try {
@@ -579,7 +616,7 @@ export default function HackathonDetailPage() {
           </div>
         </div>
         <button
-          onClick={() => toggleBookmark(slug)}
+          onClick={() => { if (!isLoggedIn) { openAuthModal(); return; } toggleBookmark(slug); }}
           className="absolute top-4 right-4 p-2 rounded-full bg-white/20 hover:bg-white/40 transition-colors cursor-pointer active:scale-95"
         >
           {bookmarked ? <BookmarkCheck size={20} className="text-warning" /> : <Bookmark size={20} className="text-white" />}
@@ -863,9 +900,9 @@ export default function HackathonDetailPage() {
                   </div>
 
                   {/* Prompt preview (collapsible) */}
-                  <details className="mt-4">
+                  <details className="group mt-4">
                     <summary className="text-xs text-text-secondary cursor-pointer hover:text-primary select-none flex items-center gap-1">
-                      <ChevronRight size={12} className="transition-transform open:rotate-90" />
+                      <ChevronRight size={12} className="transition-transform group-open:rotate-90" />
                       복사될 프롬프트 미리보기
                     </summary>
                     <pre className="mt-2 p-3 bg-background border border-border rounded-lg text-xs text-text-secondary overflow-x-auto max-h-48 whitespace-pre-wrap font-mono">
@@ -1366,8 +1403,8 @@ export default function HackathonDetailPage() {
                           data-testid="submission-content-report"
                           rows={6}
                           placeholder="분석 과정과 인사이트를 작성해주세요..."
-                          value={submitForm.content.startsWith('{') || submitForm.content.includes(',') ? '' : submitForm.content}
-                          onChange={(e) => setSubmitForm({ ...submitForm, memo: e.target.value })}
+                          value={submitForm.report}
+                          onChange={(e) => setSubmitForm({ ...submitForm, report: e.target.value })}
                           className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary transition-shadow resize-none"
                         />
                       </div>

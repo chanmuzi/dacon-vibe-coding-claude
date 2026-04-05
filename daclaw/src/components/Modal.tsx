@@ -22,20 +22,18 @@ export default function Modal({
   showCloseButton = true,
   zIndex = 50,
 }: ModalProps) {
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(isOpen);
   const [closing, setClosing] = useState(false);
 
-  // React 19 derived-state-from-props pattern
-  const [prevOpen, setPrevOpen] = useState(isOpen);
-  if (isOpen !== prevOpen) {
-    setPrevOpen(isOpen);
+  // Sync open/close state after render
+  useEffect(() => {
     if (isOpen) {
       setMounted(true);
       setClosing(false);
     } else if (mounted) {
       setClosing(true);
     }
-  }
+  }, [isOpen, mounted]);
 
   // Unmount after close transition
   useEffect(() => {

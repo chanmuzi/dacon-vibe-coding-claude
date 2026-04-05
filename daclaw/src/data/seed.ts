@@ -3,7 +3,7 @@ import type {
   CommunityPost, Badge, DailyMission, Message, UserProfile,
 } from '@/types';
 
-export const SEED_VERSION = 3;
+export const SEED_VERSION = 5;
 
 export const seedHackathons: Hackathon[] = [
   {
@@ -596,7 +596,7 @@ export const seedTeams: Team[] = [
     description: '모던 웹 개발과 UX 최적화에 전문성이 있는 팀입니다. 이전 해커톤에서 완성도 우수상을 수상했습니다. 풀스택 개발자와 UI/UX 디자이너를 찾고 있어요!',
     hackathonSlugs: ['vibe-coding-challenge'],
     requirements: 'Next.js 경험자 필수, TypeScript 능숙자 우대',
-    techStack: ['Next.js 16', 'TypeScript', 'Tailwind CSS', 'Zustand', 'Framer'],
+    techStack: ['Next.js 16', 'TypeScript', 'Tailwind CSS', 'Zustand'],
     teamScore: 0,
     hackathonCount: 1,
     submissionCount: 0,
@@ -706,7 +706,7 @@ export const seedCommunityPosts: CommunityPost[] = [
     ], createdAt: '2026-03-13',
   },
   {
-    id: 'post-3', type: 'team-find', title: '[바이브 코딩] 프론트엔드 개발자 구합니다', summary: '바이브 코딩 대회에서 React/Next.js 경험 있는 프론트엔드 개발자 2명을 구하는 팀원 모집 글입니다.', content: 'React/Next.js 경험 있는 개발자를 찾습니다.\n- 현재 인원: 기획 1, 디자인 1\n- 필요 역할: 프론트엔드 개발 2명\n- 사용 기술: Next.js, Tailwind CSS, Framer Motion',
+    id: 'post-3', type: 'team-find', title: '[바이브 코딩] 프론트엔드 개발자 구합니다', summary: '바이브 코딩 대회에서 React/Next.js 경험 있는 프론트엔드 개발자 2명을 구하는 팀원 모집 글입니다.', content: 'React/Next.js 경험 있는 개발자를 찾습니다.\n- 현재 인원: 기획 1, 디자인 1\n- 필요 역할: 프론트엔드 개발 2명\n- 사용 기술: Next.js, Tailwind CSS, tw-animate-css',
     authorId: 'user-8', authorNickname: '오기획', hackathonTag: 'vibe-coding-challenge', likes: 12, likedBy: [], comments: [
       { id: 'c3', authorId: 'user-4', authorNickname: '박프론트', content: '관심 있습니다! DM 드려도 될까요?', createdAt: '2026-03-13' },
     ], createdAt: '2026-03-12',
