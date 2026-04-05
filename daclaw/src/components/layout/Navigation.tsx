@@ -6,8 +6,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user';
 import {
   Trophy, Users, BarChart3, MessageSquare, LayoutDashboard,
-  Menu, X, Search, LogIn, LogOut, User, Eye, EyeOff, ChevronDown,
+  Menu, X, Search, LogIn, LogOut, User, Eye, EyeOff, ChevronDown, Mail,
 } from 'lucide-react';
+import { useMessageStore } from '@/store/message';
 import GlobalSearch from '@/components/GlobalSearch';
 import Modal from '@/components/Modal';
 import type { Role } from '@/types';
@@ -46,6 +47,7 @@ export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoggedIn, login, register, logout, showAuthModal, openAuthModal, closeAuthModal } = useUserStore();
+  const unreadCount = useMessageStore((s) => user ? s.getUnreadCount(user.id) : 0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -165,7 +167,7 @@ export default function Navigation() {
             </div>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <button
                 data-testid="search-input"
                 onClick={() => setShowSearch(!showSearch)}
@@ -175,8 +177,23 @@ export default function Navigation() {
                 <Search size={20} />
               </button>
 
+              {isLoggedIn && (
+                <Link
+                  href="/messages"
+                  className="relative p-2 rounded-lg text-text-secondary hover:bg-primary-light hover:text-primary transition-colors"
+                  title="메시지"
+                >
+                  <Mail size={20} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-error text-white text-[9px] font-bold">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              )}
+
               {isLoggedIn ? (
-                <div className="hidden md:flex items-center gap-2 relative">
+                <div className="hidden md:flex items-center gap-1 relative">
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-light text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
@@ -216,6 +233,19 @@ export default function Navigation() {
                           >
                             <User size={16} className="text-text-secondary" />
                             내 프로필
+                          </Link>
+                          <Link
+                            href="/messages"
+                            onClick={() => setShowUserMenu(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-primary hover:bg-primary-light transition-colors"
+                          >
+                            <Mail size={16} className="text-text-secondary" />
+                            메시지
+                            {unreadCount > 0 && (
+                              <span className="ml-auto inline-flex items-center justify-center w-5 h-5 rounded-full bg-error text-white text-[10px] font-bold">
+                                {unreadCount}
+                              </span>
+                            )}
                           </Link>
                         </div>
                         <div className="p-1.5 border-t border-border">
